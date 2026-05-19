@@ -36,3 +36,22 @@ cd BudgetFlowFusion
 #   Launch infrastructure
 docker compose up --build
 ```
+
+## How to run frontend in dev mode?
+
+```bash
+#   Go to frontend directory
+cd frontend
+
+#   Install npm manager
+npm install
+
+#   Run developer mode
+npm run dev
+```
+
+## How to build frontend in production mode?
+
+```bash
+npm run build
+```
