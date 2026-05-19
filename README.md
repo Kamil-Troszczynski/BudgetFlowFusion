@@ -13,7 +13,7 @@ Authors:
  - Dominik Chmielak [Github](https://github.com/Kamil-Troszczynski)
  - Mateusz Bartosiak [Github](https://github.com/barto159)
 
-The purchase records system is a web application designed for managing and monitoring purchase-related data within a student research club. The frontend was built using Vue.js, the backend is based on FastAPI, and the data is stored in an Oracle Database database. The system allows users to add, edit, and browse purchase records, providing quick access to information and convenient data management.
+The purchase records system is a web application designed for managing and monitoring purchase-related data within a student research club. The frontend was built using Vue.js, the backend is based on FastAPI, the data is created in SQL Model and stored in an PostgreSQL database. The system allows users to add, edit, and browse purchase records, providing quick access to information and convenient data management.
 
 ## Clone repository
 
