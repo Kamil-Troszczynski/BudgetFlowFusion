@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15
+    container_name: budgetflowfusion_db
+    environment:
+      POSTGRES_USER: budgetflowfusion
+      POSTGRES_PASSWORD: budgetflowfusion
+      POSTGRES_DB: budgetflowfusion
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    build: backend
+    container_name: backend
+    depends_on:
+       - db
+    environment:
+      - DATABASE_URL=postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/backend
+    restart: always
+
+volumes:
+  postgres_data:
