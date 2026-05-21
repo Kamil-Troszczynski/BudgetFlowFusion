@@ -1,7 +1,7 @@
 <template>
   <main class="hero">
     <!-- Choose instead uncommented line in order to hear mp4 -->
-    <!-- <video class="hero__video" autoplay controls loop playsinline> -->
+    <!-- <video class="hero__video" autoplay controlsloop playsinline> -->
     <video class="hero__video" autoplay muted loop playsinline>
       <source src="/animation.mp4" type="video/mp4" />
     </video>
