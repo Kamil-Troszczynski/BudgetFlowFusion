@@ -1,0 +1,7 @@
+sqlmodel
+fastapi[standard]
+pytest
+python-dotenv==1.0.1
+gunicorn
+uvicorn[standard]
+psycopg2
