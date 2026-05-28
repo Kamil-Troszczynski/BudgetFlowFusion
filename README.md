@@ -104,7 +104,7 @@ docker compose up --build
 #   Go to frontend directory
 cd frontend
 
-#   Install npm manager
+#   Install npm manager with packages
 npm install
 
 #   Run developer mode

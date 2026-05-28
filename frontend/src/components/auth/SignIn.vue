@@ -1,7 +1,5 @@
 <template>
   <main class="hero">
-    <!-- Choose instead uncommented line in order to hear mp4 -->
-    <!-- <video class="hero__video" autoplay controlsloop playsinline> -->
     <video class="hero__video" autoplay muted loop playsinline>
       <source src="/animation.mp4" type="video/mp4" />
     </video>
@@ -31,7 +29,7 @@
 
             <button class="login-sheet__submit" type="button">Zaloguj się</button>
             <p class="login-sheet__register">
-              Nie masz konta? <a href="#">Zarejestruj się</a>
+              Nie masz konta? <RouterLink to="/register">Zarejestruj się</RouterLink>
             </p>
           </form>
         </div>
@@ -242,14 +240,23 @@
 }
 
 .login-sheet__register a {
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
   color: #93c5fd;
   font-weight: 800;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 1rem;
   text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
 }
 
 .login-sheet__register a:hover,
 .login-sheet__register a:focus-visible {
+  color: #bfdbfe;
   text-decoration: underline;
+  background: rgba(59, 130, 246, 0.12);
 }
 
 @media (max-width: 640px) {
