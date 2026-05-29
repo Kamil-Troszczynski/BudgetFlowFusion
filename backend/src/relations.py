@@ -18,18 +18,18 @@ class Currency(str, Enum):
     USD = "USD"
 
 
-class ScientificCircleBudget(SQLModel, table=True):
-    __tablename__ = "scientific_circle_budget"
+class Association(SQLModel, table=True):
+    __tablename__ = "association"
 
-    scientific_circle_budget_id: Optional[int] = Field(default=None, primary_key=True)
-    scientific_circle_name: str
+    association_id: Optional[int] = Field(default=None, primary_key=True)
+    association_name: str
     total_budget: float
     spent_money: float
     public_purchase_plan_list_id: Optional[int] = Field(default=None, foreign_key="public_purchase_plan_list.public_purchase_plan_list_id")
 
-    purchase_requests: list["PurchaseRequest"] = Relationship(back_populates="scientific_circle_budget")
-    public_purchase_plan_list: Optional["PublicPurchasePlanList"] = Relationship(back_populates="scientific_circle_budget")
-    fundings: list["Funding"] = Relationship(back_populates="scientific_circle_budget")
+    purchase_requests: list["PurchaseRequest"] = Relationship(back_populates="association")
+    public_purchase_plan_list: Optional["PublicPurchasePlanList"] = Relationship(back_populates="association")
+    fundings: list["Funding"] = Relationship(back_populates="association")
 
 
 class PurchaseRequest(SQLModel, table=True):
@@ -43,10 +43,10 @@ class PurchaseRequest(SQLModel, table=True):
     created_at: datetime
     can_add: bool
 
-    scientific_circle_budget_id: int = Field(foreign_key="scientific_circle_budget.scientific_circle_budget_id")
+    association_id: int = Field(foreign_key="association.association_id")
     gslbccf_id: Optional[int] = Field(default=None, foreign_key="grouped_shops_list_by_cpv_category_and_funding.gslbccf_id")
 
-    scientific_circle_budget: Optional["ScientificCircleBudget"] = Relationship(back_populates="purchase_requests")
+    association: Optional["Association"] = Relationship(back_populates="purchase_requests")
     grouped_shops_list: Optional["GroupedShopsListByCpvCategoryAndFunding"] = Relationship(back_populates="purchase_requests")
     settlements: list["Settlement"] = Relationship(back_populates="purchase_request")
     project_finance_managers: list["ProjectFinanceManager"] = Relationship(back_populates="purchase_request")
@@ -58,7 +58,7 @@ class PublicPurchasePlanList(SQLModel, table=True):
     public_purchase_plan_list_id: Optional[int] = Field(default=None, primary_key=True)
     public_plan_list_name: str
 
-    scientific_circle_budget: Optional["ScientificCircleBudget"] = Relationship(back_populates="public_purchase_plan_list")
+    association: Optional["Association"] = Relationship(back_populates="public_purchase_plan_list")
     public_purchase_plans: list["PublicPurchasePlan"] = Relationship(back_populates="public_purchase_plan_list")
 
 
@@ -71,9 +71,9 @@ class Funding(SQLModel, table=True):
     spent_money: float
 
     project_id: Optional[int] = Field(default=None, foreign_key="project.project_id")
-    scientific_circle_budget_id: int = Field(foreign_key="scientific_circle_budget.scientific_circle_budget_id")
+    association_id: int = Field(foreign_key="association.association_id")
 
-    scientific_circle_budget: Optional["ScientificCircleBudget"] = Relationship(back_populates="fundings")
+    association: Optional["Association"] = Relationship(back_populates="fundings")
     project: Optional["Project"] = Relationship(back_populates="fundings")
     shop_purchase_lists: Optional["ShopPurchaseList"] = Relationship(back_populates="funding")
 

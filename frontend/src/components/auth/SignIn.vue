@@ -16,18 +16,28 @@
             Wejdź do panelu i zacznij zarządzać swoim budżetem w jednym miejscu.
           </p>
 
-          <form class="login-sheet__form">
+          <form class="login-sheet__form" @submit.prevent="handleSubmit">
             <label class="login-sheet__field">
               <span>E-mail</span>
-              <input type="email" placeholder="name@example.com" />
+              <input 
+                v-model="formData.email"
+                type="email" 
+                placeholder="name@example.com"
+                required 
+              />
             </label>
 
             <label class="login-sheet__field">
               <span>Hasło</span>
-              <input type="password" placeholder="••••••••" />
+              <input 
+                v-model="formData.password"
+                type="password" 
+                placeholder="••••••••"
+                required 
+              />
             </label>
 
-            <button class="login-sheet__submit" type="button">Zaloguj się</button>
+            <button class="login-sheet__submit" type="submit">Zaloguj się</button>
             <p class="login-sheet__register">
               Nie masz konta? <RouterLink to="/register">Zarejestruj się</RouterLink>
             </p>
@@ -37,6 +47,32 @@
     </div>
   </main>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { login } = useAuth()
+
+const formData = ref({
+  email: '',
+  password: ''
+})
+
+const handleSubmit = () => {
+  login({
+    firstName: 'Jan',
+    lastName: 'Testowy',
+    email: formData.value.email,
+    circleName: 'Moja Organizacja',
+    role: 'member'
+  })
+  
+  router.push('/home')
+}
+</script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap');

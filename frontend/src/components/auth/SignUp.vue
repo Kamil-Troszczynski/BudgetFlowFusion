@@ -100,6 +100,11 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { register } = useAuth()
 
 const formData = ref({
   firstName: '',
@@ -112,7 +117,13 @@ const formData = ref({
 })
 
 const handleSubmit = () => {
-  console.log('Dane formularza:', formData.value)
+  if (formData.value.password !== formData.value.confirmPassword) {
+    alert('Hasła nie są identyczne!')
+    return
+  }
+  
+  register(formData.value)
+  router.push('/home')
 }
 
 const toggleRole = () => {
