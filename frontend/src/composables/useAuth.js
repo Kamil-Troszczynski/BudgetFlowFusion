@@ -11,6 +11,8 @@ export function useAuth() {
       lastName: userData.lastName,
       email: userData.email,
       circleName: userData.circleName,
+      position: userData.position || '',
+      inSAP: userData.inSAP || false,
       role: userData.role || 'member',
       loginTime: new Date()
     }
@@ -24,6 +26,8 @@ export function useAuth() {
       lastName: userData.lastName,
       email: userData.email,
       circleName: userData.circleName,
+      position: userData.position || '',
+      inSAP: userData.inSAP || false,
       role: userData.role || 'member',
       registeredAt: new Date(),
       loginTime: new Date()

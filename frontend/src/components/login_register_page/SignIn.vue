@@ -65,9 +65,11 @@ const formData = ref({
 const handleSubmit = () => {
   login({
     firstName: 'Jan',
-    lastName: 'Testowy',
+    lastName: 'Kowalski',
     email: formData.value.email,
-    circleName: 'Moja Organizacja',
+    circleName: 'KNR',
+    position: 'Elektronika',
+    inSAP: false,
     role: 'member'
   })
   
