@@ -33,7 +33,7 @@
           </label>
 
           <label class="signup-form__field">
-            <span>E-mail</span>
+            <span>Login lub e-mail</span>
             <input 
               v-model="formData.email"
               type="email" 
@@ -50,6 +50,21 @@
               placeholder="Moja organizacja" 
               required
             />
+          </label>
+
+          <label class="signup-form__field">
+            <span>Pozycja w kole naukowym (Sekcja)</span>
+            <select 
+              v-model="formData.position"
+              required
+              class="signup-form__select"
+            >
+              <option value="" disabled>Wybierz sekcję</option>
+              <option value="elektronika">Elektronika</option>
+              <option value="autonomia">Autonomia</option>
+              <option value="mechanika">Mechanika</option>
+              <option value="embedded">Embedded</option>
+            </select>
           </label>
 
           <label class="signup-form__field">
@@ -87,6 +102,21 @@
             </button>
           </div>
 
+          <div class="signup-form__role-toggle">
+            <span class="signup-form__role-label">SAP</span>
+            <button 
+              class="signup-form__toggle" 
+              :class="{ 'is-in-sap': formData.inSAP === true }"
+              type="button"
+              @click="toggleSAP"
+            >
+              <span class="signup-form__toggle-text">
+                {{ formData.inSAP ? 'Jestem w SAP' : 'Nie jestem w SAP' }}
+              </span>
+              <span class="signup-form__toggle-indicator"></span>
+            </button>
+          </div>
+
           <button class="signup-form__submit" type="submit">Zarejestruj się</button>
 
           <p class="signup-form__register">
@@ -111,9 +141,11 @@ const formData = ref({
   lastName: '',
   email: '',
   circleName: '',
+  position: '',
   password: '',
   confirmPassword: '',
-  role: 'member'
+  role: 'member',
+  inSAP: false
 })
 
 const handleSubmit = () => {
@@ -128,6 +160,10 @@ const handleSubmit = () => {
 
 const toggleRole = () => {
   formData.value.role = formData.value.role === 'member' ? 'treasurer' : 'member'
+}
+
+const toggleSAP = () => {
+  formData.value.inSAP = !formData.value.inSAP
 }
 </script>
 
@@ -257,6 +293,36 @@ const toggleRole = () => {
   color: rgba(226, 232, 240, 0.45);
 }
 
+.signup-form__select {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.9vw;
+  padding: 1.2vw 1.3vw;
+  background: rgba(15, 23, 42, 0.68);
+  color: #ffffff;
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 0.95vw;
+  cursor: pointer;
+}
+
+.signup-form__select:focus {
+  border-color: rgba(96, 165, 250, 0.9);
+  box-shadow: 0 0 0 0.4vw rgba(59, 130, 246, 0.24);
+}
+
+.signup-form__select option {
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+}
+
+.signup-form__field input::placeholder {
+  color: rgba(226, 232, 240, 0.45);
+}
+
 .signup-form__field input:focus {
   border-color: rgba(96, 165, 250, 0.9);
   box-shadow: 0 0 0 0.4vw rgba(59, 130, 246, 0.24);
@@ -338,6 +404,15 @@ fieldset legend {
 .signup-form__toggle.is-treasurer {
   border-color: rgba(96, 165, 250, 0.9);
   background: rgba(59, 130, 246, 0.15);
+}
+
+.signup-form__toggle.is-in-sap {
+  border-color: rgba(34, 197, 94, 0.9);
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.signup-form__toggle.is-in-sap .signup-form__toggle-indicator {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
 .signup-form__toggle-text {

@@ -18,7 +18,7 @@
 
           <form class="login-sheet__form" @submit.prevent="handleSubmit">
             <label class="login-sheet__field">
-              <span>E-mail</span>
+              <span>Login lub e-mail</span>
               <input 
                 v-model="formData.email"
                 type="email" 
