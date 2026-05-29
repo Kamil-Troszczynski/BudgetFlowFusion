@@ -52,27 +52,22 @@
               </div>
               <div class="dashboard__user-info-content">
                 <div class="dashboard__user-info-row">
-                  <span class="dashboard__user-info-icon">{{ user.role === 'member' ? '🧩' : '💰' }}</span>
                   <span class="dashboard__user-info-label">Rola</span>
                   <span class="dashboard__user-info-value">{{ user.role === 'member' ? 'Członek koła naukowego' : 'Skarbnik' }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
-                  <span class="dashboard__user-info-icon">📬</span>
                   <span class="dashboard__user-info-label">E-mail</span>
                   <span class="dashboard__user-info-value">{{ user.email }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
-                  <span class="dashboard__user-info-icon">🏛️</span>
                   <span class="dashboard__user-info-label">Koło naukowe</span>
                   <span class="dashboard__user-info-value">{{ user.circleName }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
-                  <span class="dashboard__user-info-icon">🔧</span>
                   <span class="dashboard__user-info-label">Sekcja</span>
                   <span class="dashboard__user-info-value">{{ formatPosition(user.position) }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
-                  <span class="dashboard__user-info-icon">{{ user.inSAP ? '✅' : '❌' }}</span>
                   <span class="dashboard__user-info-label">SAP</span>
                   <span class="dashboard__user-info-value">{{ user.inSAP ? 'Jestem w SAP' : 'Nie jestem w SAP' }}</span>
                 </div>
@@ -82,7 +77,7 @@
             <section class="dashboard__grid">
               <div v-if="user.role === 'treasurer'" class="dashboard__card budget-card">
                 <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title">💰 Przegląd budżetu</h3>
+                  <h3 class="dashboard__card-title"> Przegląd budżetu </h3>
                   <span class="dashboard__card-badge">Miesiąc</span>
                 </div>
                 <div class="dashboard__card-body">
@@ -105,7 +100,7 @@
 
               <div v-if="user.role === 'treasurer'" class="dashboard__card transactions-card">
                 <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title">📋 Ostatnie transakcje</h3>
+                  <h3 class="dashboard__card-title"> Ostatnie transakcje </h3>
                   <button class="dashboard__card-link">Wszystkie →</button>
                 </div>
                 <div class="dashboard__card-body">
@@ -127,7 +122,7 @@
               </div>
               <div class="dashboard__card actions-card">
                 <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title">⚡ Szybki dostęp</h3>
+                  <h3 class="dashboard__card-title"> Szybki dostęp </h3>
                 </div>
                 <div class="dashboard__card-body">
                   <button 
@@ -143,7 +138,7 @@
 
               <div v-if="user.role === 'treasurer'" class="dashboard__card stats-card">
                 <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title">📈 Statystyki</h3>
+                  <h3 class="dashboard__card-title"> Statystyki </h3>
                 </div>
                 <div class="dashboard__card-body">
                   <div 
@@ -426,9 +421,9 @@ const recentTransactions = [
 ]
 
 const quickActions = [
-  { id: 1, icon: '➕', label: 'Dodaj przedmiot' },
-  { id: 2, icon: '🛒', label: 'Dodaj listę zakupów' },
-  { id: 3, icon: '👥', label: 'Członkowie koła' }
+  { id: 1, label: 'Dodaj przedmiot' },
+  { id: 2, label: 'Dodaj listę zakupów' },
+  { id: 3, label: 'Członkowie koła' }
 ]
 
 const statistics = [
@@ -715,11 +710,6 @@ const handleLogout = () => {
 
 .dashboard__user-info-row:hover {
   background: rgba(59, 130, 246, 0.15);
-}
-
-.dashboard__user-info-icon {
-  font-size: 1.4vw;
-  flex-shrink: 0;
 }
 
 .dashboard__user-info-label {
