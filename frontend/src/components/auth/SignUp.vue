@@ -192,24 +192,24 @@ const toggleRole = () => {
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  padding: 2rem 1.5rem;
+  padding: 2vh 3vw;
   box-sizing: border-box;
 }
 
 .signup-section {
   width: 100%;
-  max-width: 520px;
+  max-width: 40vw;
   padding: 0;
 }
 
 .signup-card__header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5vh;
 }
 
 .signup-card__eyebrow {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.8vh;
   color: rgba(191, 219, 254, 0.96);
-  font-size: 1.9rem;
+  font-size: 2.2vw;
   font-weight: 800;
   line-height: 1.45;
   font-family: 'Nunito', system-ui, sans-serif;
@@ -218,21 +218,21 @@ const toggleRole = () => {
 .signup-card__description {
   margin: 0;
   color: rgba(226, 232, 240, 0.84);
-  font-size: 0.95rem;
+  font-size: 1vw;
   line-height: 1.55;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .signup-form {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5vw;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .signup-form__field {
   display: grid;
-  gap: 0.5rem;
-  font-size: 0.95rem;
+  gap: 0.5vw;
+  font-size: 1vw;
   font-weight: 700;
   color: #ffffff;
   font-family: 'Nunito', system-ui, sans-serif;
@@ -240,8 +240,8 @@ const toggleRole = () => {
 
 .signup-form__field input {
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 0.95rem;
-  padding: 1rem 1.1rem;
+  border-radius: 0.9vw;
+  padding: 1.2vw 1.3vw;
   background: rgba(15, 23, 42, 0.68);
   color: #ffffff;
   font: inherit;
@@ -250,6 +250,7 @@ const toggleRole = () => {
     border-color 0.2s ease,
     box-shadow 0.2s ease;
   font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 0.95vw;
 }
 
 .signup-form__field input::placeholder {
@@ -258,28 +259,28 @@ const toggleRole = () => {
 
 .signup-form__field input:focus {
   border-color: rgba(96, 165, 250, 0.9);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.24);
+  box-shadow: 0 0 0 0.4vw rgba(59, 130, 246, 0.24);
 }
 
 .signup-form__roles {
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: 2vw;
 }
 
 .signup-form__radio {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.9vw;
   cursor: pointer;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 1vw;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .signup-form__radio input[type="radio"] {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.2vw;
+  height: 1.2vw;
   cursor: pointer;
   accent-color: #3b82f6;
   flex-shrink: 0;
@@ -293,8 +294,8 @@ fieldset {
 
 fieldset legend {
   font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
+  font-size: 1vw;
+  margin-bottom: 0.6vh;
   padding: 0;
   font-family: 'Nunito', system-ui, sans-serif;
 }
@@ -302,12 +303,12 @@ fieldset legend {
 .signup-form__role-toggle {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6vw;
 }
 
 .signup-form__role-label {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1vw;
   color: #ffffff;
   font-family: 'Nunito', system-ui, sans-serif;
 }
@@ -317,13 +318,13 @@ fieldset legend {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.9vw 1.2vw;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 0.95rem;
+  border-radius: 0.9vw;
   background: rgba(15, 23, 42, 0.68);
   color: #ffffff;
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 0.95rem;
+  font-size: 1vw;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -348,10 +349,10 @@ fieldset legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-left: 0.75rem;
-  border-radius: 0.4rem;
+  width: 1.5vw;
+  height: 1.5vw;
+  margin-left: 0.8vw;
+  border-radius: 0.4vw;
   background: rgba(96, 165, 250, 0.3);
   transition: all 0.3s ease;
   flex-shrink: 0;
@@ -364,19 +365,19 @@ fieldset legend {
 .signup-form__toggle-indicator::after {
   content: '↔';
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.95vw;
   font-weight: bold;
 }
 
 .signup-form__submit {
-  margin-top: 0.5rem;
+  margin-top: 0.8vh;
   border: none;
-  border-radius: 9999px;
-  padding: 1rem 1.5rem;
+  border-radius: 9999vw;
+  padding: 1.2vw 1.8vw;
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #ffffff;
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 1.4rem;
+  font-size: 1.4vw;
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -388,36 +389,36 @@ fieldset legend {
 }
 
 .signup-form__submit:hover {
-  transform: translateY(-2px);
+  transform: translateY(-0.3vh);
   filter: brightness(1.05);
   box-shadow: 0 18px 34px rgba(37, 99, 235, 0.5);
 }
 
 .signup-form__submit:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.95);
-  outline-offset: 4px;
+  outline-offset: 0.4vw;
 }
 
 .signup-form__register {
   margin: 0;
   color: rgba(226, 232, 240, 0.88);
-  font-size: 0.95rem;
+  font-size: 1vw;
   text-align: center;
-  padding-bottom: 2rem;
+  padding-bottom: 2vh;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .signup-form__register a {
   display: inline-block;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6vw 0.9vw;
   color: #93c5fd;
   font-weight: 800;
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 1.1vw;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-radius: 0.5rem;
+  border-radius: 0.5vw;
 }
 
 .signup-form__register a:hover,
@@ -430,7 +431,7 @@ fieldset legend {
 @media (max-width: 768px) {
   .signup-form__roles {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.9vw;
   }
 }
 </style>
