@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import SignIn from '@/components/auth/SignIn.vue'
-import SignUp from '@/components/auth/SignUp.vue'
+import SignIn from '@/components/login_register_page/SignIn.vue'
+import SignUp from '@/components/login_register_page/SignUp.vue'
 import HomePage from '@/components/home_page/HomePage.vue'
 import { useAuth } from '@/composables/useAuth'
 
