@@ -53,27 +53,27 @@
               <div class="dashboard__user-info-content">
                 <div class="dashboard__user-info-row">
                   <span class="dashboard__user-info-icon">{{ user.role === 'member' ? '🧩' : '💰' }}</span>
-                  <span class="dashboard__user-info-label">Rola:</span>
+                  <span class="dashboard__user-info-label">Rola</span>
                   <span class="dashboard__user-info-value">{{ user.role === 'member' ? 'Członek koła naukowego' : 'Skarbnik' }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
                   <span class="dashboard__user-info-icon">📬</span>
-                  <span class="dashboard__user-info-label">E-mail:</span>
+                  <span class="dashboard__user-info-label">E-mail</span>
                   <span class="dashboard__user-info-value">{{ user.email }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
                   <span class="dashboard__user-info-icon">🏛️</span>
-                  <span class="dashboard__user-info-label">Koło naukowe:</span>
+                  <span class="dashboard__user-info-label">Koło naukowe</span>
                   <span class="dashboard__user-info-value">{{ user.circleName }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
                   <span class="dashboard__user-info-icon">🔧</span>
-                  <span class="dashboard__user-info-label">Sekcja:</span>
+                  <span class="dashboard__user-info-label">Sekcja</span>
                   <span class="dashboard__user-info-value">{{ formatPosition(user.position) }}</span>
                 </div>
                 <div class="dashboard__user-info-row">
                   <span class="dashboard__user-info-icon">{{ user.inSAP ? '✅' : '❌' }}</span>
-                  <span class="dashboard__user-info-label">SAP:</span>
+                  <span class="dashboard__user-info-label">SAP</span>
                   <span class="dashboard__user-info-value">{{ user.inSAP ? 'Jestem w SAP' : 'Nie jestem w SAP' }}</span>
                 </div>
               </div>
@@ -170,7 +170,6 @@
       </div>
     </main>
 
-    <!-- Edit Profile Modal -->
     <div v-if="showEditProfileModal" class="modal-overlay" @click="showEditProfileModal = false">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -359,7 +358,6 @@ onMounted(() => {
   resetEditFormData()
 })
 
-// Watcher - resetuj formularz za każdym razem gdy modal się otwiera
 watch(showEditProfileModal, (newValue) => {
   if (newValue) {
     resetEditFormData()
@@ -372,7 +370,6 @@ onUnmounted(() => {
 })
 
 const toggleEditRole = () => {
-  // Skarbnik może zmienić się na zwykłego członka, ale nie na odwrót
   if (user.value?.role === 'treasurer') {
     editFormData.value.role = editFormData.value.role === 'member' ? 'treasurer' : 'member'
   }
@@ -391,7 +388,6 @@ const handleSaveProfile = () => {
     user.value.inSAP = editFormData.value.inSAP
     user.value.role = editFormData.value.role
     
-    // Zapisz do localStorage
     localStorage.setItem('user', JSON.stringify(user.value))
     
     showEditProfileModal.value = false
