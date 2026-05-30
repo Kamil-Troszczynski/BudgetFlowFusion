@@ -17,6 +17,11 @@ class Currency(str, Enum):
     EUR = "EUR"
     USD = "USD"
 
+class ItemStatus(str, Enum):
+    draft = "draft"
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 class AssociationBudget(SQLModel, table=True):
     __tablename__ = "association_budget"
@@ -212,7 +217,6 @@ class Item(SQLModel, table=True):
     currency: Currency = Field(sa_column=Column(SQLEnum(Currency), nullable=False))
     link: str
     created_at: datetime
-    ammount: int
 
     product_subcategory_id: int = Field(foreign_key="product_subcategory.product_subcategory_id")
     student_id: int = Field(foreign_key="student.student_id")
@@ -231,6 +235,8 @@ class ShopPurchaseListItem(SQLModel, table=True):
 
     shop_purchase_list: Optional["ShopPurchaseList"] = Relationship(back_populates="shop_purchase_list_items")
     item: Optional[Item] = Relationship(back_populates="shop_purchase_list_items")
+
+    ammount: int
 
 
 class Student(SQLModel, table=True):
