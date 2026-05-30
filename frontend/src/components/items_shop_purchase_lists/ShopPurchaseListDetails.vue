@@ -41,13 +41,13 @@
     <AddItemToListModal
       :isOpen="showModal"
       @close="showModal = false"
-      @add-to-list="handleNewItem"
+      @add-to-list="addItemToList"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AddItemToListModal from './AddItemToListModal.vue'
 
 const props = defineProps({
@@ -60,23 +60,51 @@ const props = defineProps({
 defineEmits(['back'])
 
 const showModal = ref(false)
-
 const listItems = ref([])
 
-const currentTotal = computed(() => {
-  return listItems.value.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)
-})
+const fetchListItems = async () => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items`)
+    if (!response.ok) throw new Error('Błąd sieci')
+    const data = await response.json()
+    listItems.value = data.map(item => ({
+      ...item,
+      id: item.line_item_id,
+      amount: item.amount,
+      totalPrice: item.total_price
+    }))
+  } catch (error) {
+    console.error("Błąd pobierania przedmiotów:", error)
+  }
+}
 
-const handleNewItem = (itemData) => {
-  listItems.value.push({
-    id: Math.random(),
-    ...itemData
-  })
+const addItemToList = async (newItem) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items?item_id=${newItem.id}&ammount=${newItem.amount}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) throw new Error('Nie udało się dodać przedmiotu')
+
+    await fetchListItems()
+    alert('Przedmiot dodany!')
+  } catch (error) {
+    console.error("Błąd dodawania:", error)
+  }
 }
 
 const removeItem = (id) => {
   listItems.value = listItems.value.filter(item => item.id !== id)
 }
+
+const currentTotal = computed(() => {
+  return listItems.value.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)
+})
+
+onMounted(() => {
+  fetchListItems()
+})
 </script>
 
 <style scoped>

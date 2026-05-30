@@ -34,21 +34,9 @@
             <span class="list-card__value">{{ list.totalPrice }} PLN</span>
           </p>
           <p class="list-card__detail">
-            <span class="list-card__label">Postęp:</span>
-            <span class="list-card__value">{{ Math.round((list.itemCount / list.itemTotal) * 100) }}%</span>
-          </p>
-          <p class="list-card__detail">
             <span class="list-card__label">Uczestnicy:</span>
             <span class="list-card__value">{{ list.participants }} osób</span>
           </p>
-          <div class="list-card__progress">
-            <div class="list-card__progress-bar">
-              <div
-                class="list-card__progress-fill"
-                :style="{ width: Math.round((list.itemCount / list.itemTotal) * 100) + '%' }"
-              ></div>
-            </div>
-          </div>
         </div>
         <div class="list-card__actions">
           <button class="list-card__button view" @click="activeList = list">Otwórz listę</button>
@@ -85,6 +73,8 @@ const allLists = ref([])
 const shops = ref([])
 
 const userLists = computed(() => {
+  console.log("Moje listy z bazy:", allLists.value);
+  console.log("Mój zalogowany User ID:", user.value?.id);
   return allLists.value
 })
 
@@ -101,27 +91,30 @@ const fetchShops = async () => {
 const fetchLists = async () => {
   try {
     await fetchShops()
-
     const response = await fetch('http://localhost:8080/api/lists')
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
-    allLists.value = data.map(list => {
+    const processedLists = await Promise.all(data.map(async (list) => {
+      const itemsResponse = await fetch(`http://localhost:8080/api/lists/${list.shop_purchase_list_id}/items`)
+      const items = await itemsResponse.json()
+
       const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
 
       return {
         ...list,
         id: list.shop_purchase_list_id,
-        name: `Dokument nr ${list.shop_purchase_list_id}`,
+        name: list.name || `Zamówienie #${list.shop_purchase_list_id}`,
         shopName: foundShop ? foundShop.shop_name : 'Nieznany sklep',
-        itemCount: 0,
-        itemTotal: 10,
-        totalPrice: list.cost,
+        itemCount: items.length,
+        totalPrice: items.reduce((sum, item) => sum + item.total_price, 0),
         participants: 1
       }
-    })
+    }))
+
+    allLists.value = processedLists
   } catch (error) {
-    console.error("Błąd pobierania list zakupowych:", error)
+    console.error("Błąd pobierania list:", error)
   }
 }
 
