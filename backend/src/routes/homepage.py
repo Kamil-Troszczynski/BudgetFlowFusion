@@ -3,36 +3,35 @@ from src import get_session, app
 from sqlmodel import Session, select
 from fastapi import Depends
 from typing import List
+from pydantic import BaseModel
+from datetime import datetime
 
+class ItemCreate(BaseModel):
+    name: str
+    link: str
+    price: float
+    currency: str
+    product_subcategory_id: int
 
-# @app.get("/")
-# async def root():
-#     return {"message": "BudgetFlowFusion API działa i jest połączone z bazą!"}
+class CategoryCreate(BaseModel):
+    name: str
+    cpv: str
 
+class SubcategoryCreate(BaseModel):
+    name: str
+    product_category_id: int
 
 @app.get("/api/shops", response_model=List[Shop])
 def get_all_shops(session: Session = Depends(get_session)):
-    shops = session.exec(select(Shop)).all()
-    return shops
-
-
-@app.get("/api/items", response_model=List[Item])
-def get_all_items(session: Session = Depends(get_session)):
-    items = session.exec(select(Item)).all()
-    return items
-
-
-@app.get("/api/lists", response_model=List[ShopPurchaseList])
-def get_all_lists(session: Session = Depends(get_session)):
-    lists = session.exec(select(ShopPurchaseList)).all()
-    return lists
-
+    return session.exec(select(Shop)).all()
 
 @app.get("/api/fundings", response_model=List[Funding])
 def get_all_fundings(session: Session = Depends(get_session)):
-    fundings = session.exec(select(Funding)).all()
-    return fundings
+    return session.exec(select(Funding)).all()
 
+@app.get("/api/lists", response_model=List[ShopPurchaseList])
+def get_all_lists(session: Session = Depends(get_session)):
+    return session.exec(select(ShopPurchaseList)).all()
 
 @app.post("/api/lists", response_model=ShopPurchaseList)
 def create_purchase_list(new_list: ShopPurchaseList, session: Session = Depends(get_session)):
@@ -41,12 +40,10 @@ def create_purchase_list(new_list: ShopPurchaseList, session: Session = Depends(
     session.refresh(new_list)
     return new_list
 
-
 @app.get("/api/lists/{list_id}/items")
 def get_items_for_list(list_id: int, session: Session = Depends(get_session)):
     statement = select(ShopPurchaseListItem).where(ShopPurchaseListItem.shop_purchase_list_id == list_id)
     line_items = session.exec(statement).all()
-
     results = []
     for line in line_items:
         item_details = session.get(Item, line.item_id)
@@ -60,9 +57,7 @@ def get_items_for_list(list_id: int, session: Session = Depends(get_session)):
                 "amount": line.amount,
                 "total_price": item_details.price * line.amount
             })
-
     return results
-
 
 @app.post("/api/lists/{list_id}/items")
 def add_item_to_list(list_id: int, item_id: int, amount: int, session: Session = Depends(get_session)):
@@ -71,23 +66,100 @@ def add_item_to_list(list_id: int, item_id: int, amount: int, session: Session =
         item_id=item_id,
         amount=amount
     )
-
     session.add(new_line_item)
     session.commit()
     session.refresh(new_line_item)
-
     return {"status": "success", "line_item_id": new_line_item.shop_purchase_list_item_id}
 
 @app.delete("/api/lists/items/{line_item_id}")
 def remove_item_from_list(line_item_id: int, session: Session = Depends(get_session)):
-    """Usuwa konkretną pozycję (wiersz) z listy zakupowej"""
-
     item_to_delete = session.get(ShopPurchaseListItem, line_item_id)
-
     if not item_to_delete:
-        return {"error": "Pozycja nie znaleziona w bazie"}
-
+        return {"error": "Pozycja nie znaleziona"}
     session.delete(item_to_delete)
     session.commit()
+    return {"status": "success"}
 
-    return {"status": "success", "message": "Przedmiot usunięty z koszyka"}
+@app.get("/api/items", response_model=List[Item])
+def get_all_items(session: Session = Depends(get_session)):
+    statement = select(Item).where(Item.status == "approved")
+    return session.exec(statement).all()
+
+@app.get("/api/items/pending", response_model=List[Item])
+def get_pending_items(session: Session = Depends(get_session)):
+    statement = select(Item).where(Item.status == "pending")
+    return session.exec(statement).all()
+
+@app.patch("/api/items/{item_id}/approve")
+def approve_item(item_id: int, session: Session = Depends(get_session)):
+    item = session.get(Item, item_id)
+    if not item:
+        return {"error": "Brak przedmiotu"}
+    item.status = "approved"
+    session.commit()
+    return {"status": "success"}
+
+@app.delete("/api/items/{item_id}/reject")
+def reject_item(item_id: int, session: Session = Depends(get_session)):
+    item = session.get(Item, item_id)
+    if not item:
+        return {"error": "Brak przedmiotu"}
+    session.delete(item)
+    session.commit()
+    return {"status": "success"}
+
+@app.post("/api/items", response_model=Item)
+def create_new_item(item_data: ItemCreate, session: Session = Depends(get_session)):
+    first_student = session.exec(select(Student)).first()
+    first_shop = session.exec(select(Shop)).first()
+
+    if not first_student or not first_shop:
+        return {"error": "Brak studentów lub sklepów w bazie"}
+
+    new_item = Item(
+        name=item_data.name,
+        link=item_data.link,
+        price=item_data.price,
+        currency=item_data.currency,
+        status="pending",
+        created_at=datetime.now(),
+        product_subcategory_id=item_data.product_subcategory_id,
+        student_id=first_student.student_id,
+        shop_id=first_shop.shop_id
+    )
+    session.add(new_item)
+    session.commit()
+    session.refresh(new_item)
+    return new_item
+
+@app.get("/api/categories")
+def get_categories(session: Session = Depends(get_session)):
+    return session.exec(select(ProductCategory)).all()
+
+@app.post("/api/categories")
+def create_category(cat_data: CategoryCreate, session: Session = Depends(get_session)):
+    new_cat = ProductCategory(
+        product_category_name=cat_data.name,
+        description="",
+        cpv=cat_data.cpv
+    )
+    session.add(new_cat)
+    session.commit()
+    session.refresh(new_cat)
+    return new_cat
+
+@app.get("/api/subcategories")
+def get_subcategories(session: Session = Depends(get_session)):
+    return session.exec(select(ProductSubcategory)).all()
+
+@app.post("/api/subcategories")
+def create_subcategory(subcat_data: SubcategoryCreate, session: Session = Depends(get_session)):
+    new_subcat = ProductSubcategory(
+        product_subcategory_name=subcat_data.name,
+        description="",
+        product_category_id=subcat_data.product_category_id
+    )
+    session.add(new_subcat)
+    session.commit()
+    session.refresh(new_subcat)
+    return new_subcat
