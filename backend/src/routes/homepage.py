@@ -8,7 +8,7 @@ from typing import List
 # @app.get("/")
 # async def root():
 #     return {"message": "BudgetFlowFusion API działa i jest połączone z bazą!"}
- 
+
 
 @app.get("/api/shops", response_model=List[Shop])
 def get_all_shops(session: Session = Depends(get_session)):
@@ -77,3 +77,17 @@ def add_item_to_list(list_id: int, item_id: int, amount: int, session: Session =
     session.refresh(new_line_item)
 
     return {"status": "success", "line_item_id": new_line_item.shop_purchase_list_item_id}
+
+@app.delete("/api/lists/items/{line_item_id}")
+def remove_item_from_list(line_item_id: int, session: Session = Depends(get_session)):
+    """Usuwa konkretną pozycję (wiersz) z listy zakupowej"""
+
+    item_to_delete = session.get(ShopPurchaseListItem, line_item_id)
+
+    if not item_to_delete:
+        return {"error": "Pozycja nie znaleziona w bazie"}
+
+    session.delete(item_to_delete)
+    session.commit()
+
+    return {"status": "success", "message": "Przedmiot usunięty z koszyka"}
