@@ -5,7 +5,7 @@
         <h2 class="lists-title">Moje listy zakupów</h2>
         <p class="lists-subtitle">Listy zakupowe, które utworzyłeś</p>
       </div>
-      <button class="lists-add-button">+ Nowa lista</button>
+      <button class="lists-add-button" @click="showAddListModal = true">+ Nowa lista</button>
     </div>
 
     <div v-if="userLists.length === 0" class="lists-empty">
@@ -57,60 +57,122 @@
       </div>
     </div>
   </div>
+
   <ShopPurchaseListDetails
     v-else
     :list="activeList"
     @back="activeList = null"
   />
+
+  <AddListModal
+    :isOpen="showAddListModal"
+    @close="showAddListModal = false"
+    @submit-list="handleNewList"
+  />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
+import AddListModal from './AddListModal.vue'
 
-const activeList = ref(null)
 const { user } = useAuth()
+const activeList = ref(null)
+const showAddListModal = ref(false)
 
-const allLists = ref([
-  {
-    id: 1,
-    name: 'Lista 1',
-    shopName: 'Biedronka',
-    itemCount: 5,
-    itemTotal: 8,
-    totalPrice: 245.50,
-    participants: 3,
-    createdDate: new Date(),
-    userId: 'user1'
-  },
-  {
-    id: 2,
-    name: 'Zakupy spożywcze',
-    shopName: 'Carrefour',
-    itemCount: 3,
-    itemTotal: 5,
-    totalPrice: 156.20,
-    participants: 2,
-    createdDate: new Date(),
-    userId: 'user1'
-  },
-  {
-    id: 3,
-    name: 'Artykuły domowe',
-    shopName: 'Leroy Merlin',
-    itemCount: 2,
-    itemTotal: 7,
-    totalPrice: 890.00,
-    participants: 4,
-    createdDate: new Date(),
-    userId: 'user1'
-  }
-])
+const allLists = ref([])
+const shops = ref([])
 
 const userLists = computed(() => {
-  return allLists.value.filter(list => list.userId === user.value?.id)
+  return allLists.value
 })
+
+const fetchShops = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/shops')
+    const data = await response.json()
+    shops.value = data
+  } catch (error) {
+    console.error("Błąd pobierania sklepów:", error)
+  }
+}
+
+const fetchLists = async () => {
+  try {
+    await fetchShops()
+
+    const response = await fetch('http://localhost:8080/api/lists')
+    if (!response.ok) throw new Error('Błąd sieci')
+    const data = await response.json()
+
+    allLists.value = data.map(list => {
+      const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
+
+      return {
+        ...list,
+        id: list.shop_purchase_list_id,
+        name: `Dokument nr ${list.shop_purchase_list_id}`,
+        shopName: foundShop ? foundShop.shop_name : 'Nieznany sklep',
+        itemCount: 0,
+        itemTotal: 10,
+        totalPrice: list.cost,
+        participants: 1
+      }
+    })
+  } catch (error) {
+    console.error("Błąd pobierania list zakupowych:", error)
+  }
+}
+
+onMounted(() => {
+  fetchLists()
+})
+
+const handleNewList = async (listData) => {
+  try {
+    const payload = {
+      priority: listData.priority,
+      cost: 0.0,
+      created_at: new Date().toISOString(),
+      funding_id: listData.fundingId,
+      shop_id: listData.shopId,
+      student_id: 2
+    }
+
+    const response = await fetch('http://localhost:8080/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorDetails = await response.json()
+      console.error("Odrzucone przez backend:", errorDetails)
+      throw new Error('Nie udało się zapisać listy w bazie')
+    }
+
+    const savedList = await response.json()
+
+    allLists.value.unshift({
+      ...savedList,
+      id: savedList.shop_purchase_list_id,
+      name: `Zamówienie #${savedList.shop_purchase_list_id}`,
+      shopName: `Sklep ID: ${savedList.shop_id}`,
+      itemCount: 0,
+      itemTotal: 10,
+      totalPrice: savedList.cost || 0,
+      participants: 1
+    })
+
+    showAddListModal.value = false
+    alert(`Lista została poprawnie zapisana w bazie!`)
+
+  } catch (error) {
+    console.error("Błąd zapisu listy:", error)
+    alert("Wystąpił błąd podczas zapisu. Wciśnij F12 i sprawdź Konsolę.")
+  }
+}
 </script>
 
 <style scoped>
