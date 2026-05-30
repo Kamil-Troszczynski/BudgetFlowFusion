@@ -147,6 +147,9 @@ class Project(SQLModel, table=True):
     allocated_budget: float
     rest_of_budget: float
 
+    association_id: Optional[int] = Field(default=None, foreign_key="association.association_id")
+    association: Optional[Association] = Relationship(back_populates="projects")
+
     fundings: list[Funding] = Relationship(back_populates="project")
 
 
@@ -173,7 +176,7 @@ class ProductCategory(SQLModel, table=True):
     product_category_id: Optional[int] = Field(default=None, primary_key=True)
     product_category_name: str
     description: str
-    cpv_id: int
+    cpv: str | None = Field(default=None)
 
     shop_purchase_list_id: Optional[int] = Field(default=None, foreign_key="shop_purchase_list.shop_purchase_list_id")
     public_purchase_plan_id: Optional[int] = Field(default=None, foreign_key="public_purchase_plan.public_purchase_plan_id")
@@ -215,8 +218,10 @@ class Item(SQLModel, table=True):
     name: str
     price: float
     currency: Currency = Field(sa_column=Column(SQLEnum(Currency), nullable=False))
-    link: str
+    link: str | None = Field(default=None)
     created_at: datetime
+
+    status: str = Field(default="approved")
 
     product_subcategory_id: int = Field(foreign_key="product_subcategory.product_subcategory_id")
     student_id: int = Field(foreign_key="student.student_id")
@@ -250,6 +255,9 @@ class Student(SQLModel, table=True):
     is_in_sap: bool
     project_finance_manager_id: Optional[int] = Field(default=None, foreign_key="project_finance_manager.project_finance_manager_id")
 
+    association_id: Optional[int] = Field(default=None, foreign_key="association.association_id")
+    association: Optional[Association] = Relationship(back_populates="students")
+
     project_finance_manager: Optional[ProjectFinanceManager] = Relationship(back_populates="student")
     items: list["Item"] = Relationship(back_populates="student")
     shop_purchase_lists: list["ShopPurchaseList"] = Relationship(back_populates="student")
@@ -277,3 +285,12 @@ class ShopPurchaseList(SQLModel, table=True):
     student: Optional[Student] = Relationship(back_populates="shop_purchase_lists")
     product_categories: list[ProductCategory] = Relationship(back_populates="shop_purchase_list")
     shop_purchase_list_items: list[ShopPurchaseListItem] = Relationship(back_populates="shop_purchase_list")
+
+class Association(SQLModel, table=True):
+    __tablename__ = "association"
+
+    association_id: Optional[int] = Field(default=None, primary_key=True)
+    association_name: str
+
+    students: list["Student"] = Relationship(back_populates="association")
+    projects: list["Project"] = Relationship(back_populates="association")
