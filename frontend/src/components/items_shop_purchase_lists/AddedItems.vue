@@ -1,77 +1,95 @@
 <template>
   <div class="items-section">
-    <div class="items-header">
-      <h2 class="items-title">Moje przedmioty</h2>
-      <p class="items-subtitle">Przedmioty, które dodałeś do list zakupowych</p>
+    <div class="items-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 class="items-title">Katalog Przedmiotów</h2>
+        <p class="items-subtitle">Przeglądaj przedmioty i dodawaj nowe do akceptacji</p>
+      </div>
+      <button class="items-add-button" @click="showAddModal = true">+ Dodaj nowy przedmiot</button>
     </div>
 
-    <div v-if="userItems.length === 0" class="items-empty">
-      <p class="items-empty-icon">📦</p>
-      <p class="items-empty-text">Nie dodałeś jeszcze żadnych przedmiotów</p>
-      <p class="items-empty-subtext">Kliknij na jedną z list zakupowych i dodaj przedmiot</p>
-    </div>
-
-    <div v-else class="items-grid">
-      <div 
-        v-for="item in userItems" 
+    <div class="items-grid">
+      <div
+        v-for="item in catalogItems"
         :key="item.id"
         class="item-card"
       >
         <div class="item-card__header">
           <h3 class="item-card__title">{{ item.name }}</h3>
-          <span class="item-card__status" :class="{ completed: item.completed }">
-            {{ item.completed ? '✓ Zakupiono' : '⏳ Oczekuje' }}
-          </span>
+          <span class="item-card__status completed">✓ W katalogu</span>
         </div>
         <div class="item-card__content">
           <p class="item-card__detail">
-            <span class="item-card__label">Lista:</span>
-            <span class="item-card__value">{{ item.listName }}</span>
-          </p>
-          <p class="item-card__detail">
-            <span class="item-card__label">Ilość:</span>
-            <span class="item-card__value">{{ item.quantity }}</span>
-          </p>
-          <p class="item-card__detail">
             <span class="item-card__label">Cena:</span>
-            <span class="item-card__value">{{ item.price }} PLN</span>
+            <span class="item-card__value">{{ item.price }} {{ item.currency }}</span>
           </p>
           <p class="item-card__detail">
-            <span class="item-card__label">Data dodania:</span>
-            <span class="item-card__value">{{ formatDate(item.addedDate) }}</span>
+            <span class="item-card__label">Link:</span>
+            <span class="item-card__value">
+              <a :href="item.link" target="_blank" style="color: #60a5fa;">Zobacz w sklepie ↗</a>
+            </span>
           </p>
-        </div>
-        <div class="item-card__actions">
-          <button class="item-card__button edit">Edytuj</button>
-          <button class="item-card__button delete">Usuń</button>
         </div>
       </div>
     </div>
+
+    <AddItemModal
+      :isOpen="showAddModal"
+      @close="showAddModal = false"
+      @submit-item="handleNewItemSubmit"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuth } from '@/composables/useAuth'
+import { ref, onMounted } from 'vue'
+import AddItemModal from './AddItemModal.vue'
 
-const { user } = useAuth()
+const showAddModal = ref(false)
+const catalogItems = ref([])
 
-const allItems = ref([
-  { id: 1, name: 'Mleko', quantity: '2 l', price: '6.99', listName: 'Biedronka', addedDate: new Date(), completed: false, userId: 'user1' },
-  { id: 2, name: 'Chleb', quantity: '1 szt', price: '3.99', listName: 'Carrefour', addedDate: new Date(), completed: true, userId: 'user1' },
-  { id: 3, name: 'Masło', quantity: '250g', price: '8.50', listName: 'Biedronka', addedDate: new Date(), completed: false, userId: 'user1' }
-])
+const fetchCatalog = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items')
+    if (!response.ok) throw new Error('Błąd sieci')
+    const data = await response.json()
 
-const userItems = computed(() => {
-  return allItems.value.filter(item => item.userId === user.value?.id)
+    catalogItems.value = data.map(item => ({
+      ...item,
+      id: item.item_id
+    }))
+  } catch (error) {
+    console.error("Błąd pobierania katalogu:", error)
+  }
+}
+
+onMounted(() => {
+  fetchCatalog()
 })
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('pl-PL', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+const handleNewItemSubmit = async (itemData) => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: itemData.name,
+        link: itemData.link,
+        price: itemData.price,
+        currency: itemData.currency,
+        product_subcategory_id: itemData.subcategoryId
+      })
+    })
+
+    if (!response.ok) throw new Error('Nie udało się wysłać przedmiotu do akceptacji')
+
+    alert('Sukces! Przedmiot został wysłany do akceptacji przez Skarbnika.')
+    showAddModal.value = false;
+
+  } catch (error) {
+    console.error("Błąd podczas dodawania przedmiotu:", error)
+    alert("Wystąpił błąd podczas zapisywania w bazie.")
+  }
 }
 </script>
 
@@ -245,4 +263,24 @@ const formatDate = (date) => {
 .item-card__button.delete:hover {
   background: rgba(239, 68, 68, 0.35);
 }
+
+.items-add-button {
+  padding: 0.8vw 1.5vw;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.8vw;
+  font-size: 1vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.items-add-button:hover {
+  transform: translateY(-0.2vh);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
 </style>

@@ -94,8 +94,24 @@ const addItemToList = async (newItem) => {
   }
 }
 
-const removeItem = (id) => {
-  listItems.value = listItems.value.filter(item => item.id !== id)
+const removeItem = async (id) => {
+  if (!confirm('Czy na pewno chcesz usunąć tę pozycję z koszyka?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/items/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) throw new Error('Błąd serwera podczas usuwania')
+
+    await fetchListItems()
+
+  } catch (error) {
+    console.error("Błąd podczas usuwania przedmiotu:", error)
+    alert("Wystąpił błąd. Nie udało się usunąć przedmiotu.")
+  }
 }
 
 const currentTotal = computed(() => {

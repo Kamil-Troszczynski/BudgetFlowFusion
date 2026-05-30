@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   isOpen: {
@@ -110,28 +110,42 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit-item'])
 
-const categories = [
-  { id: 1, name: 'Elektronika i Zasilanie', cpv: '31700000-3' },
-  { id: 2, name: 'Materiały Konstrukcyjne', cpv: '44000000-0' },
-  { id: 3, name: 'Narzędzia', cpv: '42000000-6' }
-]
+const categories = ref([])
+const allSubcategories = ref([])
 
-const allSubcategories = {
-  1: [
-    { id: 101, name: 'Ogniwa i Pakiety zasilające' },
-    { id: 102, name: 'Regulatory (ESC/BEC)' },
-    { id: 103, name: 'Kontrolery Lotu' }
-  ],
-  2: [
-    { id: 201, name: 'Filamenty (PETG, PLA, ABS)' },
-    { id: 202, name: 'Pianki modelarskie (XPS/EPS)' },
-    { id: 203, name: 'Włókno węglowe i rurki' }
-  ],
-  3: [
-    { id: 301, name: 'Narzędzia ręczne' },
-    { id: 302, name: 'Taśmy montażowe (np. Silver tape)' }
-  ]
+const fetchClassifications = async () => {
+  try {
+    const catResponse = await fetch('http://localhost:8080/api/categories')
+    if (catResponse.ok) {
+      const catData = await catResponse.json()
+      console.log("KATEGORIE Z BAZY:", catData)
+
+      categories.value = catData.map(c => ({
+        id: c.product_category_id || c.id,
+        name: c.name || c.category_name,
+        cpv: c.cpv || c.cpv_code
+      }))
+    }
+
+    const subResponse = await fetch('http://localhost:8080/api/subcategories')
+    if (subResponse.ok) {
+      const subData = await subResponse.json()
+      console.log("PODKATEGORIE Z BAZY:", subData)
+
+      allSubcategories.value = subData.map(s => ({
+        id: s.product_subcategory_id || s.id,
+        name: s.name || s.subcategory_name,
+        categoryId: s.product_category_id || s.category_id
+      }))
+    }
+  } catch (error) {
+    console.error("Błąd pobierania klasyfikacji:", error)
+  }
 }
+
+onMounted(() => {
+  fetchClassifications()
+})
 
 const form = ref({
   name: '',
@@ -143,7 +157,8 @@ const form = ref({
 })
 
 const availableSubcategories = computed(() => {
-  return form.value.categoryId ? allSubcategories[form.value.categoryId] : []
+  if (!form.value.categoryId) return []
+  return allSubcategories.value.filter(sub => sub.categoryId === form.value.categoryId)
 })
 
 const handleCategoryChange = () => {
@@ -170,7 +185,6 @@ const handleSubmit = () => {
 </script>
 
 <style scoped>
-/* Stylistyka zgodna z Twoim ciemnym motywem */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;

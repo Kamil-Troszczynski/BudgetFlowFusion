@@ -3,10 +3,13 @@
     <div class="validation-header">
       <div>
         <h2 class="validation-title">Panel Skarbnika: Akceptacja przedmiotów</h2>
-        <p class="validation-subtitle">Weryfikacja nowych przedmiotów dodanych do katalogu przez członków koła</p>
+        <p class="validation-subtitle">Weryfikacja nowych przedmiotów i zarządzanie kategoriami CPV</p>
       </div>
-      <div class="stats-badges">
+      <div class="stats-badges" style="display: flex; gap: 1vw; align-items: center;">
         <span class="badge pending">Do weryfikacji: {{ pendingItems.length }}</span>
+        <button class="action-btn accept" @click="showCategoryModal = true" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3);">
+          + Zarządzaj CPV
+        </button>
       </div>
     </div>
 
@@ -55,45 +58,93 @@
       </table>
     </div>
   </div>
+
+  <AddCategoryModal
+      :isOpen="showCategoryModal"
+      :existingCategories="dbCategories"
+      @close="showCategoryModal = false"
+      @refresh-categories="fetchCategoriesFromDB"
+    />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import AddCategoryModal from './AddCategoryModal.vue'
 
-const pendingItems = ref([
-  {
-    id: 1,
-    name: 'Kontroler Lotu Pixhawk 4',
-    addedBy: 'Jan Kowalski',
-    price: 850.00,
-    currency: 'PLN',
-    categoryName: 'Elektronika i Zasilanie',
-    cpvCode: '31700000-3',
-    link: 'https://botland.com.pl/...'
-  },
-  {
-    id: 2,
-    name: 'Włókno węglowe rurka 10mm',
-    addedBy: 'Anna Nowak',
-    price: 45.50,
-    currency: 'PLN',
-    categoryName: 'Materiały Konstrukcyjne',
-    cpvCode: '44000000-0',
-    link: 'https://modele.sklep.pl/...'
+const pendingItems = ref([])
+const showCategoryModal = ref(false)
+const dbCategories = ref([])
+
+const fetchPendingItems = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items/pending')
+    if (!response.ok) throw new Error('Błąd sieci')
+    const data = await response.json()
+
+    pendingItems.value = data.map(item => ({
+      id: item.item_id,
+      name: item.name,
+      addedBy: 'Użytkownik',
+      price: item.price,
+      currency: item.currency || 'PLN',
+      categoryName: 'Elektronika / Narzędzia',
+      cpvCode: '00000000-0',
+      link: item.link || '#'
+    }))
+  } catch (error) {
+    console.error("Błąd pobierania oczekujących:", error)
   }
-])
-
-const handleAccept = (itemId) => {
-  pendingItems.value = pendingItems.value.filter(item => item.id !== itemId)
-  console.log(`Zatwierdzono przedmiot ID: ${itemId}`)
-  alert('Przedmiot został zatwierdzony i dodany do globalnego katalogu!')
 }
 
-const handleReject = (itemId) => {
+onMounted(() => {
+  fetchPendingItems()
+  fetchCategoriesFromDB()
+})
+
+const handleAccept = async (itemId) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/items/${itemId}/approve`, {
+      method: 'PATCH'
+    })
+    if (!response.ok) throw new Error('Błąd serwera')
+
+    alert('Przedmiot został zatwierdzony i jest teraz w Katalogu!')
+    await fetchPendingItems()
+  } catch (error) {
+    console.error("Błąd akceptacji:", error)
+  }
+}
+
+const handleReject = async (itemId) => {
   const reason = prompt("Podaj powód odrzucenia (np. zły kod CPV):")
   if (reason !== null) {
-    pendingItems.value = pendingItems.value.filter(item => item.id !== itemId)
-    console.log(`Odrzucono przedmiot ID: ${itemId}, powód: ${reason}`)
+    try {
+      const response = await fetch(`http://localhost:8080/api/items/${itemId}/reject`, {
+        method: 'DELETE'
+      })
+      if (!response.ok) throw new Error('Błąd serwera')
+
+      alert(`Odrzucono przedmiot. Powód przesłano do zgłaszającego (wkrótce).`)
+      await fetchPendingItems()
+    } catch (error) {
+      console.error("Błąd odrzucania:", error)
+    }
+  }
+}
+
+const fetchCategoriesFromDB = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/categories')
+    if (response.ok) {
+      const data = await response.json()
+      dbCategories.value = data.map(c => ({
+        id: c.product_category_id,
+        name: c.name,
+        cpv: c.cpv || c.cpv_code
+      }))
+    }
+  } catch (error) {
+    console.error('Błąd pobierania CPV', error)
   }
 }
 </script>
