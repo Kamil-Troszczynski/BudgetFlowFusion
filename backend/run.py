@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import List
 
 from database import create_db_and_tables, get_session
-from src.relations import Shop, Item, ShopPurchaseList, Funding
+from src.relations import Shop, Item, ShopPurchaseList, Funding, ShopPurchaseListItem
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,3 +52,38 @@ def create_purchase_list(new_list: ShopPurchaseList, session: Session = Depends(
     session.commit()
     session.refresh(new_list)
     return new_list
+
+@app.get("/api/lists/{list_id}/items")
+def get_items_for_list(list_id: int, session: Session = Depends(get_session)):
+    statement = select(ShopPurchaseListItem).where(ShopPurchaseListItem.shop_purchase_list_id == list_id)
+    line_items = session.exec(statement).all()
+
+    results = []
+    for line in line_items:
+        item_details = session.get(Item, line.item_id)
+        if item_details:
+            results.append({
+                "line_item_id": line.shop_purchase_list_item_id,
+                "item_id": item_details.item_id,
+                "name": item_details.name,
+                "price": item_details.price,
+                "currency": item_details.currency,
+                "amount": line.ammount,
+                "total_price": item_details.price * line.ammount
+            })
+
+    return results
+
+@app.post("/api/lists/{list_id}/items")
+def add_item_to_list(list_id: int, item_id: int, ammount: int, session: Session = Depends(get_session)):
+    new_line_item = ShopPurchaseListItem(
+        shop_purchase_list_id=list_id,
+        item_id=item_id,
+        ammount=ammount
+    )
+
+    session.add(new_line_item)
+    session.commit()
+    session.refresh(new_line_item)
+
+    return {"status": "success", "line_item_id": new_line_item.shop_purchase_list_item_id}
