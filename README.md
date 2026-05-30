@@ -2,11 +2,11 @@
 ![](https://img.shields.io/badge/VUE-22.12.0-green?style=plastic
 ) ![](https://img.shields.io/badge/FastAPI-0.136.1-green?style=plastic
 ) ![](https://img.shields.io/badge/POSTGRE-SQL-blue?style=plastic
-) ![](https://img.shields.io/badge/SQL-Model-purple?style=plastic   
-) ![](https://img.shields.io/badge/Pydantic-lightgreen?style=plastic   
+) ![](https://img.shields.io/badge/SQL-Model-purple?style=plastic
+) ![](https://img.shields.io/badge/Pydantic-lightgreen?style=plastic
 )
 
-Authors: 
+Authors:
  - Kamil Troszczyński [Github](https://github.com/Kamil-Troszczynski)
  - Wojciech Fiedoruk [Github](https://github.com/Wojtek901)
  - Miłosz Piecha [Github](https://github.com/Coffee4Cat)
@@ -29,7 +29,7 @@ git clone https://github.com/Kamil-Troszczynski/BudgetFlowFusion.git
 
 ### On Linux Ubuntu
 ```bash
-# Update 
+# Update
  sudo apt-get update
 
 # Install docker
@@ -60,11 +60,11 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 nvm install 24
 
 # Verify the Node.js version:
-node -v 
+node -v
 # Should print "v24.15.0".
 
 # Verify npm version:
-npm -v 
+npm -v
 # Should print "11.12.1".
 ```
 
@@ -77,11 +77,11 @@ powershell -c "irm https://community.chocolatey.org/install.ps1|iex"
 choco install nodejs --version="24.15.0"
 
 # Verify the Node.js version:
-node -v 
+node -v
 # Should print "v24.15.0".
 
 # Verify npm version:
-npm -v 
+npm -v
 # Should print "11.12.1".
 ```
 
@@ -115,4 +115,10 @@ npm run dev
 
 ```bash
 npm run build
+```
+
+## How to look up database?
+
+```bash
+docker exec -it budgetflowfusion_db psql -U budgetflowfusion -d budgetflowfusion
 ```
