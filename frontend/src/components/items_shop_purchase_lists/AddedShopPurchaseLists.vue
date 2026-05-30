@@ -1,5 +1,5 @@
 <template>
-  <div class="lists-section">
+  <div v-if="!activeList" class="lists-section">
     <div class="lists-header">
       <div class="lists-title-section">
         <h2 class="lists-title">Moje listy zakupów</h2>
@@ -15,8 +15,8 @@
     </div>
 
     <div v-else class="lists-grid">
-      <div 
-        v-for="list in userLists" 
+      <div
+        v-for="list in userLists"
         :key="list.id"
         class="list-card"
       >
@@ -43,58 +43,65 @@
           </p>
           <div class="list-card__progress">
             <div class="list-card__progress-bar">
-              <div 
-                class="list-card__progress-fill" 
+              <div
+                class="list-card__progress-fill"
                 :style="{ width: Math.round((list.itemCount / list.itemTotal) * 100) + '%' }"
               ></div>
             </div>
           </div>
         </div>
         <div class="list-card__actions">
-          <button class="list-card__button view">Otwórz listę</button>
+          <button class="list-card__button view" @click="activeList = list">Otwórz listę</button>
           <button class="list-card__button delete">Usuń</button>
         </div>
       </div>
     </div>
   </div>
+  <ShopPurchaseListDetails
+    v-else
+    :list="activeList"
+    @back="activeList = null"
+  />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
 
+const activeList = ref(null)
 const { user } = useAuth()
 
 const allLists = ref([
-  { 
-    id: 1, 
-    name: 'Lista 1', 
-    shopName: 'Biedronka', 
-    itemCount: 5, 
-    itemTotal: 8, 
-    totalPrice: 245.50, 
+  {
+    id: 1,
+    name: 'Lista 1',
+    shopName: 'Biedronka',
+    itemCount: 5,
+    itemTotal: 8,
+    totalPrice: 245.50,
     participants: 3,
     createdDate: new Date(),
     userId: 'user1'
   },
-  { 
-    id: 2, 
-    name: 'Zakupy spożywcze', 
-    shopName: 'Carrefour', 
-    itemCount: 3, 
-    itemTotal: 5, 
-    totalPrice: 156.20, 
+  {
+    id: 2,
+    name: 'Zakupy spożywcze',
+    shopName: 'Carrefour',
+    itemCount: 3,
+    itemTotal: 5,
+    totalPrice: 156.20,
     participants: 2,
     createdDate: new Date(),
     userId: 'user1'
   },
-  { 
-    id: 3, 
-    name: 'Artykuły domowe', 
-    shopName: 'Leroy Merlin', 
-    itemCount: 2, 
-    itemTotal: 7, 
-    totalPrice: 890.00, 
+  {
+    id: 3,
+    name: 'Artykuły domowe',
+    shopName: 'Leroy Merlin',
+    itemCount: 2,
+    itemTotal: 7,
+    totalPrice: 890.00,
     participants: 4,
     createdDate: new Date(),
     userId: 'user1'
