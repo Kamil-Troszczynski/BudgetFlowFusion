@@ -8,8 +8,8 @@
             <h1 class="dashboard__title">BudgetFlowFusion</h1>
           </div>
           <nav class="dashboard__nav">
-            <button 
-              v-for="(link, index) in navLinks" 
+            <button
+              v-for="(link, index) in navLinks"
               :key="index"
               class="dashboard__nav-link"
               :class="{ active: activeNavIndex === index }"
@@ -20,7 +20,7 @@
           </nav>
           <div class="dashboard__user-section">
             <div class="dashboard__user-menu" ref="userMenuRef">
-              <button 
+              <button
                 class="dashboard__user-name"
                 @click="showUserMenu = !showUserMenu"
               >
@@ -81,8 +81,8 @@
                   <span class="dashboard__card-badge">Miesiąc</span>
                 </div>
                 <div class="dashboard__card-body">
-                  <div 
-                    v-for="stat in budgetStats" 
+                  <div
+                    v-for="stat in budgetStats"
                     :key="stat.label"
                     class="budget-stat"
                   >
@@ -104,8 +104,8 @@
                   <button class="dashboard__card-link">Wszystkie →</button>
                 </div>
                 <div class="dashboard__card-body">
-                  <div 
-                    v-for="transaction in recentTransactions" 
+                  <div
+                    v-for="transaction in recentTransactions"
                     :key="transaction.id"
                     class="transaction-item"
                   >
@@ -125,10 +125,11 @@
                   <h3 class="dashboard__card-title"> Szybki dostęp </h3>
                 </div>
                 <div class="dashboard__card-body">
-                  <button 
-                    v-for="action in quickActions" 
+                  <button
+                    v-for="action in quickActions"
                     :key="action.id"
                     class="dashboard__quick-action"
+                    @click="handleQuickAction(action.id)"
                   >
                     <span class="dashboard__quick-action-icon">{{ action.icon }}</span>
                     <span class="dashboard__quick-action-text">{{ action.label }}</span>
@@ -141,8 +142,8 @@
                   <h3 class="dashboard__card-title"> Statystyki </h3>
                 </div>
                 <div class="dashboard__card-body">
-                  <div 
-                    v-for="stat in statistics" 
+                  <div
+                    v-for="stat in statistics"
                     :key="stat.label"
                     class="stat-row"
                   >
@@ -171,13 +172,13 @@
           <h2 class="modal-title">Edytuj profil</h2>
           <button class="modal-close" @click="showEditProfileModal = false">✕</button>
         </div>
-        
+
         <form class="edit-form" @submit.prevent="handleSaveProfile">
           <div class="edit-form-group">
             <label class="edit-form-label">Imię</label>
-            <input 
+            <input
               v-model="editFormData.firstName"
-              type="text" 
+              type="text"
               placeholder="Jan"
               class="edit-form-input"
               required
@@ -186,9 +187,9 @@
 
           <div class="edit-form-group">
             <label class="edit-form-label">Nazwisko</label>
-            <input 
+            <input
               v-model="editFormData.lastName"
-              type="text" 
+              type="text"
               placeholder="Kowalski"
               class="edit-form-input"
               required
@@ -197,9 +198,9 @@
 
           <div class="edit-form-group">
             <label class="edit-form-label">E-mail</label>
-            <input 
+            <input
               v-model="editFormData.email"
-              type="email" 
+              type="email"
               placeholder="name@example.com"
               class="edit-form-input"
               required
@@ -208,7 +209,7 @@
 
           <div class="edit-form-group">
             <label class="edit-form-label">Sekcja</label>
-            <select 
+            <select
               v-model="editFormData.position"
               required
               class="edit-form-select"
@@ -223,8 +224,8 @@
 
           <div v-if="user.role === 'treasurer'" class="edit-form__role-toggle">
             <span class="edit-form__role-label">Rola</span>
-            <button 
-              class="edit-form__toggle" 
+            <button
+              class="edit-form__toggle"
               :class="{ 'is-treasurer': editFormData.role === 'treasurer' }"
               type="button"
               @click="toggleEditRole"
@@ -242,8 +243,8 @@
 
           <div class="edit-form__role-toggle">
             <span class="edit-form__role-label">SAP</span>
-            <button 
-              class="edit-form__toggle" 
+            <button
+              class="edit-form__toggle"
               :class="{ 'is-in-sap': editFormData.inSAP === true }"
               type="button"
               @click="toggleEditSAP"
@@ -262,6 +263,11 @@
         </form>
       </div>
     </div>
+    <AddItemModal
+      :isOpen="showAddItemModal"
+      @close="showAddItemModal = false"
+      @submit-item="handleItemAdded"
+    />
   </div>
 </template>
 
@@ -271,11 +277,13 @@ import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 import AddedItems from '@/components/items_shop_purchase_lists/AddedItems.vue'
 import AddedShopPurchaseLists from '@/components/items_shop_purchase_lists/AddedShopPurchaseLists.vue'
+import AddItemModal from '@/components/items_shop_purchase_lists/AddItemModal.vue'
 
 const router = useRouter()
 const { user, logout } = useAuth()
 const showUserMenu = ref(false)
 const showEditProfileModal = ref(false)
+const showAddItemModal = ref(false)
 const activeNavIndex = ref(0)
 const sectionsContainer = ref(null)
 const userMenuRef = ref(null)
@@ -382,9 +390,9 @@ const handleSaveProfile = () => {
     user.value.position = editFormData.value.position
     user.value.inSAP = editFormData.value.inSAP
     user.value.role = editFormData.value.role
-    
+
     localStorage.setItem('user', JSON.stringify(user.value))
-    
+
     showEditProfileModal.value = false
     showUserMenu.value = false
   }
@@ -397,24 +405,24 @@ const budgetStats = [
 ]
 
 const recentTransactions = [
-  { 
+  {
     id: 1,
-    title: 'Zakup materiałów promocyjnych', 
-    date: 'Dzisiaj', 
+    title: 'Zakup materiałów promocyjnych',
+    date: 'Dzisiaj',
     amount: '-450,00 PLN',
     amountClass: ''
   },
-  { 
+  {
     id: 2,
-    title: 'Wpłata członkowska', 
-    date: 'Wczoraj', 
+    title: 'Wpłata członkowska',
+    date: 'Wczoraj',
     amount: '+200,00 PLN',
     amountClass: 'success-text'
   },
-  { 
+  {
     id: 3,
-    title: 'Koszty wynajęcia sali', 
-    date: '3 dni temu', 
+    title: 'Koszty wynajęcia sali',
+    date: '3 dni temu',
     amount: '-784,56 PLN',
     amountClass: ''
   }
@@ -425,6 +433,17 @@ const quickActions = [
   { id: 2, label: 'Dodaj listę zakupów' },
   { id: 3, label: 'Członkowie koła' }
 ]
+
+const handleQuickAction = (actionId) => {
+  if (actionId === 1) {
+    showAddItemModal.value = true
+  }
+}
+
+const handleItemAdded = (itemData) => {
+  console.log("Nowy przedmiot odebrany z formularza:", itemData)
+  alert(`Przedmiot ${itemData.name} został dodany i czeka na akceptację!`)
+}
 
 const statistics = [
   { label: 'Transakcje ten miesiąc', value: '12' },
