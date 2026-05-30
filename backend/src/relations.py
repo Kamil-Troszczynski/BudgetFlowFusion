@@ -212,13 +212,14 @@ class Item(SQLModel, table=True):
     currency: Currency = Field(sa_column=Column(SQLEnum(Currency), nullable=False))
     link: str
     created_at: datetime
+    ammount: int
 
     product_subcategory_id: int = Field(foreign_key="product_subcategory.product_subcategory_id")
     student_id: int = Field(foreign_key="student.student_id")
     shop_id: int = Field(foreign_key="shop.shop_id")
     product_subcategory: Optional[ProductSubcategory] = Relationship(back_populates="items")
     student: Optional["Student"] = Relationship(back_populates="items")
-    shop: Optional[Shop] = Relationship(back_populates="items") 
+    shop: Optional[Shop] = Relationship(back_populates="items")
     shop_purchase_list_items: list["ShopPurchaseListItem"] = Relationship(back_populates="item")
 
 
@@ -227,7 +228,6 @@ class ShopPurchaseListItem(SQLModel, table=True):
 
     shop_purchase_list_id: int = Field(foreign_key="shop_purchase_list.shop_purchase_list_id", primary_key=True)
     item_id: int = Field(foreign_key="item.item_id", primary_key=True)
-    amount: int
 
     shop_purchase_list: Optional["ShopPurchaseList"] = Relationship(back_populates="shop_purchase_list_items")
     item: Optional[Item] = Relationship(back_populates="shop_purchase_list_items")
