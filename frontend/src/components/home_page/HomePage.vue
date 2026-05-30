@@ -162,6 +162,10 @@
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex]?.includes('Listy') && navLinks[activeNavIndex]?.includes('zakupów')">
             <AddedShopPurchaseLists />
           </section>
+
+          <section class="dashboard__section" v-if="navLinks[activeNavIndex] === 'Akceptacja CPV'">
+            <TreasurerValidation />
+          </section>
         </div>
       </div>
     </main>
@@ -278,6 +282,7 @@ import { useRouter } from 'vue-router'
 import AddedItems from '@/components/items_shop_purchase_lists/AddedItems.vue'
 import AddedShopPurchaseLists from '@/components/items_shop_purchase_lists/AddedShopPurchaseLists.vue'
 import AddItemModal from '@/components/items_shop_purchase_lists/AddItemModal.vue'
+import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
 
 const router = useRouter()
 const { user, logout } = useAuth()
@@ -301,7 +306,7 @@ const navLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Budżet', 'Transakcje']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Budżet', 'Transakcje', 'Akceptacja CPV']
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
