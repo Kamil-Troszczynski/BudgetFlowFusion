@@ -235,8 +235,7 @@ class ShopPurchaseListItem(SQLModel, table=True):
 
     shop_purchase_list: Optional["ShopPurchaseList"] = Relationship(back_populates="shop_purchase_list_items")
     item: Optional[Item] = Relationship(back_populates="shop_purchase_list_items")
-
-    ammount: int
+    amount: int
 
 
 class Student(SQLModel, table=True):
