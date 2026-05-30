@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   isOpen: {
@@ -60,12 +60,28 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'add-to-list'])
 
-const catalogItems = ref([
-  { id: 101, name: 'Kontroler Lotu Pixhawk 4', price: 850.00, currency: 'PLN' },
-  { id: 102, name: 'Ogniwo Li-ion 18650 Samsung', price: 25.00, currency: 'PLN' },
-  { id: 103, name: 'Filament PETG Czarny 1kg', price: 65.00, currency: 'PLN' },
-  { id: 104, name: 'Regulator ESC 40A', price: 120.00, currency: 'PLN' }
-])
+const catalogItems = ref([])
+
+const fetchItems = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items')
+    if (!response.ok) throw new Error('Błąd sieci')
+
+    const data = await response.json()
+
+    catalogItems.value = data.map(item => ({
+      ...item,
+      id: item.item_id
+    }))
+
+  } catch (error) {
+    console.error("Nie udało się pobrać katalogu przedmiotów:", error)
+  }
+}
+
+onMounted(() => {
+  fetchItems()
+})
 
 const form = ref({
   itemId: '',
