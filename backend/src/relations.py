@@ -261,6 +261,7 @@ class ShopPurchaseList(SQLModel, table=True):
 
     shop_purchase_list_id: Optional[int] = Field(default=None, primary_key=True)
     priority: int
+    name: str | None = Field(default=None)
     cost: float
     created_at: datetime
 
