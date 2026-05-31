@@ -6,9 +6,6 @@
         :key="toast.id"
         :class="['toast', `toast-${toast.type}`]"
       >
-        <span class="toast-icon">
-          {{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️' }}
-        </span>
         <span class="toast-message">{{ toast.message }}</span>
       </div>
     </TransitionGroup>

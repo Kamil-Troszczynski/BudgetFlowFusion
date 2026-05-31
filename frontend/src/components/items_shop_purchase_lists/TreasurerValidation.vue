@@ -69,12 +69,11 @@
     <div v-if="showRejectModal" class="confirm-modal-overlay" @click="showRejectModal = false">
       <div class="confirm-modal-content" @click.stop>
 
-        <div class="confirm-modal-icon">⚠️</div>
+        <div class="confirm-modal-icon"></div>
         <h2 class="confirm-modal-title">Uwaga!</h2>
 
         <p class="confirm-modal-text">
           Czy na pewno chcesz odrzucić ten przedmiot? <br/>
-          <strong class="text-danger">Zostanie on trwale usunięty z bazy danych.</strong>
         </p>
 
         <div class="confirm-modal-actions">
@@ -163,13 +162,13 @@ const executeReject = async () => {
 
     if (!response.ok) throw new Error('Błąd serwera przy odrzucaniu')
 
-    toast.info('Przedmiot został odrzucony i usunięty z bazy.')
+    toast.info('Przedmiot został odrzucony')
 
     await fetchPendingItems()
 
   } catch (error) {
     console.error("Błąd odrzucania:", error)
-    toast.error('Wystąpił błąd podczas odrzucania przedmiotu.')
+    toast.error('Wystąpił błąd podczas odrzucania przedmiotu')
   } finally {
     showRejectModal.value = false
     itemToRejectId.value = null
@@ -356,11 +355,6 @@ const fetchCategoriesFromDB = async () => {
   line-height: 1.6;
   margin-bottom: 2.5vw;
   font-family: 'Nunito', system-ui, sans-serif;
-}
-
-.text-danger {
-  color: #fca5a5;
-  font-weight: 700;
 }
 
 .confirm-modal-actions {

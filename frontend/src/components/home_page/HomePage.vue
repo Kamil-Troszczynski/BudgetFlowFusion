@@ -159,6 +159,14 @@
             <AddedItems />
           </section>
 
+          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Wnioski do zamówień'">
+            <PurchaseRequest />
+          </section>
+
+          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Rozliczenia'">
+            <Settlement />
+          </section>
+
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex]?.includes('Listy') && navLinks[activeNavIndex]?.includes('zakupów')">
             <AddedShopPurchaseLists />
           </section>
@@ -282,6 +290,8 @@ import { useRouter } from 'vue-router'
 import AddedItems from '@/components/items_shop_purchase_lists/AddedItems.vue'
 import AddedShopPurchaseLists from '@/components/items_shop_purchase_lists/AddedShopPurchaseLists.vue'
 import AddItemModal from '@/components/items_shop_purchase_lists/AddItemModal.vue'
+import PurchaseRequest from '@/components/purchase_request/PurchaseRequest.vue'
+import Settlement from '@/components/settlement/Settlement.vue'
 import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
 
 const router = useRouter()
@@ -306,7 +316,7 @@ const navLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Budżet', 'Transakcje', 'Akceptacja CPV']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Wnioski do zamówień', 'Rozliczenia', 'Akceptacja CPV']
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
