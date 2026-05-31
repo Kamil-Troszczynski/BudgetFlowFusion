@@ -5,7 +5,9 @@
     <div class="list-details__header">
       <div>
         <h2 class="list-details__title">{{ list.name }}</h2>
-        <p class="list-details__subtitle">Sklep: {{ list.shopName }} | Całkowity koszt: {{ currentTotal }} PLN</p>
+        <p class="list-details__subtitle">
+          Sklep: {{ list.shopName }} | Budżet: {{ currentTotal.toFixed(2) }} / {{ list.maxBudget.toFixed(2) }} PLN
+        </p>
       </div>
       <button class="add-item-btn" @click="showModal = true">+ Dodaj pozycję do listy</button>
     </div>
@@ -40,6 +42,8 @@
 
     <AddItemToListModal
       :isOpen="showModal"
+      :currentTotal="currentTotal"
+      :maxBudget="list.maxBudget"
       @close="showModal = false"
       @add-to-list="addItemToList"
     />
@@ -115,7 +119,7 @@ const removeItem = async (id) => {
 }
 
 const currentTotal = computed(() => {
-  return listItems.value.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)
+  return listItems.value.reduce((sum, item) => sum + item.totalPrice, 0)
 })
 
 onMounted(() => {
