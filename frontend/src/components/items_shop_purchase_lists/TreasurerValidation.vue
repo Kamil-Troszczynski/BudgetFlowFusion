@@ -14,7 +14,7 @@
     </div>
 
     <div v-if="pendingItems.length === 0" class="validation-empty">
-      <p class="empty-icon">✅</p>
+      <p class="empty-icon"></p>
       <p class="empty-text">Wszystkie przedmioty zostały zweryfikowane!</p>
       <p class="empty-subtext">Dobra robota, katalog jest aktualny.</p>
     </div>

@@ -44,6 +44,36 @@ export function useAuth() {
     }
   }
 
+  const register = async (userData) => {
+  try {
+    const response = await fetch('http://localhost:8080/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userData.firstName,
+        surname: userData.lastName,
+        login: userData.email,
+        password: userData.password,
+        position: userData.position,
+        is_in_sap: userData.inSAP,
+        association_name: userData.circleName,
+        is_treasurer: userData.role === 'treasurer'
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return { success: false, message: error.detail || 'Błąd rejestracji' }
+    }
+
+    return { success: true }
+
+    } catch (error) {
+      console.error('Błąd rejestracji:', error)
+      return { success: false, message: error.message }
+    }
+  }
+
   const logout = () => {
     user.value = null
     localStorage.removeItem('user')
@@ -60,6 +90,7 @@ export function useAuth() {
     user: computed(() => user.value),
     isAuthenticated,
     login,
+    register,
     logout,
     restoreSession
   }
