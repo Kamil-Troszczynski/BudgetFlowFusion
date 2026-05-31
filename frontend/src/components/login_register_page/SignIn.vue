@@ -19,21 +19,21 @@
           <form class="login-sheet__form" @submit.prevent="handleSubmit">
             <label class="login-sheet__field">
               <span>Login lub e-mail</span>
-              <input 
+              <input
                 v-model="formData.email"
-                type="email" 
+                type="email"
                 placeholder="name@example.com"
-                required 
+                required
               />
             </label>
 
             <label class="login-sheet__field">
               <span>Hasło</span>
-              <input 
+              <input
                 v-model="formData.password"
-                type="password" 
+                type="password"
                 placeholder="••••••••"
-                required 
+                required
               />
             </label>
 
@@ -49,11 +49,13 @@
 </template>
 
 <script setup>
-  
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
 const router = useRouter()
 const { login } = useAuth()
 
@@ -62,18 +64,17 @@ const formData = ref({
   password: ''
 })
 
-const handleSubmit = () => {
-  login({
-    firstName: 'Jan',
-    lastName: 'Kowalski',
+const handleSubmit = async () => {
+  const result = await login({
     email: formData.value.email,
-    circleName: 'KNR',
-    position: 'Elektronika',
-    inSAP: false,
-    role: 'member'
+    password: formData.value.password
   })
-  
-  router.push('/home')
+
+  if (result.success) {
+    router.push('/home')
+  } else {
+    toast.error(result.message)
+  }
 }
 </script>
 
