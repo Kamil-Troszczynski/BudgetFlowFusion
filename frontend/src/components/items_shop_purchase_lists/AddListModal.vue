@@ -69,6 +69,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
   isOpen: {
@@ -81,6 +82,7 @@ const emit = defineEmits(['close', 'submit-list'])
 
 const shops = ref([])
 const fundings = ref([])
+const { user } = useAuth()
 
 const form = ref({
   name: '',
@@ -105,7 +107,7 @@ const fetchShops = async () => {
 
 const fetchFundings = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/fundings')
+    const response = await fetch(`http://localhost:8080/api/fundings?association_id=${user.value.association_id}`)
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
     fundings.value = data.map(funding => ({
