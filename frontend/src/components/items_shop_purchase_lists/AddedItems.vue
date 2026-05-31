@@ -35,6 +35,7 @@
 
     <AddItemModal
       :isOpen="showAddModal"
+      :isLoading="isSubmitting"
       @close="showAddModal = false"
       @submit-item="handleNewItemSubmit"
     />
@@ -43,10 +44,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import AddItemModal from './AddItemModal.vue'
 
 const showAddModal = ref(false)
+const toast = useToast()
 const catalogItems = ref([])
+const { user } = useAuth()
+const isSubmitting = ref(false)
 
 const fetchCatalog = async () => {
   try {
@@ -68,6 +74,8 @@ onMounted(() => {
 })
 
 const handleNewItemSubmit = async (itemData) => {
+  isSubmitting.value = true
+
   try {
     const response = await fetch('http://localhost:8080/api/items', {
       method: 'POST',
@@ -77,18 +85,27 @@ const handleNewItemSubmit = async (itemData) => {
         link: itemData.link,
         price: itemData.price,
         currency: itemData.currency,
-        product_subcategory_id: itemData.subcategoryId
+        product_subcategory_id: itemData.subcategoryId,
+        student_id: user.value.id
       })
     })
 
     if (!response.ok) throw new Error('Nie udało się wysłać przedmiotu do akceptacji')
 
-    alert('Sukces! Przedmiot został wysłany do akceptacji przez Skarbnika.')
     showAddModal.value = false;
+
+    if (user.value.role === 'treasurer') {
+      toast.success('Przedmiot został automatycznie dodany do katalogu!')
+      fetchCatalog()
+    } else {
+      toast.success('Przedmiot został wysłany do akceptacji!')
+    }
 
   } catch (error) {
     console.error("Błąd podczas dodawania przedmiotu:", error)
-    alert("Wystąpił błąd podczas zapisywania w bazie.")
+    toast.error("Wystąpił błąd podczas zapisywania w bazie.")
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
