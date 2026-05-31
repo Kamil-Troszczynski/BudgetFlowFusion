@@ -91,7 +91,10 @@
 
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-btn-cancel" @click="closeModal">Anuluj</button>
-          <button type="submit" class="modal-btn modal-btn-save">Dodaj do akceptacji</button>
+          <button
+            type="submit"
+            class="modal-btn modal-btn-save"
+            :disabled="isLoading">{{ isLoading ? 'Zapisywanie...' : 'Dodaj do akceptacji' }}</button>
         </div>
       </form>
     </div>
@@ -102,10 +105,8 @@
 import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    required: true
-  }
+  isOpen: { type: Boolean, required: true },
+  isLoading: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['close', 'submit-item'])
@@ -118,11 +119,9 @@ const fetchClassifications = async () => {
     const catResponse = await fetch('http://localhost:8080/api/categories')
     if (catResponse.ok) {
       const catData = await catResponse.json()
-      console.log("KATEGORIE Z BAZY:", catData)
-
       categories.value = catData.map(c => ({
         id: c.product_category_id || c.id,
-        name: c.name || c.category_name,
+        name: c.product_category_name || c.name,
         cpv: c.cpv || c.cpv_code
       }))
     }
@@ -130,11 +129,9 @@ const fetchClassifications = async () => {
     const subResponse = await fetch('http://localhost:8080/api/subcategories')
     if (subResponse.ok) {
       const subData = await subResponse.json()
-      console.log("PODKATEGORIE Z BAZY:", subData)
-
       allSubcategories.value = subData.map(s => ({
         id: s.product_subcategory_id || s.id,
-        name: s.name || s.subcategory_name,
+        name: s.product_subcategory_name || s.name,
         categoryId: s.product_category_id || s.category_id
       }))
     }
@@ -331,6 +328,14 @@ const handleSubmit = () => {
 .modal-btn-save:hover {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   transform: translateY(-2px);
+}
+
+.modal-btn-save:disabled {
+  background: rgba(59, 130, 246, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.7;
 }
 
 @media (max-width: 1024px) {
