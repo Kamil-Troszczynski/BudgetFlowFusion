@@ -4,35 +4,44 @@ const user = ref(null)
 const isAuthenticated = computed(() => user.value !== null)
 
 export function useAuth() {
-  const login = (userData) => {
-    user.value = {
-      id: Math.random().toString(36).substring(7),
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      email: userData.email,
-      circleName: userData.circleName,
-      position: userData.position || '',
-      inSAP: userData.inSAP || false,
-      role: userData.role || 'member',
-      loginTime: new Date()
-    }
-    localStorage.setItem('user', JSON.stringify(user.value))
-  }
 
-  const register = (userData) => {
-    user.value = {
-      id: Math.random().toString(36).substring(7),
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      email: userData.email,
-      circleName: userData.circleName,
-      position: userData.position || '',
-      inSAP: userData.inSAP || false,
-      role: userData.role || 'member',
-      registeredAt: new Date(),
-      loginTime: new Date()
+  const login = async (userData) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Nieprawidłowy e-mail lub hasło')
+      }
+
+      const dbUser = await response.json()
+
+      user.value = {
+        id: dbUser.id,
+        association_id: dbUser.association_id,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        email: dbUser.email,
+        circleName: dbUser.circleName,
+        position: dbUser.position,
+        inSAP: dbUser.inSAP,
+        role: dbUser.role,
+        loginTime: new Date()
+      }
+
+      localStorage.setItem('user', JSON.stringify(user.value))
+      return { success: true }
+
+    } catch (error) {
+      console.error("Błąd logowania:", error)
+      return { success: false, message: error.message }
     }
-    localStorage.setItem('user', JSON.stringify(user.value))
   }
 
   const logout = () => {
@@ -51,7 +60,6 @@ export function useAuth() {
     user: computed(() => user.value),
     isAuthenticated,
     login,
-    register,
     logout,
     restoreSession
   }
