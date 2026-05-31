@@ -2,9 +2,14 @@ from src.relations import *
 from src import get_session, app
 from sqlmodel import Session, select
 from fastapi import Depends
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
+from fastapi import HTTPException
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 class ItemCreate(BaseModel):
     name: str
@@ -12,6 +17,7 @@ class ItemCreate(BaseModel):
     price: float
     currency: str
     product_subcategory_id: int
+    student_id: int
 
 class CategoryCreate(BaseModel):
     name: str
@@ -26,12 +32,18 @@ def get_all_shops(session: Session = Depends(get_session)):
     return session.exec(select(Shop)).all()
 
 @app.get("/api/fundings", response_model=List[Funding])
-def get_all_fundings(session: Session = Depends(get_session)):
-    return session.exec(select(Funding)).all()
+def get_all_fundings(association_id: Optional[int] = None, session: Session = Depends(get_session)):
+    statement = select(Funding)
+    if association_id:
+        statement = statement.join(Project).where(Project.association_id == association_id)
+    return session.exec(statement).all()
 
 @app.get("/api/lists", response_model=List[ShopPurchaseList])
-def get_all_lists(session: Session = Depends(get_session)):
-    return session.exec(select(ShopPurchaseList)).all()
+def get_all_lists(student_id: Optional[int] = None, session: Session = Depends(get_session)):
+    statement = select(ShopPurchaseList)
+    if student_id:
+        statement = statement.where(ShopPurchaseList.student_id == student_id)
+    return session.exec(statement).all()
 
 @app.post("/api/lists", response_model=ShopPurchaseList)
 def create_purchase_list(new_list: ShopPurchaseList, session: Session = Depends(get_session)):
@@ -86,8 +98,10 @@ def get_all_items(session: Session = Depends(get_session)):
     return session.exec(statement).all()
 
 @app.get("/api/items/pending", response_model=List[Item])
-def get_pending_items(session: Session = Depends(get_session)):
+def get_pending_items(association_id: Optional[int] = None, session: Session = Depends(get_session)):
     statement = select(Item).where(Item.status == "pending")
+    if association_id:
+        statement = statement.join(Student).where(Student.association_id == association_id)
     return session.exec(statement).all()
 
 @app.patch("/api/items/{item_id}/approve")
@@ -110,21 +124,25 @@ def reject_item(item_id: int, session: Session = Depends(get_session)):
 
 @app.post("/api/items", response_model=Item)
 def create_new_item(item_data: ItemCreate, session: Session = Depends(get_session)):
-    first_student = session.exec(select(Student)).first()
     first_shop = session.exec(select(Shop)).first()
+    if not first_shop:
+        return {"error": "Brak sklepów w bazie"}
 
-    if not first_student or not first_shop:
-        return {"error": "Brak studentów lub sklepów w bazie"}
+    student = session.get(Student, item_data.student_id)
+    if not student:
+        return {"error": "Student nie istnieje"}
+
+    item_status = "approved" if student.project_finance_manager_id else "pending"
 
     new_item = Item(
         name=item_data.name,
         link=item_data.link,
         price=item_data.price,
         currency=item_data.currency,
-        status="pending",
+        status=item_status,
         created_at=datetime.now(),
         product_subcategory_id=item_data.product_subcategory_id,
-        student_id=first_student.student_id,
+        student_id=item_data.student_id,
         shop_id=first_shop.shop_id
     )
     session.add(new_item)
@@ -163,3 +181,23 @@ def create_subcategory(subcat_data: SubcategoryCreate, session: Session = Depend
     session.commit()
     session.refresh(new_subcat)
     return new_subcat
+
+@app.post("/api/login")
+def login_user(credentials: LoginRequest, session: Session = Depends(get_session)):
+    statement = select(Student).where(Student.login == credentials.email)
+    user = session.exec(statement).first()
+
+    if not user or user.password_hash != credentials.password:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+
+    return {
+        "id": user.student_id,
+        "firstName": user.name,
+        "lastName": user.surname,
+        "email": user.login,
+        "circleName": user.association.association_name if user.association else "Brak koła",
+        "association_id": user.association_id,
+        "position": user.position,
+        "inSAP": user.is_in_sap,
+        "role": "treasurer" if user.project_finance_manager_id else "member"
+    }
