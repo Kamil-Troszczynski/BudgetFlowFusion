@@ -49,7 +49,7 @@
               <button class="action-btn accept" @click="handleAccept(item.id)">
                 ✓ Akceptuj
               </button>
-              <button class="action-btn reject" @click="handleReject(item.id)">
+              <button class="action-btn reject" @click="promptReject(item.id)">
                 ✕ Odrzuć
               </button>
             </td>
@@ -65,19 +65,48 @@
       @close="showCategoryModal = false"
       @refresh-categories="fetchCategoriesFromDB"
     />
+
+    <div v-if="showRejectModal" class="confirm-modal-overlay" @click="showRejectModal = false">
+      <div class="confirm-modal-content" @click.stop>
+
+        <div class="confirm-modal-icon">⚠️</div>
+        <h2 class="confirm-modal-title">Uwaga!</h2>
+
+        <p class="confirm-modal-text">
+          Czy na pewno chcesz odrzucić ten przedmiot? <br/>
+          <strong class="text-danger">Zostanie on trwale usunięty z bazy danych.</strong>
+        </p>
+
+        <div class="confirm-modal-actions">
+          <button class="confirm-btn confirm-btn-cancel" @click="showRejectModal = false">
+            Anuluj
+          </button>
+          <button class="confirm-btn confirm-btn-danger" @click="executeReject">
+            Tak, odrzuć
+          </button>
+        </div>
+
+      </div>
+    </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import AddCategoryModal from './AddCategoryModal.vue'
+import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
+const { user } = useAuth()
 const pendingItems = ref([])
 const showCategoryModal = ref(false)
 const dbCategories = ref([])
+const showRejectModal = ref(false)
+const itemToRejectId = ref(null)
 
 const fetchPendingItems = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/items/pending')
+    const response = await fetch(`http://localhost:8080/api/items/pending?association_id=${user.value.association_id}`)
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
@@ -104,31 +133,46 @@ onMounted(() => {
 const handleAccept = async (itemId) => {
   try {
     const response = await fetch(`http://localhost:8080/api/items/${itemId}/approve`, {
-      method: 'PATCH'
+      method: 'PATCH',
     })
-    if (!response.ok) throw new Error('Błąd serwera')
 
-    alert('Przedmiot został zatwierdzony i jest teraz w Katalogu!')
+    if (!response.ok) throw new Error('Błąd serwera przy akceptacji')
+
+    toast.success('Przedmiot został pomyślnie dodany do katalogu!')
+
     await fetchPendingItems()
+
   } catch (error) {
     console.error("Błąd akceptacji:", error)
+    toast.error('Wystąpił błąd podczas akceptacji przedmiotu.')
   }
 }
 
-const handleReject = async (itemId) => {
-  const reason = prompt("Podaj powód odrzucenia (np. zły kod CPV):")
-  if (reason !== null) {
-    try {
-      const response = await fetch(`http://localhost:8080/api/items/${itemId}/reject`, {
-        method: 'DELETE'
-      })
-      if (!response.ok) throw new Error('Błąd serwera')
+const promptReject = (itemId) => {
+  itemToRejectId.value = itemId
+  showRejectModal.value = true
+}
 
-      alert(`Odrzucono przedmiot. Powód przesłano do zgłaszającego (wkrótce).`)
-      await fetchPendingItems()
-    } catch (error) {
-      console.error("Błąd odrzucania:", error)
-    }
+const executeReject = async () => {
+  if (!itemToRejectId.value) return
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/items/${itemToRejectId.value}/reject`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) throw new Error('Błąd serwera przy odrzucaniu')
+
+    toast.info('Przedmiot został odrzucony i usunięty z bazy.')
+
+    await fetchPendingItems()
+
+  } catch (error) {
+    console.error("Błąd odrzucania:", error)
+    toast.error('Wystąpił błąd podczas odrzucania przedmiotu.')
+  } finally {
+    showRejectModal.value = false
+    itemToRejectId.value = null
   }
 }
 
@@ -260,4 +304,102 @@ const fetchCategoriesFromDB = async () => {
 .empty-icon { font-size: 3vw; margin-bottom: 1vw; }
 .empty-text { font-size: 1.2vw; font-weight: 700; color: #e2e8f0; margin-bottom: 0.5vw; }
 .empty-subtext { color: #94a3b8; font-size: 0.95vw; }
+
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(5, 8, 22, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+}
+
+.confirm-modal-content {
+  background: #0f172a;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 1.5vw;
+  padding: 3vw;
+  width: 90%;
+  max-width: 32vw;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.confirm-modal-icon {
+  font-size: 3.5vw;
+  margin-bottom: 1vw;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));
+}
+
+.confirm-modal-title {
+  color: #ef4444;
+  font-size: 2vw;
+  font-weight: 800;
+  margin: 0 0 1vw 0;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.confirm-modal-text {
+  color: #e2e8f0;
+  font-size: 1.1vw;
+  line-height: 1.6;
+  margin-bottom: 2.5vw;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.text-danger {
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 1.5vw;
+  justify-content: center;
+}
+
+.confirm-btn {
+  padding: 0.9vw 2.5vw;
+  border-radius: 0.8vw;
+  font-size: 1.1vw;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.confirm-btn-cancel {
+  background: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+}
+
+.confirm-btn-cancel:hover {
+  background: rgba(148, 163, 184, 0.3);
+  color: #ffffff;
+}
+
+.confirm-btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+}
+
+.confirm-btn-danger:hover {
+  transform: translateY(-0.3vh);
+  filter: brightness(1.1);
+  box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5);
+}
+
 </style>
