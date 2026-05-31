@@ -34,14 +34,24 @@
           />
         </div>
 
-        <div class="item-form-info">
-          <span class="info-icon">ℹ️</span>
-          <p>Suma dla tej pozycji: <strong>{{ calculatedTotal }}</strong></p>
+        <div class="item-form-info" :class="{ 'error-bg': isOverBudget }">
+          <span class="info-icon">{{ isOverBudget ? '⚠️' : 'ℹ️' }}</span>
+          <div style="width: 100%">
+            <p>Suma dla tej pozycji: <strong>{{ calculatedItemTotal.toFixed(2) }} PLN</strong></p>
+            <p :class="{ 'text-red': isOverBudget }" style="margin-top: 0.5vw; font-size: 0.9vw;">
+              Stan koszyka po dodaniu: {{ projectedTotal.toFixed(2) }} / {{ maxBudget.toFixed(2) }} PLN
+            </p>
+            <p v-if="isOverBudget" class="text-red font-bold" style="margin-top: 0.5vw; font-size: 0.8vw;">
+              Przekroczono dostępny budżet projektu! Zmniejsz ilość lub wybierz inny projekt.
+            </p>
+          </div>
         </div>
 
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-btn-cancel" @click="closeModal">Anuluj</button>
-          <button type="submit" class="modal-btn modal-btn-save">Dodaj do listy</button>
+          <button type="submit" class="modal-btn modal-btn-save" :disabled="isOverBudget">
+            Dodaj do listy
+          </button>
         </div>
       </form>
     </div>
@@ -52,61 +62,56 @@
 import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    required: true
-  }
+  isOpen: { type: Boolean, required: true },
+  currentTotal: { type: Number, required: true },
+  maxBudget: { type: Number, required: true }
 })
 
 const emit = defineEmits(['close', 'add-to-list'])
-
 const catalogItems = ref([])
 
 const fetchItems = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/items')
     if (!response.ok) throw new Error('Błąd sieci')
-
     const data = await response.json()
-
-    catalogItems.value = data.map(item => ({
-      ...item,
-      id: item.item_id
-    }))
-
+    catalogItems.value = data.map(item => ({ ...item, id: item.item_id }))
   } catch (error) {
-    console.error("Nie udało się pobrać katalogu przedmiotów:", error)
+    console.error("Nie udało się pobrać katalogu:", error)
   }
 }
 
-onMounted(() => {
-  fetchItems()
-})
+onMounted(() => fetchItems())
 
-const form = ref({
-  itemId: '',
-  amount: 1
-})
+const form = ref({ itemId: '', amount: 1 })
 
-const calculatedTotal = computed(() => {
-  if (!form.value.itemId) return '0.00 PLN'
+const calculatedItemTotal = computed(() => {
+  if (!form.value.itemId) return 0
   const selected = catalogItems.value.find(i => i.id === form.value.itemId)
-  return `${(selected.price * form.value.amount).toFixed(2)} ${selected.currency}`
+  return selected.price * form.value.amount
+})
+
+const projectedTotal = computed(() => {
+  return props.currentTotal + calculatedItemTotal.value
+})
+
+const isOverBudget = computed(() => {
+  return projectedTotal.value > props.maxBudget
 })
 
 const closeModal = () => {
   emit('close')
-  setTimeout(() => {
-    form.value = { itemId: '', amount: 1 }
-  }, 200)
+  setTimeout(() => { form.value = { itemId: '', amount: 1 } }, 200)
 }
 
 const handleSubmit = () => {
+  if (isOverBudget.value) return
+
   const selectedItem = catalogItems.value.find(i => i.id === form.value.itemId)
   emit('add-to-list', {
     ...selectedItem,
     amount: form.value.amount,
-    totalPrice: selectedItem.price * form.value.amount
+    totalPrice: calculatedItemTotal.value
   })
   closeModal()
 }
@@ -132,4 +137,8 @@ const handleSubmit = () => {
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; }
 .modal-btn-save:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transform: translateY(-2px); }
+.error-bg {background: rgba(239, 68, 68, 0.1) !important;border-color: rgba(239, 68, 68, 0.3) !important;}
+.text-red { color: #fca5a5 !important; }
+.font-bold { font-weight: bold; }
+.modal-btn-save:disabled {background: rgba(239, 68, 68, 0.5);color: rgba(255, 255, 255, 0.6);cursor: not-allowed;box-shadow: none;transform: none;}
 </style>
