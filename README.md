@@ -122,3 +122,11 @@ npm run build
 ```bash
 docker exec -it budgetflowfusion_db psql -U budgetflowfusion -d budgetflowfusion
 ```
+
+## How to run tests?
+
+With running container.
+
+```bash
+docker exec -it backend python -m pytest tests/
+```
