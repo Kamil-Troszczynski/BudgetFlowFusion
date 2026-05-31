@@ -148,7 +148,7 @@ class Project(SQLModel, table=True):
     rest_of_budget: float
 
     association_id: Optional[int] = Field(default=None, foreign_key="association.association_id")
-    association: Optional[Association] = Relationship(back_populates="projects")
+    association: Optional["Association"] = Relationship(back_populates="projects")
 
     fundings: list[Funding] = Relationship(back_populates="project")
 
@@ -256,7 +256,7 @@ class Student(SQLModel, table=True):
     project_finance_manager_id: Optional[int] = Field(default=None, foreign_key="project_finance_manager.project_finance_manager_id")
 
     association_id: Optional[int] = Field(default=None, foreign_key="association.association_id")
-    association: Optional[Association] = Relationship(back_populates="students")
+    association: Optional["Association"] = Relationship(back_populates="students")
 
     project_finance_manager: Optional[ProjectFinanceManager] = Relationship(back_populates="student")
     items: list["Item"] = Relationship(back_populates="student")
