@@ -62,13 +62,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
 import AddListModal from './AddListModal.vue'
 
 const { user } = useAuth()
 const activeList = ref(null)
 const showAddListModal = ref(false)
-
+const toast = useToast()
 const allLists = ref([])
 const shops = ref([])
 
@@ -91,7 +92,11 @@ const fetchShops = async () => {
 const fetchLists = async () => {
   try {
     await fetchShops()
-    const response = await fetch('http://localhost:8080/api/lists')
+
+    const fundingsResponse = await fetch(`http://localhost:8080/api/fundings?association_id=${user.value.association_id}`)
+    const fundings = await fundingsResponse.json()
+
+    const response = await fetch(`http://localhost:8080/api/lists?student_id=${user.value.id}`)
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
@@ -101,6 +106,9 @@ const fetchLists = async () => {
 
       const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
 
+      const foundFunding = fundings.find(f => f.funding_id === list.funding_id)
+      const maxBudget = foundFunding ? (foundFunding.funding_price - foundFunding.spent_money) : 0
+
       return {
         ...list,
         id: list.shop_purchase_list_id,
@@ -108,7 +116,8 @@ const fetchLists = async () => {
         shopName: foundShop ? foundShop.shop_name : 'Nieznany sklep',
         itemCount: items.length,
         totalPrice: items.reduce((sum, item) => sum + item.total_price, 0),
-        participants: 1
+        participants: 1,
+        maxBudget: maxBudget
       }
     }))
 
@@ -130,7 +139,7 @@ const handleNewList = async (listData) => {
       created_at: new Date().toISOString(),
       funding_id: listData.fundingId,
       shop_id: listData.shopId,
-      student_id: 2
+      student_id: user.value.id
     }
 
     const response = await fetch('http://localhost:8080/api/lists', {
@@ -159,7 +168,8 @@ const handleNewList = async (listData) => {
     })
 
     showAddListModal.value = false
-    alert(`Lista została poprawnie zapisana w bazie!`)
+
+    toast.success('Lista została poprawnie utworzona w bazie!')
 
   } catch (error) {
     console.error("Błąd zapisu listy:", error)
