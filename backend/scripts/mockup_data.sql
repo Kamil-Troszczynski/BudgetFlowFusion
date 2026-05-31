@@ -28,8 +28,8 @@ INSERT INTO project_finance_manager (login, password_hash, access, purchase_requ
 INSERT INTO student (name, surname, login, password_hash, position, is_in_sap, project_finance_manager_id, association_id) VALUES
 ('Michał', 'Kowalski',   'michal.kowalski@kolo.edu.pl', 'hashed_123', 'Elektronika', true, 1, 1),
 ('Anna',   'Nowak',      'anna.nowak@kolo.edu.pl',      'hashed_456', 'Mechanika', false, NULL, 1),
-('Piotr',  'Zieliński',  'piotr.zielinski@kolo.edu.pl', 'hashed_111', 'Programista AI', true, NULL, 2),
-('Kasia',  'Wiśniewska', 'kasia.w@kolo.edu.pl',         'hashed_222', 'Konstruktor CAD', false, 2, 2);
+('Piotr',  'Zieliński',  'piotr.zielinski@kolo.edu.pl', 'hashed_111', 'Autonomia', true, NULL, 2),
+('Kasia',  'Wiśniewska', 'kasia.w@kolo.edu.pl',         'hashed_222', 'Mechanika', false, 2, 2);
 
 -- 6. Finansowania (Fundings)
 INSERT INTO funding (funding_name, funding_price, spent_money, project_id, association_budget_id) VALUES
@@ -72,14 +72,18 @@ INSERT INTO public_purchase_plan (public_purchase_plan_name, cost, funding_id, g
 ('Zakup podzespołów napędowych do łazika HAL_062', 5000.00, 1, 1, 1),
 ('Komponenty do systemu wizyjnego Drona X-1', 3000.00, 2, 2, 1);
 
--- 12. Przedmioty w Katalogu (UWAGA: Dodano kolumnę STATUS)
+-- 12. Przedmioty w Katalogu
 INSERT INTO item (name, price, currency, link, created_at, status, product_subcategory_id, student_id, shop_id) VALUES
 ('Silnik DC z przekładnią 12V',     145.50,  'PLN', 'https://botland.com.pl', NOW(), 'approved', 1, 2, 1),
 ('Kamera Intel RealSense D435i',   1850.00,  'PLN', 'https://botland.com.pl', NOW(), 'approved', 2, 2, 1),
 ('Filament PETG 1kg Czarny',         65.00,  'PLN', 'https://botland.com.pl', NOW(), 'approved', 3, 2, 1),
 ('Płytka STM32 Nucleo-F446RE',       99.90,  'PLN', 'https://tme.eu',         NOW(), 'approved', 4, 1, 2),
 ('Zestaw śrubokrętów precyzyjnych', 120.00,  'PLN', 'https://allegro.pl',     NOW(), 'pending',  5, 4, 4),
-('Sterownik Silnika BLDC 30A',       85.00,  'PLN', 'https://kamami.pl',      NOW(), 'pending',  1, 3, 3);
+('Sterownik Silnika BLDC 30A',       85.00,  'PLN', 'https://kamami.pl',      NOW(), 'pending',  1, 3, 3),
+('Przekładnia redukcyjna 12V',       45.00,  'PLN', 'https://botland.com.pl', NOW(), 'pending',  2, 2, 1),
+('Kamera głębi ZED2i',               45.00,  'PLN', 'https://botland.com.pl', NOW(), 'pending',  2, 2, 1),
+('Czujnik odległości VL53L0X',       45.00,  'PLN', 'https://botland.com.pl', NOW(), 'pending',  2, 2, 1),
+('Zestaw przewodów żeńsko-męskich',  15.50,  'PLN', 'https://botland.com.pl', NOW(), 'pending',  2, 2, 1);
 
 -- 13. Listy Zakupowe
 INSERT INTO shop_purchase_list (priority, cost, created_at, gslbccf_id, settlement_id, funding_id, shop_id, student_id) VALUES
