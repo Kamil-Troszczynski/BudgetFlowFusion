@@ -17,8 +17,12 @@ class ItemCreate(BaseModel):
 
 
 @app.get("/api/items", response_model=List[Item])
-def get_all_items(session: Session = Depends(get_session)):
-    statement = select(Item).where(Item.status == "approved")
+def get_all_items(student_id: Optional[int] = None, session: Session = Depends(get_session)):
+    if student_id:
+        statement = select(Item).where(Item.student_id == student_id)
+    else:
+        statement = select(Item).where(Item.status == "approved")
+
     return session.exec(statement).all()
 
 
