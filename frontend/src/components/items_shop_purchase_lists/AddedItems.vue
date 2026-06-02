@@ -56,7 +56,7 @@ const isSubmitting = ref(false)
 
 const fetchCatalog = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/items')
+    const response = await fetch(`http://localhost:8080/api/items?student_id=${user.value.id}`)
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
