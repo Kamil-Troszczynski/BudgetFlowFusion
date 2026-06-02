@@ -18,10 +18,13 @@ const { toasts } = useToast()
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 .toast-container {
   position: fixed;
-  bottom: 2vw;
-  right: 2vw;
+  top: 2vw;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   gap: 0.8vw;
@@ -40,6 +43,7 @@ const { toasts } = useToast()
   color: white;
   font-size: 0.95vw;
   font-weight: 600;
+  font-family: 'Nunito', system-ui, sans-serif;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   border-left: 0.3vw solid;
   pointer-events: auto;
@@ -52,6 +56,6 @@ const { toasts } = useToast()
 .toast-anim-enter-active, .toast-anim-leave-active {
   transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
-.toast-anim-enter-from { opacity: 0; transform: translateX(100%); }
-.toast-anim-leave-to { opacity: 0; transform: translateX(100%); }
+.toast-anim-enter-from { opacity: 0; transform: translateY(-100%); }
+.toast-anim-leave-to { opacity: 0; transform: translateY(-100%); }
 </style>

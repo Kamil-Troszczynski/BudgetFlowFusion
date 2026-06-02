@@ -1,7 +1,8 @@
 import pytest
-from src.relations import Item, ProductCategory, ProductSubcategory, Association, Student
+from src.relations import Item, ProductSubcategory, Association, Student
 from datetime import datetime
 from sqlmodel import select
+
 
 def test_add_category_and_subcategory(client, session):
     """Test sprawdza, czy kody CPV i kategorie poprawnie zapisują się w bazie"""

@@ -20,9 +20,9 @@ INSERT INTO association_budget (association_budget_name, total_budget, spent_mon
 ('Fundusz Rozwojowy Wydziału', 100000.00, 0.00, 2);
 
 
-INSERT INTO project_finance_manager (login, password_hash, access, purchase_request_id) VALUES
-('skarbnik_glowny@kolo.edu.pl', 'hashed_123', true, NULL),
-('zastepca_skarbnika@kolo.edu.pl', 'hashed_789', true, NULL);
+INSERT INTO project_finance_manager (login, password_hash, access) VALUES
+('skarbnik_glowny@kolo.edu.pl', 'hashed_123', true),
+('zastepca_skarbnika@kolo.edu.pl', 'hashed_789', true);
 
 
 INSERT INTO student (name, surname, login, password_hash, position, is_in_sap, project_finance_manager_id, association_id) VALUES
@@ -97,9 +97,9 @@ INSERT INTO shop_purchase_list_item (shop_purchase_list_id, item_id, amount) VAL
 (2, 4, 4);
 
 
-INSERT INTO purchase_request (purchase_request_name, budget_allocated_for_the_order, if_service, used_cpv_id, created_at, can_add, association_budget_id, gslbccf_id) VALUES
-('Wniosek: Napęd i wizja łazika', 2562.00, false, 42000000, NOW(), false, 1, 1),
-('Wniosek: Mikrokontrolery do drona', 399.60, false, 31700000, NOW(), false, 1, 2);
+INSERT INTO purchase_request (purchase_request_name, budget_allocated_for_the_order, if_service, used_cpv_id, created_at, can_add, association_budget_id, gslbccf_id, project_finance_manager_id) VALUES
+('Wniosek: Napęd i wizja łazika',      2562.00, false, 42000000, NOW(), false, 1, 1, 1),
+('Wniosek: Mikrokontrolery do drona',   399.60, false, 31700000, NOW(), false, 1, 2, 2);
 
 
 INSERT INTO settlement (created_at, paid_by_project_finance_manager_id, purchase_request_id) VALUES
@@ -109,10 +109,6 @@ INSERT INTO settlement (created_at, paid_by_project_finance_manager_id, purchase
 
 UPDATE shop_purchase_list SET settlement_id = 1 WHERE shop_purchase_list_id = 1;
 UPDATE shop_purchase_list SET settlement_id = 2 WHERE shop_purchase_list_id = 2;
-
-
-UPDATE project_finance_manager SET purchase_request_id = 1 WHERE project_finance_manager_id = 1;
-UPDATE project_finance_manager SET purchase_request_id = 2 WHERE project_finance_manager_id = 2;
 
 
 INSERT INTO invoice (number, issue_date, seller_name, seller_nip, net_total, vat_total, status, created_at, settlement_id) VALUES

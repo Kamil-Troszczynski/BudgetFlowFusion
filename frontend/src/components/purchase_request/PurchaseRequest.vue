@@ -1,180 +1,310 @@
 <template>
-  <div v-if="!activeRequest" class="requests-section">
-    <div class="requests-header">
-      <div class="requests-title-section">
-        <h2 class="requests-title">Moje wnioski o zamówienie</h2>
-        <p class="requests-subtitle">Wnioski zakupowe, które utworzyłeś</p>
+  <div class="requests-container">
+    <template v-if="!activeRequest">
+      <div class="requests-section">
+        <div class="requests-header">
+          <div class="requests-title-section">
+            <h2 class="requests-title">Moje wnioski o zamówienie</h2>
+            <p class="requests-subtitle">Wnioski zakupowe, które utworzyłeś</p>
+          </div>
+          <button class="requests-add-button" @click="showAddRequestModal = true">+ Nowy wniosek</button>
+        </div>
+
+        <div v-if="userRequests.length === 0" class="requests-empty">
+          <p class="lists-empty-icon">📄</p>
+          <p class="requests-empty-text">Nie utworzyłeś jeszcze żadnego wniosku</p>
+          <p class="requests-empty-subtext">
+            Stwórz nowy wniosek klikając przycisk powyżej
+          </p>
+        </div>
+
+        <div v-else class="requests-grid">
+          <div
+            v-for="request in userRequests"
+            :key="request.id"
+            class="request-card"
+          >
+            <div class="request-card__header">
+              <h3 class="request-card__title">{{ request.name }}</h3>
+              <span class="request-card__badge" :class="request.status">
+                {{ formatStatus(request.status) }}
+              </span>
+            </div>
+            <div class="request-card__content">
+              <p class="request-card__detail">
+                <span class="request-card__label">Budżet:</span>
+                <span class="request-card__value">{{ request.budget }} PLN</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Typ:</span>
+                <span class="request-card__value">{{ request.ifService ? 'Usługa' : 'Produkt' }}</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Data:</span>
+                <span class="request-card__value">{{ formatDate(request.created_at) }}</span>
+              </p>
+            </div>
+            <div class="request-card__actions">
+              <button class="request-card__button view" @click="activeRequest = request">Otwórz wniosek</button>
+              <button class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="requests-add-button" @click="showAddRequestModal = true">+ Nowy wniosek</button>
-    </div>
 
-    <div v-if="userRequests.length === 0" class="requests-empty">
-  <p class="lists-empty-icon">📄</p>
-  <p class="requests-empty-text">Nie utworzyłeś jeszcze żadnego wniosku</p>
-  <p class="requests-empty-subtext">
-    Stwórz nowy wniosek klikając przycisk powyżej
-  </p>
-</div>
+      <div class="requests-section">
+        <div class="requests-header">
+          <div class="requests-title-section">
+            <h2 class="requests-title">Wszystkie wnioski skarbników</h2>
+            <p class="requests-subtitle">Wnioski wszystkich skarbników w Twojej organizacji</p>
+          </div>
+        </div>
 
-    <div v-else class="requests-grid">
-      <div
-        v-for="request in userRequests"
-        :key="request.id"
-        class="request-card"
-      >
-        <div class="request-card__header">
-          <h3 class="request-card__title">{{ request.name }}</h3>
-          <span class="request-card__badge" :class="request.status">
-            {{ formatStatus(request.status) }}
+        <div v-if="allRequests.length === 0" class="requests-empty">
+          <p class="lists-empty-icon">📦</p>
+          <p class="requests-empty-text">Brak wniosków w organizacji</p>
+          <p class="requests-empty-subtext">
+            Wnioski pojawią się tutaj
+          </p>
+        </div>
+
+        <div v-else class="requests-grid">
+          <div
+            v-for="request in allRequests"
+            :key="request.id"
+            class="request-card"
+          >
+            <div class="request-card__header">
+              <h3 class="request-card__title">{{ request.name }}</h3>
+              <span class="request-card__badge" :class="request.status">
+                {{ formatStatus(request.status) }}
+              </span>
+            </div>
+            <div class="request-card__content">
+              <p class="request-card__detail">
+                <span class="request-card__label">Budżet:</span>
+                <span class="request-card__value">{{ request.budget }} PLN</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Typ:</span>
+                <span class="request-card__value">{{ request.ifService ? 'Usługa' : 'Produkt' }}</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Data:</span>
+                <span class="request-card__value">{{ formatDate(request.created_at) }}</span>
+              </p>
+            </div>
+            <div class="request-card__actions">
+              <button class="request-card__button view" @click="activeRequest = request">Otwórz wniosek</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <div v-else class="requests-section">
+      <button class="request-details__back" @click="activeRequest = null">
+        ← Powrót
+      </button>
+
+      <div class="request-details__card">
+        <div class="request-details__top">
+          <div>
+            <h2 class="request-details__title">{{ activeRequest.name }}</h2>
+            <p class="request-details__subtitle">Wniosek o zamówienie #{{ activeRequest.id }}</p>
+          </div>
+          <span class="request-card__badge" :class="activeRequest.status">
+            {{ formatStatus(activeRequest.status) }}
           </span>
         </div>
-        <div class="request-card__content">
-          <p class="request-card__detail">
-            <span class="request-card__label">Budżet:</span>
-            <span class="request-card__value">{{ request.budget }} PLN</span>
-          </p>
-          <p class="request-card__detail">
-            <span class="request-card__label">Przedmioty:</span>
-            <span class="request-card__value">{{ request.itemCount }}</span>
-          </p>
-          <p class="request-card__detail">
-            <span class="request-card__label">Data:</span>
-            <span class="request-card__value">{{ formatDate(request.created_at) }}</span>
-          </p>
-        </div>
-        <div class="request-card__actions">
-          <button class="request-card__button view" @click="activeRequest = request">Otwórz wniosek</button>
-          <button class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
+
+        <div class="request-details__grid">
+          <div class="request-info">
+            <p>Budżet</p>
+            <strong>{{ activeRequest.budget }} PLN</strong>
+          </div>
+          <div class="request-info">
+            <p>Typ wniosku</p>
+            <strong>{{ activeRequest.ifService ? 'Usługa' : 'Produkt' }}</strong>
+          </div>
+          <div class="request-info">
+            <p>Data utworzenia</p>
+            <strong>{{ formatDate(activeRequest.created_at) }}</strong>
+          </div>
+          <div class="request-info">
+            <p>Kod CPV</p>
+            <strong>{{ activeRequest.used_cpv_id ?? 'Brak' }}</strong>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showAddRequestModal" class="modal-overlay" @click="showAddRequestModal = false">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h2 class="modal-title">Nowy wniosek o zamówienie</h2>
-        <button class="modal-close" @click="showAddRequestModal = false">✕</button>
+    <div v-if="showAddRequestModal" class="modal-overlay" @click="showAddRequestModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Nowy wniosek o zamówienie</h2>
+          <button class="modal-close" @click="showAddRequestModal = false">✕</button>
+        </div>
+        <form class="modal-form" @submit.prevent="handleNewRequest">
+          <div class="modal-form__group">
+            <label class="modal-form__label">Nazwa wniosku</label>
+            <input
+              v-model="newRequestData.purchase_request_name"
+              type="text"
+              placeholder="np. Zakup elektroniki"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Budżet (PLN)</label>
+            <input
+              v-model="newRequestData.budget_allocated_for_the_order"
+              type="number"
+              placeholder="0.00"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Czy to usługa?</label>
+            <button
+              type="button"
+              class="modal-form__toggle"
+              :class="{ active: newRequestData.if_service }"
+              @click="newRequestData.if_service = !newRequestData.if_service"
+            >
+              {{ newRequestData.if_service ? 'Tak – usługa' : 'Nie – produkt' }}
+            </button>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
+            <button type="submit" class="modal-btn modal-btn-save">Utwórz wniosek</button>
+          </div>
+        </form>
       </div>
-      <form class="modal-form" @submit.prevent="handleNewRequest">
-        <div class="modal-form__group">
-          <label class="modal-form__label">Nazwa wniosku</label>
-          <input
-            v-model="newRequestData.name"
-            type="text"
-            placeholder="np. Zakup elektroniki"
-            class="modal-form__input"
-            required
-          />
-        </div>
-        <div class="modal-form__group">
-          <label class="modal-form__label">Budżet (PLN)</label>
-          <input
-            v-model="newRequestData.budget"
-            type="number"
-            placeholder="0.00"
-            class="modal-form__input"
-            required
-          />
-        </div>
-        <div class="modal-form__group">
-          <label class="modal-form__label">Czy to usługa?</label>
-          <button
-            type="button"
-            class="modal-form__toggle"
-            :class="{ active: newRequestData.ifService }"
-            @click="newRequestData.ifService = !newRequestData.ifService"
-          >
-            {{ newRequestData.ifService ? 'Tak – usługa' : 'Nie – produkt' }}
-          </button>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
-          <button type="submit" class="modal-btn modal-btn-save">Utwórz wniosek</button>
-        </div>
-      </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
 const { user } = useAuth()
 const activeRequest = ref(null)
 const showAddRequestModal = ref(false)
+
 const userRequests = ref([])
+const allRequests = ref([])
 
 const newRequestData = ref({
-  name: '',
-  budget: 0,
-  ifService: false
+  purchase_request_name: '',
+  budget_allocated_for_the_order: null,
+  if_service: false,
+  used_cpv_id: 1,
+  association_budget_id: 1,
+  association_name: '',
+  can_add: true
+})
+
+const mapRequest = (req) => ({
+  id: req.purchase_request_id,
+  name: req.purchase_request_name,
+  budget: req.budget_allocated_for_the_order,
+  ifService: req.if_service,
+  status: req.can_add ? 'pending' : 'approved',
+  created_at: req.created_at,
+  used_cpv_id: req.used_cpv_id,
+  itemCount: 0
 })
 
 const fetchRequests = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/purchase_requests?student_id=${user.value?.studentId}`)
-    if (!response.ok) throw new Error('Błąd sieci')
+    const response = await fetch(`http://localhost:8080/api/purchase_requests`)
+    if (!response.ok) throw new Error('Błąd pobierania danych')
+
     const data = await response.json()
-
-    userRequests.value = await Promise.all(data.map(async (req) => {
-      const itemsResponse = await fetch(`http://localhost:8080/api/purchase_requests/${req.purchase_request_id}/items`)
-      const items = await itemsResponse.json()
-
-      return {
-        ...req,
-        id: req.purchase_request_id,
-        name: req.purchase_request_name,
-        budget: req.budget_allocated_for_the_order,
-        status: req.can_add ? 'pending' : 'approved',
-        itemCount: items.length
-      }
-    }))
+    allRequests.value = data.map(mapRequest)
   } catch (error) {
     console.error('Błąd pobierania wniosków:', error)
   }
 }
 
-const handleNewRequest = async () => {
+const fetchRequestsBySpecificProjectFinanceManager = async () => {
+  if (!user.value?.id) return
+
   try {
-    const response = await fetch('http://localhost:8080/api/purchase_requests', {
+    const response = await fetch(`http://localhost:8080/api/purchase_requests/${user.value.id}`)
+    if (!response.ok) throw new Error('Błąd pobierania danych')
+
+    const data = await response.json()
+    userRequests.value = data.map(mapRequest)
+  } catch (error) {
+    console.error('Błąd pobierania wniosków dla managera:', error)
+  }
+}
+
+const handleNewRequest = async () => {
+  if (!user.value?.id) {
+    alert("Błąd: Nie można utworzyć wniosku, brak ID użytkownika.")
+    return
+  }
+
+  try {
+    const payload = {
+      purchase_request_name: newRequestData.value.purchase_request_name,
+      budget_allocated_for_the_order: newRequestData.value.budget_allocated_for_the_order,
+      if_service: newRequestData.value.if_service,
+      used_cpv_id: newRequestData.value.used_cpv_id,
+      association_budget_id: newRequestData.value.association_budget_id,
+      created_at: new Date().toISOString(),
+      can_add: newRequestData.value.can_add,
+      project_finance_manager_id: user.value.id // <-- Dodane przekazywanie ID skarbnika
+    }
+
+    const response = await fetch('http://localhost:8080/api/create_purchase_requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        purchase_request_name: newRequestData.value.name,
-        budget_allocated_for_the_order: newRequestData.value.budget,
-        if_service: newRequestData.value.ifService,
-        association_budget_id: user.value?.associationBudgetId,
-        created_at: new Date().toISOString(),
-        can_add: true
-      })
+      body: JSON.stringify(payload)
     })
 
-    if (!response.ok) throw new Error('Błąd zapisu')
-    const saved = await response.json()
+    if (!response.ok) {
+      const error = await response.json()
+      alert(`Błąd przy dodawaniu wniosku: ${error.detail || 'Nieznany błąd'}`)
+      return
+    }
 
-    userRequests.value.unshift({
-      ...saved,
-      id: saved.purchase_request_id,
-      name: saved.purchase_request_name,
-      budget: saved.budget_allocated_for_the_order,
-      status: 'pending',
-      itemCount: 0
-    })
-
-    newRequestData.value = { name: '', budget: 0, ifService: false }
+    const createdRequest = await response.json()
+    
+    // Resetuj formularz i zamknij modal
+    newRequestData.value.purchase_request_name = ''
+    newRequestData.value.budget_allocated_for_the_order = null
     showAddRequestModal.value = false
 
+    // Odśwież listy
+    fetchRequests()
+    fetchRequestsBySpecificProjectFinanceManager()
+
   } catch (error) {
-    console.error('Błąd tworzenia wniosku:', error)
+    console.error('Błąd przy dodawaniu wniosku:', error)
   }
 }
 
 const deleteRequest = async (id) => {
+  if (!confirm('Czy na pewno chcesz usunąć ten wniosek?')) return
+
   try {
-    await fetch(`http://localhost:8080/api/purchase_requests/${id}`, { method: 'DELETE' })
-    userRequests.value = userRequests.value.filter(r => r.id !== id)
+    const response = await fetch(`http://localhost:8080/api/purchase_requests/${id}`, { method: 'DELETE' })
+    if (response.ok) {
+      userRequests.value = userRequests.value.filter(r => r.id !== id)
+      allRequests.value = allRequests.value.filter(r => r.id !== id)
+      
+      // Jeśli usunięty wniosek był aktualnie otwarty, zamknij go
+      if (activeRequest.value?.id === id) {
+        activeRequest.value = null
+      }
+    }
   } catch (error) {
     console.error('Błąd usuwania wniosku:', error)
   }
@@ -187,15 +317,33 @@ const formatStatus = (status) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('pl-PL')
+  return new Intl.DateTimeFormat('pl-PL').format(new Date(dateStr))
 }
 
 onMounted(() => {
   fetchRequests()
 })
+
+// Obserwujemy ID użytkownika i pobieramy dane, gdy jest dostępne
+watch(
+  () => user.value?.id,
+  (newId) => {
+    if (newId) {
+      fetchRequestsBySpecificProjectFinanceManager()
+    }
+  },
+  { immediate: true }
+)
 </script>
+
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+.requests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4vh;
+}
 
 .requests-section {
   width: 100%;
@@ -396,6 +544,82 @@ onMounted(() => {
   background: rgba(239, 68, 68, 0.35);
 }
 
+/* WIDOK SZCZEGÓŁÓW (Zaadaptowany z rozliczeń) */
+.request-details__back {
+  margin-bottom: 2vh;
+  background: none;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  font-size: 1vw;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.request-details__card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 1vw;
+  padding: 2vw;
+}
+
+.request-details__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2vw;
+}
+
+.request-details__title {
+  color: white;
+  margin: 0;
+  font-size: 1.6vw;
+  font-weight: 800;
+}
+
+.request-details__subtitle {
+  color: rgba(226, 232, 240, 0.5);
+  margin: 0.5vh 0 0 0;
+}
+
+.request-details__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1vw;
+  margin-bottom: 2vw;
+}
+
+.request-info {
+  background: rgba(30, 41, 59, 0.6);
+  padding: 1vw;
+  border-radius: 0.8vw;
+}
+
+.request-info p {
+  color: rgba(226, 232, 240, 0.5);
+  margin: 0 0 0.5vh 0;
+  font-size: 0.9vw;
+}
+
+.request-info strong {
+  color: white;
+  font-size: 1vw;
+}
+
+.request-details__items h3 {
+  color: #bfdbfe;
+  margin: 0;
+  font-size: 1.2vw;
+}
+
+.items-empty {
+  background: rgba(30, 41, 59, 0.5);
+  padding: 2vw;
+  border-radius: 0.8vw;
+  text-align: center;
+  border: 0.08vw dashed rgba(148, 163, 184, 0.3);
+}
+
+/* MODAL */
 .modal-overlay {
   position: fixed;
   inset: 0;

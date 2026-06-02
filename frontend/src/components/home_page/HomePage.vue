@@ -97,29 +97,6 @@
                   </div>
                 </div>
               </div>
-
-              <div v-if="user.role === 'treasurer'" class="dashboard__card transactions-card">
-                <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title"> Ostatnie transakcje </h3>
-                  <button class="dashboard__card-link">Wszystkie →</button>
-                </div>
-                <div class="dashboard__card-body">
-                  <div
-                    v-for="transaction in recentTransactions"
-                    :key="transaction.id"
-                    class="transaction-item"
-                  >
-                    <div class="transaction-item__info">
-                      <p class="transaction-item__title">{{ transaction.title }}</p>
-                      <p class="transaction-item__date">{{ transaction.date }}</p>
-                    </div>
-                    <p class="transaction-item__amount" :class="transaction.amountClass">
-                      {{ transaction.amount }}
-                    </p>
-                  </div>
-                  <button class="dashboard__btn-secondary">+ Nowa transakcja</button>
-                </div>
-              </div>
               <div class="dashboard__card actions-card">
                 <div class="dashboard__card-header">
                   <h3 class="dashboard__card-title"> Szybki dostęp </h3>
@@ -134,22 +111,6 @@
                     <span class="dashboard__quick-action-icon">{{ action.icon }}</span>
                     <span class="dashboard__quick-action-text">{{ action.label }}</span>
                   </button>
-                </div>
-              </div>
-
-              <div v-if="user.role === 'treasurer'" class="dashboard__card stats-card">
-                <div class="dashboard__card-header">
-                  <h3 class="dashboard__card-title"> Statystyki </h3>
-                </div>
-                <div class="dashboard__card-body">
-                  <div
-                    v-for="stat in statistics"
-                    :key="stat.label"
-                    class="stat-row"
-                  >
-                    <p class="stat-row__label">{{ stat.label }}</p>
-                    <p class="stat-row__value">{{ stat.value }}</p>
-                  </div>
                 </div>
               </div>
             </section>
@@ -280,6 +241,40 @@
       @close="showAddItemModal = false"
       @submit-item="handleItemAdded"
     />
+    <div v-if="showMembersModal" class="modal-overlay" @click="showMembersModal = false">
+      <div class="modal-content members-modal" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Członkowie koła</h2>
+          <button class="modal-close" @click="showMembersModal = false">✕</button>
+        </div>
+
+        <div class="members-list">
+          <div v-if="allStudents.length === 0" class="members-empty">
+            Brak członków do wyświetlenia.
+          </div>
+          <div
+            v-for="student in allStudents"
+            :key="student.id"
+            class="member-item"
+          >
+            <div class="member-item__info">
+              <p class="member-item__name">{{ student.name }} {{ student.surname }}</p>
+              <p class="member-item__details">
+                <span>Sekcja: {{ formatPosition(student.position) }}</span>
+                <span>•</span>
+                <span :class="{'text-success': student.is_in_sap, 'text-warning': !student.is_in_sap}">
+                  SAP: {{ student.is_in_sap ? 'Tak' : 'Nie' }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="modal-btn modal-btn-cancel" @click="showMembersModal = false">Zamknij</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -292,6 +287,7 @@ import AddedShopPurchaseLists from '@/components/items_shop_purchase_lists/Added
 import AddItemModal from '@/components/items_shop_purchase_lists/AddItemModal.vue'
 import PurchaseRequest from '@/components/purchase_request/PurchaseRequest.vue'
 import Settlement from '@/components/settlement/Settlement.vue'
+import { useToast } from '@/composables/useToast'
 import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
 
 const router = useRouter()
@@ -301,7 +297,10 @@ const showEditProfileModal = ref(false)
 const showAddItemModal = ref(false)
 const activeNavIndex = ref(0)
 const sectionsContainer = ref(null)
+const toast = useToast()
 const userMenuRef = ref(null)
+const allStudents = ref([])
+const showMembersModal = ref(false)
 
 const editFormData = ref({
   firstName: '',
@@ -419,30 +418,6 @@ const budgetStats = [
   { label: 'Pozostało', value: '3 765,44 PLN', class: 'success' }
 ]
 
-const recentTransactions = [
-  {
-    id: 1,
-    title: 'Zakup materiałów promocyjnych',
-    date: 'Dzisiaj',
-    amount: '-450,00 PLN',
-    amountClass: ''
-  },
-  {
-    id: 2,
-    title: 'Wpłata członkowska',
-    date: 'Wczoraj',
-    amount: '+200,00 PLN',
-    amountClass: 'success-text'
-  },
-  {
-    id: 3,
-    title: 'Koszty wynajęcia sali',
-    date: '3 dni temu',
-    amount: '-784,56 PLN',
-    amountClass: ''
-  }
-]
-
 const quickActions = [
   { id: 1, label: 'Dodaj przedmiot' },
   { id: 2, label: 'Dodaj listę zakupów' },
@@ -453,19 +428,70 @@ const handleQuickAction = (actionId) => {
   if (actionId === 1) {
     showAddItemModal.value = true
   }
+  if (actionId === 3) {
+    handleCheckMembers()
+  }
 }
 
-const handleItemAdded = (itemData) => {
-  console.log("Nowy przedmiot odebrany z formularza:", itemData)
-  alert(`Przedmiot ${itemData.name} został dodany i czeka na akceptację!`)
+const handleItemAdded = async (itemData) => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: itemData.name,
+        link: itemData.link,
+        price: itemData.price,
+        currency: itemData.currency,
+        product_subcategory_id: itemData.subcategoryId,
+        student_id: user.value.id
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error('Nie udało się wysłać przedmiotu do akceptacji')
+    }
+
+    if (user.value.role === 'treasurer') {
+      toast.success('Przedmiot został automatycznie dodany do katalogu!')
+    } else {
+      toast.success('Przedmiot został wysłany do akceptacji!')
+    }
+  } catch (error) {
+    console.error('Błąd podczas dodawania przedmiotu:', error)
+    toast.error("Wystąpił błąd podczas zapisywania w bazie.")
+    alert('Błąd: ' + error.message)
+  }
 }
 
-const statistics = [
-  { label: 'Transakcje ten miesiąc', value: '12' },
-  { label: 'Średnia transakcji', value: '102,88 PLN' },
-  { label: 'Największy wydatek', value: '784,56 PLN' },
-  { label: 'Liczba członków', value: '8' }
-]
+
+const handleCheckMembers = async () => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/students/`)
+    if (!response.ok) {
+      throw new Error('Błąd pobierania danych')
+    }
+
+    const data = await response.json()
+    allStudents.value = data.map(req => ({
+      id: req.student_id,
+      name: req.name,
+      surname: req.surname,
+      login: req.login,
+      password_hash: req.password_hash,
+      position: req.position,
+      is_in_sap: req.is_in_sap,
+      project_finance_manager_id: req.project_finance_manager_id,
+      association_id: req.association_id
+    }))
+    
+    showMembersModal.value = true
+  } catch (error) {
+    console.error("Wystąpił błąd podczas sprawdzania członków: ", error);
+    toast.error("Wystąpił błąd podczas sprawdzania członków")
+  }
+}
+
 
 const formatPosition = (position) => {
   if (!position) return 'Nie wybrana'
@@ -1368,6 +1394,102 @@ const handleLogout = () => {
 .modal-btn-cancel:hover {
   background: rgba(59, 130, 246, 0.2);
   border-color: rgba(59, 130, 246, 0.5);
+}
+
+
+.members-modal {
+  max-width: 35vw;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1vw;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 0.5vw;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(15, 23, 42, 0.5);
+}
+
+.members-list::-webkit-scrollbar {
+  width: 0.4vw;
+}
+
+.members-list::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 0.2vw;
+}
+
+.members-list::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 0.2vw;
+}
+
+.members-empty {
+  text-align: center;
+  color: rgba(226, 232, 240, 0.6);
+  padding: 2vw;
+  font-size: 0.95vw;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1vw 1.2vw;
+  background: rgba(30, 41, 59, 0.8);
+  border: 0.08vw solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.8vw;
+  transition: all 0.2s ease;
+}
+
+.member-item:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.member-item__name {
+  font-weight: 700;
+  font-size: 1.05vw;
+  color: #e2e8f0;
+  margin-bottom: 0.3vh;
+}
+
+.member-item__details {
+  font-size: 0.85vw;
+  color: rgba(226, 232, 240, 0.6);
+  display: flex;
+  gap: 0.5vw;
+  align-items: center;
+}
+
+.text-success {
+  color: #86efac;
+}
+
+.text-warning {
+  color: #fbbf24;
+}
+
+@media (max-width: 1024px) {
+  .members-modal {
+    max-width: 55vw;
+  }
+}
+
+@media (max-width: 640px) {
+  .members-modal {
+    max-width: 90vw;
+  }
+  
+  .member-item__name {
+    font-size: 1.2vw;
+  }
+  
+  .member-item__details {
+    font-size: 1vw;
+  }
 }
 
 .modal-btn-save {

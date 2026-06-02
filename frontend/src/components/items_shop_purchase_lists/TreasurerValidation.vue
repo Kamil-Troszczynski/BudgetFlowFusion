@@ -105,28 +105,35 @@ const itemToRejectId = ref(null)
 
 const fetchPendingItems = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/items/pending?association_id=${user.value.association_id}`)
+    const associationId = user.value.associationId || user.value.association_id
+    const response = await fetch(`http://localhost:8080/api/items/pending?association_id=${associationId}`)
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
-    pendingItems.value = data.map(item => ({
-      id: item.item_id,
-      name: item.name,
-      addedBy: 'Użytkownik',
-      price: item.price,
-      currency: item.currency || 'PLN',
-      categoryName: 'Elektronika / Narzędzia',
-      cpvCode: '00000000-0',
-      link: item.link || '#'
-    }))
+    pendingItems.value = data.map(item => {
+      const matchingCategory = dbCategories.value.find(cat => 
+        cat.id === item.product_subcategory_id
+      ) || { name: 'Niezaklasyfikowane', cpv: 'N/A' }
+      
+      return {
+        id: item.item_id,
+        name: item.name,
+        addedBy: item.student?.name || 'Użytkownik',
+        price: item.price,
+        currency: item.currency || 'PLN',
+        categoryName: matchingCategory.name,
+        cpvCode: matchingCategory.cpv,
+        link: item.link || '#'
+      }
+    })
   } catch (error) {
     console.error("Błąd pobierania oczekujących:", error)
   }
 }
 
-onMounted(() => {
-  fetchPendingItems()
-  fetchCategoriesFromDB()
+onMounted(async () => {
+  await fetchCategoriesFromDB()
+  await fetchPendingItems()
 })
 
 const handleAccept = async (itemId) => {
@@ -285,6 +292,7 @@ const fetchCategoriesFromDB = async () => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .action-btn.accept { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }

@@ -49,11 +49,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-#   Added routes to import them 
-from src.routes.categories_subcategories_routes import *
-from src.routes.lists_routes import *
-from src.routes.login_register_routes import *
-from src.routes.items_routes import *
-from src.routes.shops_routes import *
-from src.routes.fundings_routes import *
+import src.routes
+ 

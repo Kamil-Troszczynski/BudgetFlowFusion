@@ -8,8 +8,7 @@ from sqlalchemy.pool import StaticPool
 from datetime import datetime
 from src import app, get_session
 from src.relations import *
-from sqlmodel import select
-import src.routes.homepage
+
 
 DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(

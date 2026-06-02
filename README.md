@@ -15,84 +15,9 @@ Authors:
 
 The purchase records system is a web application designed for managing and monitoring purchase-related data within a student research club. The frontend was built using Vue.js, the backend is based on FastAPI, the data is created in SQL Model and stored in an PostgreSQL database. The system allows users to add, edit, and browse purchase records, providing quick access to information and convenient data management.
 
-## Current project structure
-```bash
-BudgetFlowFusion/
-│
-├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── run.py
-│   ├── scripts/
-│   │   └── mockup_data.sql
-│   │
-│   ├── src/
-│   │   ├── __init__.py
-│   │   ├── relations.py
-│   │   └── routes/
-│   │       ├── categories_subcategories_routes.py
-│   │       ├── fundings_routes.py
-│   │       ├── items_routes.py
-│   │       ├── lists_routes.py
-│   │       ├── login_register_routes.py
-│   │       └── shops_routes.py
-│   │
-│   └── tests/
-│       ├── conftest.py
-│       └── test_business_logic.py
-│
-├── frontend/
-│   ├── index.html
-│   ├── jsconfig.json
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── vite.config.js
-│   │
-│   ├── public/
-│   │   ├── animation.mp4
-│   │   ├── favicon.ico
-│   │   └── logo.png
-│   │
-│   └── src/
-│       ├── App.vue
-│       ├── main.js
-│       │
-│       ├── components/
-│       │   ├── home_page/
-│       │   │   └── HomePage.vue
-│       │   │
-│       │   ├── items_shop_purchase_lists/
-│       │   │   ├── AddCategoryModal.vue
-│       │   │   ├── AddedItems.vue
-│       │   │   ├── AddedShopPurchaseLists.vue
-│       │   │   ├── AddItemModal.vue
-│       │   │   ├── AddItemToListModal.vue
-│       │   │   ├── AddListModal.vue
-│       │   │   ├── ShopPurchaseListDetails.vue
-│       │   │   └── TreasurerValidation.vue
-│       │   │
-│       │   ├── login_register_page/
-│       │   │   ├── SignIn.vue
-│       │   │   └── SignUp.vue
-│       │   │
-│       │   ├── purchase_request/
-│       │   │   └── PurchaseRequest.vue
-│       │   │
-│       │   ├── settlement/
-│       │   │   └── Settlement.vue
-│       │   │
-│       │   └── ToastNotification.vue
-│       │
-│       ├── composables/
-│       │   ├── useAuth.js
-│       │   └── useToast.js
-│       │
-│       └── router/
-│           └── index.js
-│
-├── docker-compose.yml
-└── README.md
-```
+## Relational model
+
+[Relational model](https://lucid.app/lucidchart/4c60fae3-d6ca-4e1f-99f1-ca321ef8f68c/edit?viewport_loc=-4019%2C-1542%2C5790%2C3232%2C0_0&invitationId=inv_2f28a81a-1fdf-4abd-bf29-cbbb9eadcab6)
 
 ## Clone repository
 
@@ -175,6 +100,9 @@ cd BudgetFlowFusion
 
 #   Launch infrastructure
 docker compose up --build
+
+#   In order to reset database, delete volume
+docker compose down -v
 ```
 
 ## How to run frontend in dev mode?

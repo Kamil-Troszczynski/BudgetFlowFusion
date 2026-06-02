@@ -50,11 +50,13 @@ class PurchaseRequest(SQLModel, table=True):
 
     association_budget_id: int = Field(foreign_key="association_budget.association_budget_id")
     gslbccf_id: Optional[int] = Field(default=None, foreign_key="grouped_shops_list_by_cpv_category_and_funding.gslbccf_id")
+    project_finance_manager_id: Optional[int] = Field(default=None, foreign_key="project_finance_manager.project_finance_manager_id") 
 
     association_budget: Optional[AssociationBudget] = Relationship(back_populates="purchase_requests")
     grouped_shops_list: Optional["GroupedShopsListByCpvCategoryAndFunding"] = Relationship(back_populates="purchase_requests")
     settlements: list["Settlement"] = Relationship(back_populates="purchase_request")
-    project_finance_managers: list["ProjectFinanceManager"] = Relationship(back_populates="purchase_request")
+    project_finance_manager: Optional["ProjectFinanceManager"] = Relationship(back_populates="purchase_requests")
+
 
 
 class PublicPurchasePlanList(SQLModel, table=True):
@@ -116,11 +118,10 @@ class ProjectFinanceManager(SQLModel, table=True):
     login: str
     password_hash: str = Field(max_length=256)
     access: bool
-    purchase_request_id: Optional[int] = Field(default=None, foreign_key="purchase_request.purchase_request_id")
 
-    purchase_request: Optional[PurchaseRequest] = Relationship(back_populates="project_finance_managers")
     paid_settlements: list[Settlement] = Relationship(back_populates="paid_by_project_finance_manager")
     student: Optional["Student"] = Relationship(back_populates="project_finance_manager")
+    purchase_requests: list["PurchaseRequest"] = Relationship(back_populates="project_finance_manager") 
 
 
 class PublicPurchasePlan(SQLModel, table=True):
