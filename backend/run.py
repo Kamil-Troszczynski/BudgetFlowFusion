@@ -1,6 +1,6 @@
-from src.routes.homepage import *
 import uvicorn
-from src import app
+from src import *
+
 
 if __name__ == "__main__":
-    uvicorn.run("src:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("run:app", host = "0.0.0.0", port = 8080, reload = True)

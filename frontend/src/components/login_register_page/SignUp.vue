@@ -148,14 +148,24 @@ const formData = ref({
   inSAP: false
 })
 
-const handleSubmit = () => {
+const errorMessage = ref('')
+
+const handleSubmit = async () => {
+  errorMessage.value = ''
+
   if (formData.value.password !== formData.value.confirmPassword) {
-    alert('Hasła nie są identyczne!')
+    errorMessage.value = 'Hasła nie są identyczne!'
     return
   }
-  
-  register(formData.value)
-  router.push('/home')
+
+  const result = await register(formData.value)
+
+  if (!result.success) {
+    errorMessage.value = result.message
+    return
+  }
+
+  router.push('/login')
 }
 
 const toggleRole = () => {
