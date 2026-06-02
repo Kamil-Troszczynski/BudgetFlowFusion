@@ -9,7 +9,6 @@
     </div>
 
     <div v-if="userLists.length === 0" class="lists-empty">
-      <p class="lists-empty-icon">🛒</p>
       <p class="lists-empty-text">Nie utworzyłeś jeszcze żadnej listy</p>
       <p class="lists-empty-subtext">Stwórz nową listę zakupów klikając przycisk powyżej</p>
     </div>
@@ -40,17 +39,31 @@
         </div>
         <div class="list-card__actions">
           <button class="list-card__button view" @click="activeList = list">Otwórz listę</button>
-          <button class="list-card__button delete">Usuń</button>
+          <button class="list-card__button delete" @click.stop="promptDeleteList(list.id)">Usuń</button>
         </div>
       </div>
     </div>
   </div>
 
   <ShopPurchaseListDetails
-    v-else
+    v-else-if="activeList"
     :list="activeList"
     @back="activeList = null"
   />
+
+  <div v-if="showDeleteModal" class="confirm-modal-overlay" @click="showDeleteModal = false">
+    <div class="confirm-modal-content" @click.stop>
+      <h2 class="confirm-modal-title">Usuwanie listy</h2>
+      <p class="confirm-modal-text">
+        Czy na pewno chcesz usunąć tę listę?<br/>
+        <strong class="text-danger">Wszystkie przedmioty w jej koszyku również zostaną usunięte.</strong>
+      </p>
+      <div class="confirm-modal-actions">
+        <button class="confirm-btn confirm-btn-cancel" @click="showDeleteModal = false">Anuluj</button>
+        <button class="confirm-btn confirm-btn-danger" @click="executeDeleteList">Tak, usuń</button>
+      </div>
+    </div>
+  </div>
 
   <AddListModal
     :isOpen="showAddListModal"
@@ -72,6 +85,8 @@ const showAddListModal = ref(false)
 const toast = useToast()
 const allLists = ref([])
 const shops = ref([])
+const showDeleteModal = ref(false)
+const listToDeleteId = ref(null)
 
 const userLists = computed(() => {
   console.log("Moje listy z bazy:", allLists.value);
@@ -93,20 +108,33 @@ const fetchLists = async () => {
   try {
     await fetchShops()
 
-    const fundingsResponse = await fetch(`http://localhost:8080/api/fundings?association_id=${user.value.association_id}`)
-    const fundings = await fundingsResponse.json()
+    let fundings = []
+    if (user.value?.association_id) {
+      const fundingsResponse = await fetch(`http://localhost:8080/api/fundings?association_id=${user.value.association_id}`)
+      if (fundingsResponse.ok) {
+        fundings = await fundingsResponse.json()
+      }
+    }
 
-    const response = await fetch(`http://localhost:8080/api/lists?student_id=${user.value.id}`)
-    if (!response.ok) throw new Error('Błąd sieci')
+    const timestamp = new Date().getTime()
+    const response = await fetch(`http://localhost:8080/api/lists?student_id=${user.value.id}&t=${timestamp}`, {
+      cache: 'no-store'
+    })
+
+    if (!response.ok) throw new Error('Błąd sieci przy pobieraniu list')
     const data = await response.json()
 
     const processedLists = await Promise.all(data.map(async (list) => {
-      const itemsResponse = await fetch(`http://localhost:8080/api/lists/${list.shop_purchase_list_id}/items`)
-      const items = await itemsResponse.json()
+      let items = []
+      try {
+        const itemsResponse = await fetch(`http://localhost:8080/api/lists/${list.shop_purchase_list_id}/items?t=${timestamp}`, { cache: 'no-store' })
+        if (itemsResponse.ok) items = await itemsResponse.json()
+      } catch (e) {
+        console.warn("Brak przedmiotów na liście", e)
+      }
 
       const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
-
-      const foundFunding = fundings.find(f => f.funding_id === list.funding_id)
+      const foundFunding = Array.isArray(fundings) ? fundings.find(f => f.funding_id === list.funding_id) : null
       const maxBudget = foundFunding ? (foundFunding.funding_price - foundFunding.spent_money) : 0
 
       return {
@@ -123,7 +151,7 @@ const fetchLists = async () => {
 
     allLists.value = processedLists
   } catch (error) {
-    console.error("Błąd pobierania list:", error)
+    console.error("Krytyczny błąd pobierania list:", error)
   }
 }
 
@@ -134,11 +162,11 @@ onMounted(() => {
 const handleNewList = async (listData) => {
   try {
     const payload = {
-      priority: listData.priority,
+      priority: listData.priority || 1,
       cost: 0.0,
       created_at: new Date().toISOString(),
-      funding_id: listData.fundingId,
-      shop_id: listData.shopId,
+      funding_id: listData.fundingId || listData.funding_id,
+      shop_id: listData.shopId || listData.shop_id,
       student_id: user.value.id
     }
 
@@ -149,31 +177,47 @@ const handleNewList = async (listData) => {
     })
 
     if (!response.ok) {
-      const errorDetails = await response.json()
-      console.error("Odrzucone przez backend:", errorDetails)
+      const err = await response.json()
+      console.error("Błąd backendu:", err)
       throw new Error('Nie udało się zapisać listy w bazie')
     }
 
-    const savedList = await response.json()
-
-    allLists.value.unshift({
-      ...savedList,
-      id: savedList.shop_purchase_list_id,
-      name: `Zamówienie #${savedList.shop_purchase_list_id}`,
-      shopName: `Sklep ID: ${savedList.shop_id}`,
-      itemCount: 0,
-      itemTotal: 10,
-      totalPrice: savedList.cost || 0,
-      participants: 1
-    })
+    await fetchLists()
 
     showAddListModal.value = false
-
-    toast.success('Lista została poprawnie utworzona w bazie!')
+    toast.success('Lista została poprawnie utworzona!')
 
   } catch (error) {
     console.error("Błąd zapisu listy:", error)
-    alert("Wystąpił błąd podczas zapisu. Wciśnij F12 i sprawdź Konsolę.")
+    toast.error("Wystąpił błąd podczas zapisu nowej listy.")
+  }
+}
+
+const promptDeleteList = (listId) => {
+  listToDeleteId.value = listId
+  showDeleteModal.value = true
+}
+
+const executeDeleteList = async () => {
+  if (!listToDeleteId.value) return
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${listToDeleteId.value}`, {
+      method: 'DELETE'
+    })
+
+    if (!response.ok) throw new Error('Nie udało się usunąć listy z backendu')
+
+    toast.info('Lista została trwale usunięta z systemu.')
+
+    await fetchLists()
+
+  } catch (error) {
+    console.error("Błąd podczas usuwania:", error)
+    toast.error('Wystąpił problem przy usuwaniu listy.')
+  } finally {
+    showDeleteModal.value = false
+    listToDeleteId.value = null
   }
 }
 </script>
@@ -389,4 +433,18 @@ const handleNewList = async (listData) => {
 .list-card__button.delete:hover {
   background: rgba(239, 68, 68, 0.35);
 }
+
+.confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
+.confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes modalPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.confirm-modal-icon { font-size: 3.5vw; margin-bottom: 1vw; filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); }
+.confirm-modal-title { color: #ef4444; font-size: 2vw; font-weight: 800; margin: 0 0 1vw 0; }
+.confirm-modal-text { color: #e2e8f0; font-size: 1.1vw; line-height: 1.6; margin-bottom: 2.5vw; }
+.text-danger { color: #fca5a5; font-weight: 700; }
+.confirm-modal-actions { display: flex; gap: 1.5vw; justify-content: center; }
+.confirm-btn { padding: 0.9vw 2.5vw; border-radius: 0.8vw; font-size: 1.1vw; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s ease; }
+.confirm-btn-cancel { background: rgba(148, 163, 184, 0.15); color: #e2e8f0; }
+.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: #ffffff; }
+.confirm-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
+.confirm-btn-danger:hover { transform: translateY(-0.3vh); filter: brightness(1.1); box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5); }
 </style>
