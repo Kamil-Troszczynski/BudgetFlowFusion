@@ -100,7 +100,8 @@ def seed_data_fixture(session: Session):
         created_at=datetime.now(timezone.utc),
         funding_id=1,
         shop_id=1,
-        gslbccf_id=1
+        gslbccf_id=1,
+        student_id=1
     )
     session.add(spl)
     session.commit()
