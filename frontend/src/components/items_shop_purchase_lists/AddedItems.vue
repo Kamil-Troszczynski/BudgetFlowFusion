@@ -8,7 +8,21 @@
       <button class="items-add-button" @click="showAddModal = true">+ Dodaj nowy przedmiot</button>
     </div>
 
-    <div class="items-grid">
+    <div class="items-toolbar">
+      <span class="items-toolbar__label">Grupowanie</span>
+      <button
+        v-for="option in groupingOptions"
+        :key="option.value"
+        type="button"
+        class="items-toolbar__btn"
+        :class="{ active: activeGroupMode === option.value }"
+        @click="setGroupMode(option.value)"
+      >
+        {{ option.label }}
+      </button>
+    </div>
+
+    <div v-if="activeGroupMode === 'none'" class="items-grid">
       <div
         v-for="item in catalogItems"
         :key="item.id"
@@ -33,6 +47,50 @@
       </div>
     </div>
 
+    <div v-else class="grouped-items">
+      <div
+        v-for="group in groupedItems"
+        :key="group.group_key"
+        class="item-group"
+      >
+        <div class="item-group__header">
+          <div>
+            <h3 class="item-group__title">{{ group.group_label }}</h3>
+            <p class="item-group__meta">
+              {{ group.count }} pozycji · {{ formatMoney(group.total_price) }} PLN
+            </p>
+          </div>
+        </div>
+
+        <div class="items-grid">
+          <div
+            v-for="item in group.items"
+            :key="item.item_id"
+            class="item-card"
+          >
+            <div class="item-card__header">
+              <h3 class="item-card__title">{{ item.name }}</h3>
+              <span class="item-card__status completed">{{ item.status }}</span>
+            </div>
+            <div class="item-card__content">
+              <p class="item-card__detail">
+                <span class="item-card__label">Cena:</span>
+                <span class="item-card__value">{{ formatMoney(item.price) }} {{ item.currency }}</span>
+              </p>
+              <p class="item-card__detail">
+                <span class="item-card__label">Sklep:</span>
+                <span class="item-card__value">{{ item.shop_name || 'Brak' }}</span>
+              </p>
+              <p class="item-card__detail">
+                <span class="item-card__label">CPV:</span>
+                <span class="item-card__value">{{ item.cpv || 'Brak' }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <AddItemModal
       :isOpen="showAddModal"
       :isLoading="isSubmitting"
@@ -51,8 +109,18 @@ import AddItemModal from './AddItemModal.vue'
 const showAddModal = ref(false)
 const toast = useToast()
 const catalogItems = ref([])
+const groupedItems = ref([])
 const { user } = useAuth()
 const isSubmitting = ref(false)
+const activeGroupMode = ref('none')
+
+const groupingOptions = [
+  { value: 'none', label: 'Brak' },
+  { value: 'shop', label: 'Sklep' },
+  { value: 'cpv', label: 'CPV' },
+  { value: 'category', label: 'Kategoria' },
+  { value: 'status', label: 'Status' }
+]
 
 const fetchCatalog = async () => {
   try {
@@ -67,6 +135,35 @@ const fetchCatalog = async () => {
   } catch (error) {
     console.error("Błąd pobierania katalogu:", error)
   }
+}
+
+const fetchGroupedCatalog = async () => {
+  if (activeGroupMode.value === 'none') return
+
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/items/grouped?student_id=${user.value.id}&group_by=${activeGroupMode.value}`
+    )
+    if (!response.ok) throw new Error('Błąd sieci')
+
+    groupedItems.value = await response.json()
+  } catch (error) {
+    console.error("Błąd pobierania pogrupowanego katalogu:", error)
+  }
+}
+
+const setGroupMode = async (mode) => {
+  activeGroupMode.value = mode
+  if (mode !== 'none') {
+    await fetchGroupedCatalog()
+  }
+}
+
+const formatMoney = (value) => {
+  return Number(value || 0).toLocaleString('pl-PL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
 }
 
 onMounted(() => {
@@ -97,6 +194,7 @@ const handleNewItemSubmit = async (itemData) => {
     if (user.value.role === 'treasurer') {
       toast.success('Przedmiot został automatycznie dodany do katalogu!')
       fetchCatalog()
+      fetchGroupedCatalog()
     } else {
       toast.success('Przedmiot został wysłany do akceptacji!')
     }
@@ -136,6 +234,43 @@ const handleNewItemSubmit = async (itemData) => {
   margin: 0;
 }
 
+.items-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.7vw;
+  margin-bottom: 2vw;
+  padding: 0.8vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.8vw;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.items-toolbar__label {
+  color: rgba(226, 232, 240, 0.65);
+  font-size: 0.9vw;
+  font-weight: 800;
+}
+
+.items-toolbar__btn {
+  padding: 0.55vw 0.9vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.18);
+  border-radius: 0.55vw;
+  background: rgba(30, 41, 59, 0.55);
+  color: #cbd5e1;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 0.88vw;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.items-toolbar__btn:hover,
+.items-toolbar__btn.active {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
 .items-empty {
   display: flex;
   flex-direction: column;
@@ -170,6 +305,42 @@ const handleNewItemSubmit = async (itemData) => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(24vw, 1fr));
   gap: 2vw;
+}
+
+.grouped-items {
+  display: grid;
+  gap: 2vw;
+}
+
+.item-group {
+  display: grid;
+  gap: 1.2vw;
+  padding: 1.5vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 1vw;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.item-group__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1vw;
+  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.12);
+}
+
+.item-group__title {
+  margin: 0;
+  color: #bfdbfe;
+  font-size: 1.25vw;
+  font-weight: 800;
+}
+
+.item-group__meta {
+  margin: 0.4vh 0 0 0;
+  color: rgba(226, 232, 240, 0.58);
+  font-size: 0.9vw;
+  font-weight: 700;
 }
 
 .item-card {

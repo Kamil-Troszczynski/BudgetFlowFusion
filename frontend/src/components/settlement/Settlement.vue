@@ -181,7 +181,12 @@
         </div>
 
         <div class="settlement-details__invoices">
-          <h3>Załączone faktury</h3>
+          <div class="invoice-section-header">
+            <h3>Załączone faktury</h3>
+            <button class="request-card__button upload" type="button" @click="showAddInvoiceModal = true">
+              + Dodaj fakturę
+            </button>
+          </div>
 
           <div v-if="activeSettlement.invoices.length === 0">
             <p style="color: rgba(226,232,240,0.5)">Brak załączonych faktur</p>
@@ -194,11 +199,102 @@
           >
             <div>
               <p class="invoice-title">{{ invoice.invoice_name ?? `Faktura #${invoice.invoice_id}` }}</p>
-              <p class="invoice-date">{{ formatDate(invoice.created_at) }}</p>
+              <p class="invoice-date">
+                {{ invoice.seller_name || 'Brak sprzedawcy' }} · {{ formatDate(invoice.issue_date || invoice.created_at) }}
+              </p>
             </div>
             <div class="invoice-price">{{ invoice.amount ?? '—' }} PLN</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div v-if="showAddInvoiceModal" class="modal-overlay" @click="showAddInvoiceModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Nowa faktura</h2>
+          <button class="modal-close" @click="showAddInvoiceModal = false">✕</button>
+        </div>
+        <form class="modal-form" @submit.prevent="handleNewInvoice">
+          <div class="modal-form__group">
+            <label class="modal-form__label">Numer faktury</label>
+            <input
+              v-model="newInvoiceData.number"
+              type="text"
+              placeholder="np. F/2026/06/001"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Data wystawienia</label>
+            <input
+              v-model="newInvoiceData.issue_date"
+              type="date"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Sprzedawca</label>
+            <input
+              v-model="newInvoiceData.seller_name"
+              type="text"
+              placeholder="Nazwa sprzedawcy"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">NIP sprzedawcy</label>
+            <input
+              v-model="newInvoiceData.seller_nip"
+              type="text"
+              placeholder="1234567890"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__row">
+            <div class="modal-form__group">
+              <label class="modal-form__label">Netto</label>
+              <input
+                v-model.number="newInvoiceData.net_total"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                class="modal-form__input"
+                required
+              />
+            </div>
+            <div class="modal-form__group">
+              <label class="modal-form__label">VAT</label>
+              <input
+                v-model.number="newInvoiceData.vat_total"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                class="modal-form__input"
+                required
+              />
+            </div>
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Status</label>
+            <select v-model="newInvoiceData.status" class="modal-form__input" required>
+              <option value="pending">Oczekująca</option>
+              <option value="accepted">Zaakceptowana</option>
+              <option value="rejected">Odrzucona</option>
+              <option value="paid">Opłacona</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" @click="showAddInvoiceModal = false">Anuluj</button>
+            <button type="submit" class="modal-btn modal-btn-save">Utwórz fakturę</button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -231,12 +327,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
 const API_URL = 'http://localhost:8080/api'
 
 const { user } = useAuth()
+
+const currentFinanceManagerId = computed(() => {
+  return user.value?.projectFinanceManagerId || user.value?.id
+})
 
 const activeSettlement = ref(null)
 
@@ -247,8 +347,18 @@ const loading = ref(false)
 const error = ref(null)
 
 const showAddSettlementModal = ref(false)
+const showAddInvoiceModal = ref(false)
 const newSettlementData = ref({
   purchase_request_id: null
+})
+const newInvoiceData = ref({
+  number: '',
+  issue_date: new Date().toISOString().slice(0, 10),
+  seller_name: '',
+  seller_nip: '',
+  net_total: null,
+  vat_total: null,
+  status: 'pending'
 })
 
 const mapSettlements = (data = []) =>
@@ -268,6 +378,21 @@ const mapSettlements = (data = []) =>
     totalSpent: Number(req.total_spent ?? 0),
   }))
 
+const replaceSettlement = (updatedSettlement) => {
+  const mapped = mapSettlements([updatedSettlement])[0]
+
+  allSettlements.value = allSettlements.value.map(settlement =>
+    settlement.id === mapped.id ? mapped : settlement
+  )
+  userSettlements.value = userSettlements.value.map(settlement =>
+    settlement.id === mapped.id ? mapped : settlement
+  )
+
+  if (activeSettlement.value?.id === mapped.id) {
+    activeSettlement.value = mapped
+  }
+}
+
 const fetchAllSettlements = async () => {
   const response = await fetch(`${API_URL}/settlements`)
 
@@ -280,10 +405,10 @@ const fetchAllSettlements = async () => {
 }
 
 const fetchUserSettlements = async () => {
-  if (!user.value?.id) return
+  if (!currentFinanceManagerId.value) return
 
   const response = await fetch(
-    `${API_URL}/settlements/manager/${user.value.id}`
+    `${API_URL}/settlements/manager/${currentFinanceManagerId.value}`
   )
 
   if (!response.ok) {
@@ -313,15 +438,15 @@ const loadData = async () => {
 
 
 const handleNewSettlement = async () => {
-  if (!user.value?.id) {
-    alert("Błąd: Brak ID użytkownika.")
+  if (!currentFinanceManagerId.value) {
+    alert("Błąd: Brak ID skarbnika.")
     return
   }
 
   try {
     const payload = {
       purchase_request_id: newSettlementData.value.purchase_request_id,
-      paid_by_project_finance_manager_id: user.value.id,
+      paid_by_project_finance_manager_id: currentFinanceManagerId.value,
       created_at: new Date().toISOString()
     }
 
@@ -344,6 +469,51 @@ const handleNewSettlement = async () => {
 
   } catch (err) {
     console.error('Błąd zapisu rozliczenia:', err)
+  }
+}
+
+const resetInvoiceForm = () => {
+  newInvoiceData.value = {
+    number: '',
+    issue_date: new Date().toISOString().slice(0, 10),
+    seller_name: '',
+    seller_nip: '',
+    net_total: null,
+    vat_total: null,
+    status: 'pending'
+  }
+}
+
+const handleNewInvoice = async () => {
+  if (!activeSettlement.value?.id) return
+
+  try {
+    const response = await fetch(`${API_URL}/settlements/${activeSettlement.value.id}/invoices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        number: newInvoiceData.value.number,
+        issue_date: newInvoiceData.value.issue_date,
+        seller_name: newInvoiceData.value.seller_name,
+        seller_nip: newInvoiceData.value.seller_nip,
+        net_total: Number(newInvoiceData.value.net_total),
+        vat_total: Number(newInvoiceData.value.vat_total),
+        status: newInvoiceData.value.status
+      })
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      alert(`Błąd przy tworzeniu faktury: ${err.detail || 'Nieznany błąd'}`)
+      return
+    }
+
+    const updatedSettlement = await response.json()
+    replaceSettlement(updatedSettlement)
+    resetInvoiceForm()
+    showAddInvoiceModal.value = false
+  } catch (err) {
+    console.error('Błąd zapisu faktury:', err)
   }
 }
 
@@ -392,7 +562,7 @@ onMounted(() => {
 })
 
 watch(
-  () => user.value?.id,
+  () => currentFinanceManagerId.value,
   (newId) => {
     if (newId) {
       fetchUserSettlements()
@@ -698,8 +868,16 @@ watch(
 
 .settlement-details__invoices h3 {
   color: #bfdbfe;
-  margin: 0 0 1.5vh 0;
+  margin: 0;
   font-size: 1.2vw;
+}
+
+.invoice-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1vw;
+  margin-bottom: 1.5vh;
 }
 
 .invoice-card {
@@ -780,6 +958,12 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 0.5vw;
+}
+
+.modal-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1vw;
 }
 
 .modal-form__label {

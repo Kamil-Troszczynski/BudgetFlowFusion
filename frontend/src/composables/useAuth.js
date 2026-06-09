@@ -31,6 +31,7 @@ export function useAuth() {
         circleName: dbUser.circleName,
         position: dbUser.position,
         inSAP: dbUser.inSAP,
+        projectFinanceManagerId: dbUser.project_finance_manager_id,
         role: dbUser.role,
         loginTime: new Date()
       }

@@ -33,7 +33,11 @@
             <div class="request-card__content">
               <p class="request-card__detail">
                 <span class="request-card__label">Budżet:</span>
-                <span class="request-card__value">{{ request.budget }} PLN</span>
+                <span class="request-card__value">{{ formatMoney(request.budget) }} PLN</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Budżet koła:</span>
+                <span class="request-card__value">{{ request.associationBudgetName || 'Brak' }}</span>
               </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
@@ -83,7 +87,11 @@
             <div class="request-card__content">
               <p class="request-card__detail">
                 <span class="request-card__label">Budżet:</span>
-                <span class="request-card__value">{{ request.budget }} PLN</span>
+                <span class="request-card__value">{{ formatMoney(request.budget) }} PLN</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Budżet koła:</span>
+                <span class="request-card__value">{{ request.associationBudgetName || 'Brak' }}</span>
               </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
@@ -120,8 +128,12 @@
 
         <div class="request-details__grid">
           <div class="request-info">
-            <p>Budżet</p>
-            <strong>{{ activeRequest.budget }} PLN</strong>
+            <p>Kwota wniosku</p>
+            <strong>{{ formatMoney(activeRequest.budget) }} PLN</strong>
+          </div>
+          <div class="request-info">
+            <p>Budżet koła</p>
+            <strong>{{ activeRequest.associationBudgetName || 'Brak' }}</strong>
           </div>
           <div class="request-info">
             <p>Typ wniosku</p>
@@ -134,6 +146,18 @@
           <div class="request-info">
             <p>Kod CPV</p>
             <strong>{{ activeRequest.used_cpv_id ?? 'Brak' }}</strong>
+          </div>
+          <div class="request-info">
+            <p>Budżet koła</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.total_budget) }} PLN</strong>
+          </div>
+          <div class="request-info">
+            <p>Zarezerwowane we wnioskach</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.purchase_requests_total_allocated) }} PLN</strong>
+          </div>
+          <div class="request-info">
+            <p>Dostępne po wnioskach</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.available_after_purchase_requests) }} PLN</strong>
           </div>
         </div>
       </div>
@@ -161,7 +185,54 @@
             <input
               v-model="newRequestData.budget_allocated_for_the_order"
               type="number"
+              min="0.01"
+              step="0.01"
               placeholder="0.00"
+              class="modal-form__input"
+              required
+            />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Budżet koła naukowego</label>
+            <select
+              v-model.number="newRequestData.association_budget_id"
+              class="modal-form__input"
+              required
+            >
+              <option value="" disabled>Wybierz budżet</option>
+              <option
+                v-for="budget in associationBudgets"
+                :key="budget.association_budget_id"
+                :value="budget.association_budget_id"
+              >
+                {{ budget.association_budget_name }}
+              </option>
+            </select>
+          </div>
+          <div v-if="selectedBudgetForForm" class="budget-preview">
+            <p>
+              <span>Budżet koła</span>
+              <strong>{{ formatMoney(selectedBudgetForForm.total_budget) }} PLN</strong>
+            </p>
+            <p>
+              <span>Wydane</span>
+              <strong>{{ formatMoney(selectedBudgetForForm.spent_money) }} PLN</strong>
+            </p>
+            <p>
+              <span>Zarezerwowane przez wnioski</span>
+              <strong>{{ formatMoney(selectedBudgetForForm.purchase_requests_total_allocated) }} PLN</strong>
+            </p>
+            <p>
+              <span>Dostępne po wnioskach</span>
+              <strong>{{ formatMoney(projectedAvailableAfterRequest) }} PLN</strong>
+            </p>
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Kod CPV</label>
+            <input
+              v-model.number="newRequestData.used_cpv_id"
+              type="number"
+              placeholder="np. 42000000"
               class="modal-form__input"
               required
             />
@@ -188,24 +259,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
+const API_URL = 'http://localhost:8080/api'
 const { user } = useAuth()
 const activeRequest = ref(null)
 const showAddRequestModal = ref(false)
 
 const userRequests = ref([])
 const allRequests = ref([])
+const associationBudgets = ref([])
+
+const currentFinanceManagerId = computed(() => {
+  return user.value?.projectFinanceManagerId || user.value?.id
+})
 
 const newRequestData = ref({
   purchase_request_name: '',
   budget_allocated_for_the_order: null,
   if_service: false,
   used_cpv_id: 1,
-  association_budget_id: 1,
+  association_budget_id: '',
   association_name: '',
   can_add: true
+})
+
+const selectedBudgetForForm = computed(() => {
+  return associationBudgets.value.find(
+    budget => budget.association_budget_id === newRequestData.value.association_budget_id
+  )
+})
+
+const projectedAvailableAfterRequest = computed(() => {
+  const available = selectedBudgetForForm.value?.available_after_purchase_requests || 0
+  const requested = Number(newRequestData.value.budget_allocated_for_the_order || 0)
+  return available - requested
 })
 
 const mapRequest = (req) => ({
@@ -216,12 +305,15 @@ const mapRequest = (req) => ({
   status: req.can_add ? 'pending' : 'approved',
   created_at: req.created_at,
   used_cpv_id: req.used_cpv_id,
+  associationBudgetId: req.association_budget_id,
+  associationBudgetName: req.association_budget_name,
+  budgetInfo: req.budget_info,
   itemCount: 0
 })
 
 const fetchRequests = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/purchase_requests`)
+    const response = await fetch(`${API_URL}/purchase_requests`)
     if (!response.ok) throw new Error('Błąd pobierania danych')
 
     const data = await response.json()
@@ -232,10 +324,10 @@ const fetchRequests = async () => {
 }
 
 const fetchRequestsBySpecificProjectFinanceManager = async () => {
-  if (!user.value?.id) return
+  if (!currentFinanceManagerId.value) return
 
   try {
-    const response = await fetch(`http://localhost:8080/api/purchase_requests/${user.value.id}`)
+    const response = await fetch(`${API_URL}/purchase_requests/${currentFinanceManagerId.value}`)
     if (!response.ok) throw new Error('Błąd pobierania danych')
 
     const data = await response.json()
@@ -245,9 +337,25 @@ const fetchRequestsBySpecificProjectFinanceManager = async () => {
   }
 }
 
+const fetchAssociationBudgets = async () => {
+  if (!user.value?.association_id) return
+
+  try {
+    const response = await fetch(`${API_URL}/association_budgets?association_id=${user.value.association_id}`)
+    if (!response.ok) throw new Error('Błąd pobierania budżetów koła')
+
+    associationBudgets.value = await response.json()
+    if (!newRequestData.value.association_budget_id && associationBudgets.value.length > 0) {
+      newRequestData.value.association_budget_id = associationBudgets.value[0].association_budget_id
+    }
+  } catch (error) {
+    console.error('Błąd pobierania budżetów koła:', error)
+  }
+}
+
 const handleNewRequest = async () => {
-  if (!user.value?.id) {
-    alert("Błąd: Nie można utworzyć wniosku, brak ID użytkownika.")
+  if (!currentFinanceManagerId.value) {
+    alert("Błąd: Nie można utworzyć wniosku, brak ID skarbnika.")
     return
   }
 
@@ -260,10 +368,10 @@ const handleNewRequest = async () => {
       association_budget_id: newRequestData.value.association_budget_id,
       created_at: new Date().toISOString(),
       can_add: newRequestData.value.can_add,
-      project_finance_manager_id: user.value.id // <-- Dodane przekazywanie ID skarbnika
+      project_finance_manager_id: currentFinanceManagerId.value
     }
 
-    const response = await fetch('http://localhost:8080/api/create_purchase_requests', {
+    const response = await fetch(`${API_URL}/create_purchase_requests`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -275,16 +383,14 @@ const handleNewRequest = async () => {
       return
     }
 
-    const createdRequest = await response.json()
-    
-    // Resetuj formularz i zamknij modal
     newRequestData.value.purchase_request_name = ''
     newRequestData.value.budget_allocated_for_the_order = null
+    newRequestData.value.if_service = false
     showAddRequestModal.value = false
 
-    // Odśwież listy
     fetchRequests()
     fetchRequestsBySpecificProjectFinanceManager()
+    fetchAssociationBudgets()
 
   } catch (error) {
     console.error('Błąd przy dodawaniu wniosku:', error)
@@ -295,10 +401,11 @@ const deleteRequest = async (id) => {
   if (!confirm('Czy na pewno chcesz usunąć ten wniosek?')) return
 
   try {
-    const response = await fetch(`http://localhost:8080/api/purchase_requests/${id}`, { method: 'DELETE' })
+    const response = await fetch(`${API_URL}/purchase_requests/${id}`, { method: 'DELETE' })
     if (response.ok) {
       userRequests.value = userRequests.value.filter(r => r.id !== id)
       allRequests.value = allRequests.value.filter(r => r.id !== id)
+      fetchAssociationBudgets()
       
       // Jeśli usunięty wniosek był aktualnie otwarty, zamknij go
       if (activeRequest.value?.id === id) {
@@ -320,16 +427,25 @@ const formatDate = (dateStr) => {
   return new Intl.DateTimeFormat('pl-PL').format(new Date(dateStr))
 }
 
+const formatMoney = (value) => {
+  return Number(value || 0).toLocaleString('pl-PL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
 onMounted(() => {
   fetchRequests()
+  fetchAssociationBudgets()
 })
 
 // Obserwujemy ID użytkownika i pobieramy dane, gdy jest dostępne
 watch(
-  () => user.value?.id,
+  () => currentFinanceManagerId.value,
   (newId) => {
     if (newId) {
       fetchRequestsBySpecificProjectFinanceManager()
+      fetchAssociationBudgets()
     }
   },
   { immediate: true }
@@ -690,6 +806,28 @@ watch(
 .modal-form__input:focus {
   outline: none;
   border-color: rgba(59,130,246,0.7);
+}
+
+.budget-preview {
+  display: grid;
+  gap: 0.6vw;
+  padding: 1vw;
+  border: 0.08vw solid rgba(59, 130, 246, 0.22);
+  border-radius: 0.8vw;
+  background: rgba(30, 41, 59, 0.55);
+}
+
+.budget-preview p {
+  display: flex;
+  justify-content: space-between;
+  gap: 1vw;
+  margin: 0;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 0.9vw;
+}
+
+.budget-preview strong {
+  color: #ffffff;
 }
 
 .modal-form__toggle {

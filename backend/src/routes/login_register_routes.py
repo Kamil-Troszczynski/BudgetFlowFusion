@@ -40,6 +40,7 @@ def login_user(credentials: LoginRequest, session: Session = Depends(get_session
         "association_id": user.association_id,
         "position": user.position,
         "inSAP": user.is_in_sap,
+        "project_finance_manager_id": user.project_finance_manager_id,
         "role": "treasurer" if user.project_finance_manager_id else "member"
     }
 

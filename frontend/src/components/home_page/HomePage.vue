@@ -132,6 +132,10 @@
             <AddedShopPurchaseLists />
           </section>
 
+          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Plany publiczne'">
+            <PublicPurchasePlans />
+          </section>
+
           <section class="dashboard__section" v-if="navLinks[activeNavIndex] === 'Akceptacja CPV'">
             <TreasurerValidation />
           </section>
@@ -287,6 +291,7 @@ import AddedShopPurchaseLists from '@/components/items_shop_purchase_lists/Added
 import AddItemModal from '@/components/items_shop_purchase_lists/AddItemModal.vue'
 import PurchaseRequest from '@/components/purchase_request/PurchaseRequest.vue'
 import Settlement from '@/components/settlement/Settlement.vue'
+import PublicPurchasePlans from '@/components/public_purchase_plans/PublicPurchasePlans.vue'
 import { useToast } from '@/composables/useToast'
 import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
 
@@ -315,7 +320,7 @@ const navLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Wnioski do zamówień', 'Rozliczenia', 'Akceptacja CPV']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Plany publiczne', 'Wnioski do zamówień', 'Rozliczenia', 'Akceptacja CPV']
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
