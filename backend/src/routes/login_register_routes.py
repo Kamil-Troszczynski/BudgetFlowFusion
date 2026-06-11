@@ -25,23 +25,41 @@ class RegisterRequest(BaseModel):
 
 @app.post("/api/login")
 def login_user(credentials: LoginRequest, session: Session = Depends(get_session)):
-    statement = select(Student).where(Student.login == credentials.email)
-    user = session.exec(statement).first()
+    student = session.exec(select(Student).where(Student.login == credentials.email)).first()
 
-    if not user or user.password_hash != credentials.password:
-        raise HTTPException(status_code = 401, detail = "Nieprawidłowy email lub hasło")
+    if student:
+        if student.password_hash != credentials.password:
+            raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+        return {
+            "id": student.student_id,
+            "firstName": student.name,
+            "lastName": student.surname,
+            "email": student.login,
+            "circleName": student.association.association_name if student.association else "Brak koła",
+            "association_id": student.association_id,
+            "position": student.position,
+            "inSAP": student.is_in_sap,
+            "project_finance_manager_id": student.project_finance_manager_id,
+            "role": "treasurer" if student.project_finance_manager_id else "member"
+        }
 
+    pfm = session.exec(select(ProjectFinanceManager).where(ProjectFinanceManager.login == credentials.email)).first()
+
+    if not pfm or pfm.password_hash != credentials.password:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+
+    linked_student = pfm.student
     return {
-        "id": user.student_id,
-        "firstName": user.name,
-        "lastName": user.surname,
-        "email": user.login,
-        "circleName": user.association.association_name if user.association else "Brak koła",
-        "association_id": user.association_id,
-        "position": user.position,
-        "inSAP": user.is_in_sap,
-        "project_finance_manager_id": user.project_finance_manager_id,
-        "role": "treasurer" if user.project_finance_manager_id else "member"
+        "id": linked_student.student_id if linked_student else None,
+        "firstName": linked_student.name if linked_student else "",
+        "lastName": linked_student.surname if linked_student else "",
+        "email": pfm.login,
+        "circleName": linked_student.association.association_name if linked_student and linked_student.association else "Brak koła",
+        "association_id": linked_student.association_id if linked_student else None,
+        "position": linked_student.position if linked_student else "",
+        "inSAP": linked_student.is_in_sap if linked_student else False,
+        "project_finance_manager_id": pfm.project_finance_manager_id,
+        "role": "treasurer"
     }
 
 
@@ -78,7 +96,7 @@ def sign_up(credentials: RegisterRequest, session: Session = Depends(get_session
         password_hash=credentials.password,
         position=credentials.position,
         is_in_sap=credentials.is_in_sap,
-        association_name=association.association_name,
+        association_id=association.association_id,
         project_finance_manager_id=finance_manager.project_finance_manager_id if finance_manager else None
     )
 

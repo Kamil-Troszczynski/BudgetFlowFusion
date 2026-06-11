@@ -132,9 +132,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const { register } = useAuth()
+const toast = useToast()
 
 const formData = ref({
   firstName: '',
@@ -148,20 +150,16 @@ const formData = ref({
   inSAP: false
 })
 
-const errorMessage = ref('')
-
 const handleSubmit = async () => {
-  errorMessage.value = ''
-
   if (formData.value.password !== formData.value.confirmPassword) {
-    errorMessage.value = 'Hasła nie są identyczne!'
+    toast.error('Hasła nie są identyczne!')
     return
   }
 
   const result = await register(formData.value)
 
   if (!result.success) {
-    errorMessage.value = result.message
+    toast.error(result.message)
     return
   }
 
