@@ -5,7 +5,19 @@
         <h2 class="items-title">Katalog Przedmiotów</h2>
         <p class="items-subtitle">Przeglądaj przedmioty i dodawaj nowe do akceptacji</p>
       </div>
-      <button class="items-add-button" @click="showAddModal = true">+ Dodaj nowy przedmiot</button>
+      <div style="display: flex; gap: 0.8vw; align-items: center;">
+        <button class="items-request-subcategory-button" @click="showRequestSubcategoryModal = true">+ Zgłoś podkategorię</button>
+        <button class="items-add-button" @click="showAddModal = true">+ Dodaj nowy przedmiot</button>
+      </div>
+    </div>
+
+    <div class="search-bar-wrapper">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Szukaj przedmiotu po nazwie..."
+        class="search-input"
+      />
     </div>
 
     <div class="items-toolbar">
@@ -24,7 +36,7 @@
 
     <div v-if="activeGroupMode === 'none'" class="items-grid">
       <div
-        v-for="item in catalogItems"
+        v-for="item in filteredCatalogItems"
         :key="item.id"
         class="item-card"
       >
@@ -97,22 +109,36 @@
       @close="showAddModal = false"
       @submit-item="handleNewItemSubmit"
     />
+
+    <RequestSubcategoryModal
+      :isOpen="showRequestSubcategoryModal"
+      @close="showRequestSubcategoryModal = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import AddItemModal from './AddItemModal.vue'
+import RequestSubcategoryModal from './RequestSubcategoryModal.vue'
 
 const showAddModal = ref(false)
+const showRequestSubcategoryModal = ref(false)
 const toast = useToast()
 const catalogItems = ref([])
 const groupedItems = ref([])
 const { user } = useAuth()
 const isSubmitting = ref(false)
 const activeGroupMode = ref('none')
+const searchQuery = ref('')
+
+const filteredCatalogItems = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return catalogItems.value
+  return catalogItems.value.filter(i => i.name.toLowerCase().includes(q))
+})
 
 const groupingOptions = [
   { value: 'none', label: 'Brak' },
@@ -233,6 +259,28 @@ const handleNewItemSubmit = async (itemData) => {
   color: rgba(226, 232, 240, 0.6);
   margin: 0;
 }
+
+.search-bar-wrapper {
+  margin-bottom: 1.5vw;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.9vw 1.2vw;
+  background: rgba(15, 23, 42, 0.6);
+  border: 0.08vw solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.7vw;
+  color: #ffffff;
+  font-size: 0.95vw;
+  font-family: 'Nunito', system-ui, sans-serif;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.search-input:focus {
+  outline: none;
+  border-color: rgba(96, 165, 250, 0.6);
+}
+.search-input::placeholder { color: rgba(226, 232, 240, 0.4); }
 
 .items-toolbar {
   display: flex;
@@ -450,6 +498,24 @@ const handleNewItemSubmit = async (itemData) => {
 
 .item-card__button.delete:hover {
   background: rgba(239, 68, 68, 0.35);
+}
+
+.items-request-subcategory-button {
+  padding: 0.8vw 1.5vw;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.8vw;
+  font-size: 1vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.items-request-subcategory-button:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 .items-add-button {

@@ -36,13 +36,23 @@
 
         <template v-if="formType === 'subcategory'">
           <div class="item-form-group">
+            <label class="item-form-label">Szukaj kategorii głównej</label>
+            <input
+              v-model="categorySearch"
+              type="text"
+              placeholder="Filtruj kategorie..."
+              class="item-form-input item-form-search"
+            />
+          </div>
+          <div class="item-form-group">
             <label class="item-form-label">Wybierz Kategorię Główną</label>
             <select v-model="subcatForm.categoryId" class="item-form-select" required>
               <option value="" disabled>Wybierz kategorię...</option>
-              <option v-for="cat in existingCategories" :key="cat.id" :value="cat.id">
+              <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">
                 {{ cat.name }} (CPV: {{ cat.cpv }})
               </option>
             </select>
+            <span class="category-count">{{ filteredCategories.length }} z {{ existingCategories.length }} kategorii</span>
           </div>
           <div class="item-form-group">
             <label class="item-form-label">Nazwa Podkategorii (np. Drukarki 3D)</label>
@@ -60,7 +70,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -69,15 +80,31 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'refresh-categories'])
 
+const toast = useToast()
 const formType = ref('category')
+const categorySearch = ref('')
 
 const catForm = ref({ name: '', cpv: '' })
 const subcatForm = ref({ categoryId: '', name: '' })
+
+const filteredCategories = computed(() => {
+  const q = categorySearch.value.toLowerCase().trim()
+  if (!q) return props.existingCategories || []
+  return (props.existingCategories || []).filter(c =>
+    c.name.toLowerCase().includes(q) || (c.cpv || '').toLowerCase().includes(q)
+  )
+})
+
+watch(() => props.isOpen, (val) => {
+  if (!val) return
+  categorySearch.value = ''
+})
 
 const closeModal = () => {
   emit('close')
   catForm.value = { name: '', cpv: '' }
   subcatForm.value = { categoryId: '', name: '' }
+  categorySearch.value = ''
 }
 
 const handleSubmit = async () => {
@@ -104,12 +131,12 @@ const handleSubmit = async () => {
 
     if (!response.ok) throw new Error('Błąd zapisu w bazie')
 
-    alert('Zapisano pomyślnie!')
+    toast.success('Zapisano pomyślnie!')
     emit('refresh-categories')
     closeModal()
   } catch (error) {
     console.error("Błąd zapisu:", error)
-    alert("Nie udało się zapisać danych.")
+    toast.error("Nie udało się zapisać danych.")
   }
 }
 </script>
@@ -123,16 +150,26 @@ const handleSubmit = async () => {
 .modal-close:hover { color: #ffffff; }
 
 .type-selector { display: flex; gap: 1vw; margin-bottom: 2vw; background: rgba(30, 41, 59, 0.4); padding: 0.5vw; border-radius: 0.8vw; }
-.type-btn { flex: 1; padding: 0.8vw; background: transparent; border: none; color: #94a3b8; font-weight: 600; border-radius: 0.6vw; cursor: pointer; transition: all 0.2s; }
+.type-btn { flex: 1; padding: 0.8vw; background: transparent; border: none; color: #94a3b8; font-weight: 600; border-radius: 0.6vw; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', system-ui, sans-serif; }
 .type-btn.active { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
 
 .item-form-group { margin-bottom: 1.5vw; }
 .item-form-label { display: block; margin-bottom: 0.6vw; color: rgba(226, 232, 240, 0.9); font-size: 0.95vw; font-weight: 600; }
-.item-form-input, .item-form-select { width: 100%; padding: 0.9vw; background: rgba(30, 41, 59, 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #ffffff; font-size: 0.95vw; }
+.item-form-input, .item-form-select { width: 100%; padding: 0.9vw; background: rgba(30, 41, 59, 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #ffffff; font-size: 0.95vw; box-sizing: border-box; }
 .item-form-input:focus, .item-form-select:focus { outline: none; border-color: #3b82f6; }
+.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.item-form-search { margin-bottom: 0.6vw; }
+.item-form-select option { background: #0f172a; }
+
+.category-count {
+  font-size: 0.8vw;
+  color: rgba(148, 163, 184, 0.7);
+  margin-top: 0.4vw;
+  display: block;
+}
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; margin-top: 2vw; padding-top: 1.5vw; border-top: 0.1vw solid rgba(59, 130, 246, 0.2); }
-.modal-btn { padding: 0.8vw 1.6vw; border-radius: 0.6vw; font-size: 0.95vw; font-weight: 600; cursor: pointer; border: none; }
+.modal-btn { padding: 0.8vw 1.6vw; border-radius: 0.6vw; font-size: 0.95vw; font-weight: 600; cursor: pointer; border: none; font-family: 'Nunito', system-ui, sans-serif; }
 .modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: #e2e8f0; }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; }
 </style>

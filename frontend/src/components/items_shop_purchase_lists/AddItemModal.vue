@@ -53,35 +53,34 @@
         </div>
 
         <div class="item-form-group">
-          <label class="item-form-label">Kategoria główna (CPV)</label>
-          <select
-            v-model="form.categoryId"
-            class="item-form-select"
-            @change="handleCategoryChange"
-            required
-          >
-            <option value="" disabled>Wybierz kategorię</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }} (CPV: {{ cat.cpv }})
-            </option>
-          </select>
-        </div>
-
-        <div class="item-form-group">
-          <label class="item-form-label">Podkategoria</label>
+          <label class="item-form-label">Podkategoria produktu</label>
+          <input
+            v-model="subcategorySearch"
+            type="text"
+            placeholder="Szukaj podkategorii..."
+            class="item-form-input item-form-search"
+          />
           <select
             v-model="form.subcategoryId"
             class="item-form-select"
-            :disabled="!form.categoryId"
             required
           >
-            <option value="" disabled>
-              {{ form.categoryId ? 'Wybierz podkategorię' : 'Najpierw wybierz kategorię główną' }}
-            </option>
-            <option v-for="sub in availableSubcategories" :key="sub.id" :value="sub.id">
+            <option value="" disabled>Wybierz podkategorię</option>
+            <option
+              v-for="sub in filteredSubcategories"
+              :key="sub.id"
+              :value="sub.id"
+            >
               {{ sub.name }}
             </option>
           </select>
+          <button
+            type="button"
+            class="request-subcategory-link"
+            @click="showRequestModal = true"
+          >
+            Nie ma twojej podkategorii? Zgłoś nową →
+          </button>
         </div>
 
         <div class="item-form-info">
@@ -99,10 +98,16 @@
       </form>
     </div>
   </div>
+
+  <RequestSubcategoryModal
+    :isOpen="showRequestModal"
+    @close="showRequestModal = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import RequestSubcategoryModal from './RequestSubcategoryModal.vue'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -111,37 +116,33 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit-item'])
 
-const categories = ref([])
 const allSubcategories = ref([])
+const subcategorySearch = ref('')
+const showRequestModal = ref(false)
 
-const fetchClassifications = async () => {
+const fetchSubcategories = async () => {
   try {
-    const catResponse = await fetch('http://localhost:8080/api/categories')
-    if (catResponse.ok) {
-      const catData = await catResponse.json()
-      categories.value = catData.map(c => ({
-        id: c.product_category_id || c.id,
-        name: c.product_category_name || c.name,
-        cpv: c.cpv || c.cpv_code
-      }))
-    }
-
-    const subResponse = await fetch('http://localhost:8080/api/subcategories')
-    if (subResponse.ok) {
-      const subData = await subResponse.json()
-      allSubcategories.value = subData.map(s => ({
+    const response = await fetch('http://localhost:8080/api/subcategories')
+    if (response.ok) {
+      const data = await response.json()
+      allSubcategories.value = data.map(s => ({
         id: s.product_subcategory_id || s.id,
-        name: s.product_subcategory_name || s.name,
-        categoryId: s.product_category_id || s.category_id
+        name: s.product_subcategory_name || s.name
       }))
     }
   } catch (error) {
-    console.error("Błąd pobierania klasyfikacji:", error)
+    console.error("Błąd pobierania podkategorii:", error)
   }
 }
 
 onMounted(() => {
-  fetchClassifications()
+  fetchSubcategories()
+})
+
+const filteredSubcategories = computed(() => {
+  const query = subcategorySearch.value.toLowerCase().trim()
+  if (!query) return allSubcategories.value
+  return allSubcategories.value.filter(s => s.name.toLowerCase().includes(query))
 })
 
 const form = ref({
@@ -149,34 +150,19 @@ const form = ref({
   link: '',
   price: null,
   currency: 'PLN',
-  categoryId: '',
   subcategoryId: ''
 })
-
-const availableSubcategories = computed(() => {
-  if (!form.value.categoryId) return []
-  return allSubcategories.value.filter(sub => sub.categoryId === form.value.categoryId)
-})
-
-const handleCategoryChange = () => {
-  form.value.subcategoryId = ''
-}
 
 const closeModal = () => {
   emit('close')
   setTimeout(() => {
-    form.value = { name: '', link: '', price: null, currency: 'PLN', categoryId: '', subcategoryId: '' }
+    form.value = { name: '', link: '', price: null, currency: 'PLN', subcategoryId: '' }
+    subcategorySearch.value = ''
   }, 200)
 }
 
 const handleSubmit = () => {
-  const newItem = {
-    ...form.value,
-    status: 'pending',
-    addedDate: new Date().toISOString()
-  }
-
-  emit('submit-item', newItem)
+  emit('submit-item', { ...form.value, status: 'pending', addedDate: new Date().toISOString() })
   closeModal()
 }
 </script>
@@ -264,6 +250,7 @@ const handleSubmit = () => {
   color: #ffffff;
   font-size: 0.95vw;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .item-form-input:focus, .item-form-select:focus {
@@ -272,10 +259,30 @@ const handleSubmit = () => {
   background: rgba(30, 41, 59, 0.9);
 }
 
+.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+
+.item-form-search {
+  margin-bottom: 0.6vw;
+}
+
 .item-form-select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.request-subcategory-link {
+  margin-top: 0.6vw;
+  background: none;
+  border: none;
+  color: #60a5fa;
+  font-size: 0.85vw;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Nunito', system-ui, sans-serif;
+  transition: color 0.2s;
+}
+.request-subcategory-link:hover { color: #93c5fd; text-decoration: underline; }
 
 .item-form-info {
   display: flex;
@@ -317,9 +324,7 @@ const handleSubmit = () => {
   background: rgba(148, 163, 184, 0.1);
   color: #e2e8f0;
 }
-.modal-btn-cancel:hover {
-  background: rgba(148, 163, 184, 0.2);
-}
+.modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
 
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -329,7 +334,6 @@ const handleSubmit = () => {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   transform: translateY(-2px);
 }
-
 .modal-btn-save:disabled {
   background: rgba(59, 130, 246, 0.5);
   cursor: not-allowed;
@@ -343,6 +347,5 @@ const handleSubmit = () => {
 }
 @media (max-width: 640px) {
   .modal-content { max-width: 90vw; padding: 1.5vw; }
-  .item-form-label, .item-form-input, .item-form-select, .modal-btn { font-size: 1.2vw; }
 }
 </style>
