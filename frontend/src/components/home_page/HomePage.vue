@@ -78,7 +78,7 @@
               <div v-if="user.role === 'treasurer'" class="dashboard__card budget-card">
                 <div class="dashboard__card-header">
                   <h3 class="dashboard__card-title"> Przegląd budżetu </h3>
-                  <span class="dashboard__card-badge">Miesiąc</span>
+                  <span class="dashboard__card-badge">Na żywo</span>
                 </div>
                 <div class="dashboard__card-body">
                   <div
@@ -91,9 +91,9 @@
                   </div>
                   <div class="budget-progress">
                     <div class="budget-progress__bar">
-                      <div class="budget-progress__fill" style="width: 24.7%"></div>
+                      <div class="budget-progress__fill" :style="{ width: `${budgetUsagePercent}%` }"></div>
                     </div>
-                    <p class="budget-progress__text">24.7% wydane</p>
+                    <p class="budget-progress__text">{{ budgetUsagePercent.toFixed(1) }}% wykorzystane</p>
                   </div>
                 </div>
               </div>
@@ -121,7 +121,7 @@
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Wnioski do zamówień'">
-            <PurchaseRequest />
+            <PurchaseRequest @budget-changed="fetchBudgetSummary" />
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Rozliczenia'">
@@ -306,6 +306,12 @@ const toast = useToast()
 const userMenuRef = ref(null)
 const allStudents = ref([])
 const showMembersModal = ref(false)
+const budgetSummary = ref({
+  total_budget: 0,
+  spent_money: 0,
+  purchase_requests_total_allocated: 0,
+  available_after_purchase_requests: 0
+})
 
 const editFormData = ref({
   firstName: '',
@@ -378,6 +384,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   document.addEventListener('click', handleClickOutside)
   resetEditFormData()
+  fetchBudgetSummary()
 })
 
 watch(showEditProfileModal, (newValue) => {
@@ -417,11 +424,43 @@ const handleSaveProfile = () => {
   }
 }
 
-const budgetStats = [
-  { label: 'Budżet dostępny', value: '5 000,00 PLN', class: '' },
-  { label: 'Wydane', value: '1 234,56 PLN', class: 'warning' },
-  { label: 'Pozostało', value: '3 765,44 PLN', class: 'success' }
-]
+const formatBudgetMoney = (value) => `${Number(value || 0).toLocaleString('pl-PL', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+})} PLN`
+
+const usedAndReserved = computed(() => (
+  Number(budgetSummary.value.spent_money || 0)
+  + Number(budgetSummary.value.purchase_requests_total_allocated || 0)
+))
+
+const budgetStats = computed(() => [
+  { label: 'Budżet całkowity', value: formatBudgetMoney(budgetSummary.value.total_budget), class: '' },
+  { label: 'Wydane i zarezerwowane', value: formatBudgetMoney(usedAndReserved.value), class: 'warning' },
+  { label: 'Pozostało', value: formatBudgetMoney(budgetSummary.value.available_after_purchase_requests), class: 'success' }
+])
+
+const budgetUsagePercent = computed(() => {
+  const total = Number(budgetSummary.value.total_budget || 0)
+  if (total <= 0) return 0
+  return Math.min(100, Math.max(0, (usedAndReserved.value / total) * 100))
+})
+
+const fetchBudgetSummary = async () => {
+  if (user.value?.role !== 'treasurer' || !user.value?.association_id) return
+
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/dashboard/budget_summary?association_id=${user.value.association_id}`,
+      { cache: 'no-store' }
+    )
+    if (!response.ok) throw new Error('Nie udało się pobrać podsumowania budżetu')
+    budgetSummary.value = await response.json()
+  } catch (error) {
+    console.error('Błąd pobierania podsumowania budżetu:', error)
+    toast.error('Nie udało się odświeżyć budżetu na pulpicie.')
+  }
+}
 
 const quickActions = [
   { id: 1, label: 'Dodaj przedmiot' },

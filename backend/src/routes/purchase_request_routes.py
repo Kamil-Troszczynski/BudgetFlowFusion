@@ -13,7 +13,7 @@ class PurchaseRequestCreate(BaseModel):
     budget_allocated_for_the_order: float
     if_service: bool
     used_cpv_id: Optional[int]
-    association_budget_id: int
+    project_budget_id: Optional[int] = None
     created_at: datetime
     created_by_user_id: Optional[int] = None
     can_add: bool = True
@@ -22,6 +22,12 @@ class PurchaseRequestCreate(BaseModel):
 
 
 class PurchaseRequestBudgetOut(BaseModel):
+    project_budget_id: int
+    project_budget_name: str
+    project_total_budget: float
+    project_spent_money: float
+    project_purchase_requests_total_allocated: float
+    project_available_after_purchase_requests: float
     association_budget_id: int
     association_budget_name: str
     total_budget: float
@@ -45,6 +51,8 @@ class PurchaseRequestOut(BaseModel):
     budget_allocated_for_the_order: float
     if_service: bool
     used_cpv_id: Optional[int] = None
+    project_budget_id: int
+    project_budget_name: Optional[str] = None
     association_budget_id: int
     association_budget_name: Optional[str] = None
     created_at: datetime
@@ -93,29 +101,51 @@ def _source_list_for_request(request: PurchaseRequest, session: Session) -> Opti
 
 
 def _budget_info_for_request(request: PurchaseRequest, session: Session) -> Optional[PurchaseRequestBudgetOut]:
-    budget = session.get(AssociationBudget, request.association_budget_id)
+    project_budget = session.get(ProjectBudget, request.project_budget_id)
+    if not project_budget:
+        return None
+    budget = session.get(AssociationBudget, project_budget.association_budget_id)
     if not budget:
         return None
 
-    purchase_requests = session.exec(
+    project_purchase_requests = session.exec(
         select(PurchaseRequest).where(
-            PurchaseRequest.association_budget_id == budget.association_budget_id
+            PurchaseRequest.project_budget_id == project_budget.project_budget_id
         )
     ).all()
-    total_allocated = sum(
+    project_total_allocated = sum(
         purchase_request.budget_allocated_for_the_order
-        for purchase_request in purchase_requests
+        for purchase_request in project_purchase_requests
+    )
+    association_purchase_requests = session.exec(
+        select(PurchaseRequest)
+        .join(ProjectBudget)
+        .where(ProjectBudget.association_budget_id == budget.association_budget_id)
+    ).all()
+    association_total_allocated = sum(
+        purchase_request.budget_allocated_for_the_order
+        for purchase_request in association_purchase_requests
     )
 
     available_money = budget.total_budget - budget.spent_money
     return PurchaseRequestBudgetOut(
+        project_budget_id=project_budget.project_budget_id,
+        project_budget_name=project_budget.project_budget_name,
+        project_total_budget=project_budget.total_budget,
+        project_spent_money=project_budget.spent_money,
+        project_purchase_requests_total_allocated=project_total_allocated,
+        project_available_after_purchase_requests=(
+            project_budget.total_budget
+            - project_budget.spent_money
+            - project_total_allocated
+        ),
         association_budget_id=budget.association_budget_id,
         association_budget_name=budget.association_budget_name,
         total_budget=budget.total_budget,
         spent_money=budget.spent_money,
         available_money=available_money,
-        purchase_requests_total_allocated=total_allocated,
-        available_after_purchase_requests=available_money - total_allocated,
+        purchase_requests_total_allocated=association_total_allocated,
+        available_after_purchase_requests=available_money - association_total_allocated,
     )
 
 
@@ -127,7 +157,9 @@ def _purchase_request_out(request: PurchaseRequest, session: Session) -> Purchas
         budget_allocated_for_the_order=request.budget_allocated_for_the_order,
         if_service=request.if_service,
         used_cpv_id=request.used_cpv_id,
-        association_budget_id=request.association_budget_id,
+        project_budget_id=request.project_budget_id,
+        project_budget_name=budget_info.project_budget_name if budget_info else None,
+        association_budget_id=budget_info.association_budget_id if budget_info else 0,
         association_budget_name=budget_info.association_budget_name if budget_info else None,
         created_at=request.created_at,
         can_add=request.can_add,
@@ -170,7 +202,7 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
     source_settlement = None
     source_gslbccf_id = None
     budget_allocated = new_purchase_request_data.budget_allocated_for_the_order
-    association_budget_id = new_purchase_request_data.association_budget_id
+    project_budget_id = new_purchase_request_data.project_budget_id
 
     if new_purchase_request_data.shop_purchase_list_id:
         source_list = session.get(ShopPurchaseList, new_purchase_request_data.shop_purchase_list_id)
@@ -197,34 +229,64 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
         if not source_funding:
             raise HTTPException(status_code=404, detail="Dofinansowanie zamówienia nie znalezione")
 
-        association_budget_id = source_funding.association_budget_id
+        project_budget = session.exec(
+            select(ProjectBudget).where(ProjectBudget.project_id == source_funding.project_id)
+        ).first()
+        if not project_budget:
+            raise HTTPException(status_code=400, detail="Projekt zamówienia nie ma przypisanego budżetu")
+
+        project_budget_id = project_budget.project_budget_id
         budget_allocated = _shop_purchase_list_total(source_list, session)
         source_gslbccf_id = source_list.gslbccf_id
 
-    association_budget = session.get(AssociationBudget, association_budget_id)
-    if not association_budget:
-        raise HTTPException(status_code=404, detail="Budżet koła nie znaleziony")
+    if not project_budget_id:
+        raise HTTPException(status_code=400, detail="Budżet projektu jest wymagany")
+
+    project_budget = session.get(ProjectBudget, project_budget_id)
+    if not project_budget:
+        raise HTTPException(status_code=404, detail="Budżet projektu nie znaleziony")
+
+    allocated_in_requests = sum(
+        request.budget_allocated_for_the_order
+        for request in session.exec(
+            select(PurchaseRequest).where(
+                PurchaseRequest.project_budget_id == project_budget.project_budget_id
+            )
+        ).all()
+    )
+    available_project_budget = (
+        project_budget.total_budget
+        - project_budget.spent_money
+        - allocated_in_requests
+    )
+    if budget_allocated <= 0:
+        raise HTTPException(status_code=400, detail="Kwota wniosku musi być większa od zera")
+    if budget_allocated > available_project_budget:
+        raise HTTPException(
+            status_code=400,
+            detail="Kwota wniosku przekracza dostępny budżet projektu",
+        )
 
     new_purchase_request = PurchaseRequest(
         purchase_request_name = new_purchase_request_data.purchase_request_name,
         budget_allocated_for_the_order = budget_allocated,
         if_service = new_purchase_request_data.if_service,
         used_cpv_id = new_purchase_request_data.used_cpv_id,
-        association_budget_id = association_budget_id,
+        project_budget_id = project_budget.project_budget_id,
         created_at = new_purchase_request_data.created_at,
         can_add = new_purchase_request_data.can_add,
         project_finance_manager_id = new_purchase_request_data.project_finance_manager_id,
         gslbccf_id = source_gslbccf_id
     )
-    session.add(new_purchase_request)
-    session.commit()
-    session.refresh(new_purchase_request)
+    if source_settlement:
+        session.add(source_settlement)
 
+    session.add(new_purchase_request)
+    session.flush()
     if source_settlement:
         source_settlement.purchase_request_id = new_purchase_request.purchase_request_id
-        session.add(source_settlement)
-        session.commit()
-        session.refresh(new_purchase_request)
+    session.commit()
+    session.refresh(new_purchase_request)
 
     return _purchase_request_out(new_purchase_request, session)
 
@@ -234,6 +296,12 @@ def delete_purchase_request(purchase_request_id: int, session: Session = Depends
     purchase_request = session.exec(select(PurchaseRequest).where(PurchaseRequest.purchase_request_id == purchase_request_id)).first()
     if not purchase_request:
         raise HTTPException(status_code = 404, detail = "Wniosek nie znaleziony")
+    settlements = session.exec(
+        select(Settlement).where(Settlement.purchase_request_id == purchase_request_id)
+    ).all()
+    for settlement in settlements:
+        settlement.purchase_request_id = None
+        session.add(settlement)
     session.delete(purchase_request)
     session.commit()
     return {"message": "Wniosek usunięty pomyślnie"}

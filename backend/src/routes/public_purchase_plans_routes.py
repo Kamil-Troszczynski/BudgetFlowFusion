@@ -40,6 +40,27 @@ class PurchaseRequestForBudgetOut(BaseModel):
     created_at: Optional[str] = None
     can_add: bool
     project_finance_manager_id: Optional[int] = None
+    project_budget_id: int
+
+
+class ProjectBudgetOut(BaseModel):
+    project_budget_id: int
+    project_budget_name: str
+    total_budget: float
+    spent_money: float
+    purchase_requests_total_allocated: float
+    available_after_purchase_requests: float
+    association_budget_id: int
+    association_budget_name: Optional[str] = None
+    project_id: int
+    project_name: Optional[str] = None
+
+
+class DashboardBudgetSummaryOut(BaseModel):
+    total_budget: float
+    spent_money: float
+    purchase_requests_total_allocated: float
+    available_after_purchase_requests: float
 
 
 class AssociationBudgetOut(BaseModel):
@@ -138,7 +159,8 @@ def _budget_out(
     fundings = _get_budget_fundings(budget.association_budget_id, session, association_id)
     purchase_requests = session.exec(
         select(PurchaseRequest)
-        .where(PurchaseRequest.association_budget_id == budget.association_budget_id)
+        .join(ProjectBudget)
+        .where(ProjectBudget.association_budget_id == budget.association_budget_id)
         .order_by(PurchaseRequest.created_at.desc())
     ).all()
     purchase_requests_total = sum(
@@ -173,6 +195,7 @@ def _budget_out(
                 created_at=purchase_request.created_at.isoformat() if purchase_request.created_at else None,
                 can_add=purchase_request.can_add,
                 project_finance_manager_id=purchase_request.project_finance_manager_id,
+                project_budget_id=purchase_request.project_budget_id,
             )
             for purchase_request in purchase_requests
         ],
@@ -221,7 +244,7 @@ def get_association_budgets(
     if association_id:
         statement = (
             statement
-            .join(Funding)
+            .join(ProjectBudget)
             .join(Project)
             .where(Project.association_id == association_id)
             .distinct()
@@ -229,6 +252,95 @@ def get_association_budgets(
 
     budgets = session.exec(statement).all()
     return [_budget_out(budget, session, association_id) for budget in budgets]
+
+
+@app.get("/api/project_budgets", response_model=List[ProjectBudgetOut])
+def get_project_budgets(
+    association_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
+    statement = select(ProjectBudget)
+    if association_id:
+        statement = (
+            statement
+            .join(Project)
+            .where(Project.association_id == association_id)
+        )
+    project_budgets = session.exec(
+        statement.order_by(ProjectBudget.project_budget_id)
+    ).all()
+
+    result = []
+    for project_budget in project_budgets:
+        requests = session.exec(
+            select(PurchaseRequest).where(
+                PurchaseRequest.project_budget_id == project_budget.project_budget_id
+            )
+        ).all()
+        allocated = sum(request.budget_allocated_for_the_order for request in requests)
+        association_budget = session.get(
+            AssociationBudget, project_budget.association_budget_id
+        )
+        project = session.get(Project, project_budget.project_id)
+        result.append(ProjectBudgetOut(
+            project_budget_id=project_budget.project_budget_id,
+            project_budget_name=project_budget.project_budget_name,
+            total_budget=project_budget.total_budget,
+            spent_money=project_budget.spent_money,
+            purchase_requests_total_allocated=allocated,
+            available_after_purchase_requests=(
+                project_budget.total_budget - project_budget.spent_money - allocated
+            ),
+            association_budget_id=project_budget.association_budget_id,
+            association_budget_name=(
+                association_budget.association_budget_name if association_budget else None
+            ),
+            project_id=project_budget.project_id,
+            project_name=project.project_name if project else None,
+        ))
+    return result
+
+
+@app.get("/api/dashboard/budget_summary", response_model=DashboardBudgetSummaryOut)
+def get_dashboard_budget_summary(
+    association_id: int,
+    session: Session = Depends(get_session),
+):
+    project_budgets = session.exec(
+        select(ProjectBudget)
+        .join(Project)
+        .where(Project.association_id == association_id)
+    ).all()
+    association_budget_ids = {
+        project_budget.association_budget_id for project_budget in project_budgets
+    }
+    association_budgets = [
+        session.get(AssociationBudget, budget_id)
+        for budget_id in association_budget_ids
+    ]
+    association_budgets = [budget for budget in association_budgets if budget]
+    project_budget_ids = [
+        project_budget.project_budget_id for project_budget in project_budgets
+    ]
+    requests = (
+        session.exec(
+            select(PurchaseRequest).where(
+                PurchaseRequest.project_budget_id.in_(project_budget_ids)
+            )
+        ).all()
+        if project_budget_ids
+        else []
+    )
+
+    total_budget = sum(budget.total_budget for budget in association_budgets)
+    spent_money = sum(budget.spent_money for budget in association_budgets)
+    allocated = sum(request.budget_allocated_for_the_order for request in requests)
+    return DashboardBudgetSummaryOut(
+        total_budget=total_budget,
+        spent_money=spent_money,
+        purchase_requests_total_allocated=allocated,
+        available_after_purchase_requests=total_budget - spent_money - allocated,
+    )
 
 
 @app.post("/api/public_purchase_plan_lists", response_model=PublicPurchasePlanListOut)

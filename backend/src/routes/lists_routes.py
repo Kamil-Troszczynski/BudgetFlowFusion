@@ -34,6 +34,8 @@ class ClosedPurchaseListForRequestOut(BaseModel):
     funding_id: int
     association_budget_id: Optional[int] = None
     association_budget_name: Optional[str] = None
+    project_budget_id: Optional[int] = None
+    project_budget_name: Optional[str] = None
     shop_id: int
     shop_name: Optional[str] = None
     settlement_id: int
@@ -216,6 +218,13 @@ def get_closed_lists_for_purchase_requests(
             else None
         )
         shop = session.get(Shop, purchase_list.shop_id)
+        project_budget = (
+            session.exec(
+                select(ProjectBudget).where(ProjectBudget.project_id == funding.project_id)
+            ).first()
+            if funding and funding.project_id
+            else None
+        )
         items_summary = _list_items_summary(purchase_list.shop_purchase_list_id, session)
         total_price = items_summary["total_price"] or purchase_list.cost or 0.0
 
@@ -231,6 +240,8 @@ def get_closed_lists_for_purchase_requests(
                 funding_id=purchase_list.funding_id,
                 association_budget_id=association_budget.association_budget_id if association_budget else None,
                 association_budget_name=association_budget.association_budget_name if association_budget else None,
+                project_budget_id=project_budget.project_budget_id if project_budget else None,
+                project_budget_name=project_budget.project_budget_name if project_budget else None,
                 shop_id=purchase_list.shop_id,
                 shop_name=shop.shop_name if shop else None,
                 settlement_id=purchase_list.settlement_id,

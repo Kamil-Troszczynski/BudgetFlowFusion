@@ -5,6 +5,7 @@ from src.relations import (
     AssociationBudget,
     Funding,
     Project,
+    ProjectBudget,
     PublicPurchasePlan,
     PublicPurchasePlanList,
 )
@@ -53,6 +54,23 @@ def public_plan_seed_fixture(session: Session):
     session.refresh(budget)
     session.refresh(other_budget)
 
+    project_budget = ProjectBudget(
+        project_budget_name="Budżet projektu głównego",
+        total_budget=10000.0,
+        spent_money=0.0,
+        association_budget_id=budget.association_budget_id,
+        project_id=project.project_id,
+    )
+    other_project_budget = ProjectBudget(
+        project_budget_name="Budżet projektu obcego",
+        total_budget=5000.0,
+        spent_money=0.0,
+        association_budget_id=other_budget.association_budget_id,
+        project_id=other_project.project_id,
+    )
+    session.add_all([project_budget, other_project_budget])
+    session.commit()
+
     funding = Funding(
         funding_name="Grant testowy",
         funding_price=8000.0,
@@ -76,6 +94,7 @@ def public_plan_seed_fixture(session: Session):
         "association": association,
         "budget": budget,
         "funding": funding,
+        "project_budget": project_budget,
         "other_funding": other_funding,
     }
 

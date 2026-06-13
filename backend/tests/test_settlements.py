@@ -41,7 +41,7 @@ def seed_data_fixture(session: Session):
         budget_allocated_for_the_order=5000.0,
         if_service=True,
         used_cpv_id=101,  
-        association_budget_id=1,
+        project_budget_id=1,
         created_at=datetime.now(timezone.utc),
         can_add=True,
         project_finance_manager_id=10
