@@ -150,7 +150,7 @@ const groupingOptions = [
 
 const fetchCatalog = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/items?student_id=${user.value.id}`)
+    const response = await fetch('http://localhost:8080/api/items')
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
 
@@ -168,7 +168,7 @@ const fetchGroupedCatalog = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:8080/api/items/grouped?student_id=${user.value.id}&group_by=${activeGroupMode.value}`
+      `http://localhost:8080/api/items/grouped?group_by=${activeGroupMode.value}`
     )
     if (!response.ok) throw new Error('Błąd sieci')
 

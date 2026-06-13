@@ -244,6 +244,16 @@ class ShopPurchaseListItem(SQLModel, table=True):
     amount: int
 
 
+class ShopPurchaseListItemContribution(SQLModel, table=True):
+    __tablename__ = "shop_purchase_list_item_contribution"
+
+    shop_purchase_list_id: int = Field(foreign_key="shop_purchase_list.shop_purchase_list_id", primary_key=True)
+    item_id: int = Field(foreign_key="item.item_id", primary_key=True)
+    student_id: int = Field(foreign_key="student.student_id", primary_key=True)
+    amount: int
+    created_at: datetime
+
+
 class Student(SQLModel, table=True):
     __tablename__ = "student"
 

@@ -55,18 +55,13 @@ def _item_group_metadata(item: Item, session: Session):
 @app.get("/api/items/grouped", response_model=List[ItemGroupOut])
 def get_grouped_items(
     group_by: str = "shop",
-    student_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     allowed_groups = {"shop", "cpv", "category", "status"}
     if group_by not in allowed_groups:
         group_by = "shop"
 
-    statement = select(Item)
-    if student_id:
-        statement = statement.where(Item.student_id == student_id)
-    else:
-        statement = statement.where(Item.status == "approved")
+    statement = select(Item).where(Item.status == "approved")
 
     items = session.exec(statement).all()
     groups = {}
@@ -126,12 +121,8 @@ def get_grouped_items(
 
 
 @app.get("/api/items", response_model=List[Item])
-def get_all_items(student_id: Optional[int] = None, session: Session = Depends(get_session)):
-    if student_id:
-        statement = select(Item).where(Item.student_id == student_id)
-    else:
-        statement = select(Item).where(Item.status == "approved")
-
+def get_all_items(session: Session = Depends(get_session)):
+    statement = select(Item).where(Item.status == "approved")
     return session.exec(statement).all()
 
 

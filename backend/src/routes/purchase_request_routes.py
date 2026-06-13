@@ -18,6 +18,7 @@ class PurchaseRequestCreate(BaseModel):
     created_by_user_id: Optional[int] = None
     can_add: bool = True
     project_finance_manager_id: int
+    shop_purchase_list_id: Optional[int] = None
 
 
 class PurchaseRequestBudgetOut(BaseModel):
@@ -28,6 +29,14 @@ class PurchaseRequestBudgetOut(BaseModel):
     available_money: float
     purchase_requests_total_allocated: float
     available_after_purchase_requests: float
+
+
+class SourceShopPurchaseListOut(BaseModel):
+    shop_purchase_list_id: int
+    name: Optional[str] = None
+    shop_name: Optional[str] = None
+    total_price: Optional[float] = None
+    settlement_id: Optional[int] = None
 
 
 class PurchaseRequestOut(BaseModel):
@@ -43,6 +52,44 @@ class PurchaseRequestOut(BaseModel):
     gslbccf_id: Optional[int] = None
     project_finance_manager_id: Optional[int] = None
     budget_info: Optional[PurchaseRequestBudgetOut] = None
+    source_shop_purchase_list: Optional[SourceShopPurchaseListOut] = None
+
+
+def _shop_purchase_list_total(shop_purchase_list: ShopPurchaseList, session: Session) -> float:
+    line_items = session.exec(
+        select(ShopPurchaseListItem).where(
+            ShopPurchaseListItem.shop_purchase_list_id == shop_purchase_list.shop_purchase_list_id
+        )
+    ).all()
+    total = 0.0
+    for line in line_items:
+        item = session.get(Item, line.item_id)
+        if item:
+            total += (item.price or 0) * line.amount
+    return total or shop_purchase_list.cost or 0.0
+
+
+def _source_list_for_request(request: PurchaseRequest, session: Session) -> Optional[SourceShopPurchaseListOut]:
+    settlement = session.exec(
+        select(Settlement).where(Settlement.purchase_request_id == request.purchase_request_id)
+    ).first()
+    if not settlement:
+        return None
+
+    purchase_list = session.exec(
+        select(ShopPurchaseList).where(ShopPurchaseList.settlement_id == settlement.settlement_id)
+    ).first()
+    if not purchase_list:
+        return None
+
+    shop = session.get(Shop, purchase_list.shop_id)
+    return SourceShopPurchaseListOut(
+        shop_purchase_list_id=purchase_list.shop_purchase_list_id,
+        name=purchase_list.name,
+        shop_name=shop.shop_name if shop else None,
+        total_price=_shop_purchase_list_total(purchase_list, session),
+        settlement_id=settlement.settlement_id,
+    )
 
 
 def _budget_info_for_request(request: PurchaseRequest, session: Session) -> Optional[PurchaseRequestBudgetOut]:
@@ -87,6 +134,7 @@ def _purchase_request_out(request: PurchaseRequest, session: Session) -> Purchas
         gslbccf_id=request.gslbccf_id,
         project_finance_manager_id=request.project_finance_manager_id,
         budget_info=budget_info,
+        source_shop_purchase_list=_source_list_for_request(request, session),
     )
 
 
@@ -118,23 +166,66 @@ def get_purchase_requests_by_project_finance_manager(project_finance_manager_id:
 
 @app.post("/api/create_purchase_requests", response_model=PurchaseRequestOut)
 def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, session: Session = Depends(get_session)):
-    association_budget = session.get(AssociationBudget, new_purchase_request_data.association_budget_id)
+    source_list = None
+    source_settlement = None
+    source_gslbccf_id = None
+    budget_allocated = new_purchase_request_data.budget_allocated_for_the_order
+    association_budget_id = new_purchase_request_data.association_budget_id
+
+    if new_purchase_request_data.shop_purchase_list_id:
+        source_list = session.get(ShopPurchaseList, new_purchase_request_data.shop_purchase_list_id)
+        if not source_list:
+            raise HTTPException(status_code=404, detail="Zamknięte zamówienie nie znalezione")
+
+        source_student = session.get(Student, source_list.student_id)
+        if (
+            not source_student
+            or source_student.project_finance_manager_id != new_purchase_request_data.project_finance_manager_id
+        ):
+            raise HTTPException(status_code=403, detail="Możesz utworzyć wniosek tylko ze swojego zamkniętego zamówienia")
+
+        if source_list.settlement_id is None:
+            raise HTTPException(status_code=400, detail="Wniosek można utworzyć tylko z zamkniętego zamówienia")
+
+        source_settlement = session.get(Settlement, source_list.settlement_id)
+        if not source_settlement:
+            raise HTTPException(status_code=400, detail="Zamknięte zamówienie nie ma rozliczenia")
+        if source_settlement.purchase_request_id is not None:
+            raise HTTPException(status_code=400, detail="To zamówienie ma już utworzony wniosek")
+
+        source_funding = session.get(Funding, source_list.funding_id)
+        if not source_funding:
+            raise HTTPException(status_code=404, detail="Dofinansowanie zamówienia nie znalezione")
+
+        association_budget_id = source_funding.association_budget_id
+        budget_allocated = _shop_purchase_list_total(source_list, session)
+        source_gslbccf_id = source_list.gslbccf_id
+
+    association_budget = session.get(AssociationBudget, association_budget_id)
     if not association_budget:
         raise HTTPException(status_code=404, detail="Budżet koła nie znaleziony")
 
     new_purchase_request = PurchaseRequest(
         purchase_request_name = new_purchase_request_data.purchase_request_name,
-        budget_allocated_for_the_order = new_purchase_request_data.budget_allocated_for_the_order,
+        budget_allocated_for_the_order = budget_allocated,
         if_service = new_purchase_request_data.if_service,
         used_cpv_id = new_purchase_request_data.used_cpv_id,
-        association_budget_id = new_purchase_request_data.association_budget_id,
+        association_budget_id = association_budget_id,
         created_at = new_purchase_request_data.created_at,
         can_add = new_purchase_request_data.can_add,
-        project_finance_manager_id = new_purchase_request_data.project_finance_manager_id
+        project_finance_manager_id = new_purchase_request_data.project_finance_manager_id,
+        gslbccf_id = source_gslbccf_id
     )
     session.add(new_purchase_request)
     session.commit()
     session.refresh(new_purchase_request)
+
+    if source_settlement:
+        source_settlement.purchase_request_id = new_purchase_request.purchase_request_id
+        session.add(source_settlement)
+        session.commit()
+        session.refresh(new_purchase_request)
+
     return _purchase_request_out(new_purchase_request, session)
 
 

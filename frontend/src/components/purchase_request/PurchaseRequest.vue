@@ -7,7 +7,7 @@
             <h2 class="requests-title">Moje wnioski o zamówienie</h2>
             <p class="requests-subtitle">Wnioski zakupowe, które utworzyłeś</p>
           </div>
-          <button class="requests-add-button" @click="showAddRequestModal = true">+ Nowy wniosek</button>
+          <button class="requests-add-button" @click="openAddRequestModal">+ Nowy wniosek</button>
         </div>
 
         <div v-if="userRequests.length === 0" class="requests-empty">
@@ -38,6 +38,10 @@
               <p class="request-card__detail">
                 <span class="request-card__label">Budżet koła:</span>
                 <span class="request-card__value">{{ request.associationBudgetName || 'Brak' }}</span>
+              </p>
+              <p v-if="request.sourceList" class="request-card__detail">
+                <span class="request-card__label">Zamówienie:</span>
+                <span class="request-card__value">{{ request.sourceList.name }}</span>
               </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
@@ -93,6 +97,10 @@
                 <span class="request-card__label">Budżet koła:</span>
                 <span class="request-card__value">{{ request.associationBudgetName || 'Brak' }}</span>
               </p>
+              <p v-if="request.sourceList" class="request-card__detail">
+                <span class="request-card__label">Zamówienie:</span>
+                <span class="request-card__value">{{ request.sourceList.name }}</span>
+              </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
                 <span class="request-card__value">{{ request.ifService ? 'Usługa' : 'Produkt' }}</span>
@@ -130,6 +138,10 @@
           <div class="request-info">
             <p>Kwota wniosku</p>
             <strong>{{ formatMoney(activeRequest.budget) }} PLN</strong>
+          </div>
+          <div v-if="activeRequest.sourceList" class="request-info">
+            <p>Utworzony z zamówienia</p>
+            <strong>{{ activeRequest.sourceList.name }}</strong>
           </div>
           <div class="request-info">
             <p>Budżet koła</p>
@@ -171,6 +183,27 @@
         </div>
         <form class="modal-form" @submit.prevent="handleNewRequest">
           <div class="modal-form__group">
+            <label class="modal-form__label">Zamknięte zamówienie</label>
+            <select
+              v-model.number="newRequestData.shop_purchase_list_id"
+              class="modal-form__input"
+              required
+              @change="applySelectedClosedOrder"
+            >
+              <option value="" disabled>Wybierz własne zamknięte zamówienie</option>
+              <option
+                v-for="order in availableClosedOrders"
+                :key="order.shop_purchase_list_id"
+                :value="order.shop_purchase_list_id"
+              >
+                {{ orderLabel(order) }}
+              </option>
+            </select>
+            <p v-if="availableClosedOrders.length === 0" class="modal-form__hint">
+              Nie masz zamkniętych zamówień bez utworzonego wniosku.
+            </p>
+          </div>
+          <div class="modal-form__group">
             <label class="modal-form__label">Nazwa wniosku</label>
             <input
               v-model="newRequestData.purchase_request_name"
@@ -189,6 +222,7 @@
               step="0.01"
               placeholder="0.00"
               class="modal-form__input"
+              readonly
               required
             />
           </div>
@@ -197,6 +231,7 @@
             <select
               v-model.number="newRequestData.association_budget_id"
               class="modal-form__input"
+              disabled
               required
             >
               <option value="" disabled>Wybierz budżet</option>
@@ -250,7 +285,7 @@
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
-            <button type="submit" class="modal-btn modal-btn-save">Utwórz wniosek</button>
+            <button type="submit" class="modal-btn modal-btn-save" :disabled="!selectedClosedOrder">Złóż wniosek</button>
           </div>
         </form>
       </div>
@@ -270,6 +305,7 @@ const showAddRequestModal = ref(false)
 const userRequests = ref([])
 const allRequests = ref([])
 const associationBudgets = ref([])
+const closedOrders = ref([])
 
 const currentFinanceManagerId = computed(() => {
   return user.value?.projectFinanceManagerId || user.value?.id
@@ -282,7 +318,18 @@ const newRequestData = ref({
   used_cpv_id: 1,
   association_budget_id: '',
   association_name: '',
-  can_add: true
+  can_add: true,
+  shop_purchase_list_id: ''
+})
+
+const availableClosedOrders = computed(() => {
+  return closedOrders.value.filter(order => !order.purchase_request_id)
+})
+
+const selectedClosedOrder = computed(() => {
+  return availableClosedOrders.value.find(
+    order => order.shop_purchase_list_id === newRequestData.value.shop_purchase_list_id
+  )
 })
 
 const selectedBudgetForForm = computed(() => {
@@ -308,6 +355,15 @@ const mapRequest = (req) => ({
   associationBudgetId: req.association_budget_id,
   associationBudgetName: req.association_budget_name,
   budgetInfo: req.budget_info,
+  sourceList: req.source_shop_purchase_list
+    ? {
+        id: req.source_shop_purchase_list.shop_purchase_list_id,
+        name: req.source_shop_purchase_list.name || `Zamówienie #${req.source_shop_purchase_list.shop_purchase_list_id}`,
+        shopName: req.source_shop_purchase_list.shop_name,
+        totalPrice: req.source_shop_purchase_list.total_price,
+        settlementId: req.source_shop_purchase_list.settlement_id
+      }
+    : null,
   itemCount: 0
 })
 
@@ -353,9 +409,56 @@ const fetchAssociationBudgets = async () => {
   }
 }
 
+const fetchClosedOrdersForRequests = async () => {
+  if (!currentFinanceManagerId.value) return
+
+  try {
+    const response = await fetch(
+      `${API_URL}/lists/closed_for_purchase_requests?project_finance_manager_id=${currentFinanceManagerId.value}`
+    )
+    if (!response.ok) throw new Error('Błąd pobierania zamkniętych zamówień')
+
+    closedOrders.value = await response.json()
+  } catch (error) {
+    console.error('Błąd pobierania zamkniętych zamówień:', error)
+  }
+}
+
+const applySelectedClosedOrder = () => {
+  const order = selectedClosedOrder.value
+  if (!order) return
+
+  const orderName = order.name?.trim() || `Zamówienie #${order.shop_purchase_list_id}`
+  const total = Number(order.total_price || order.cost || 0)
+  newRequestData.value.purchase_request_name = `Wniosek: ${orderName}`
+  newRequestData.value.budget_allocated_for_the_order = Math.round(total * 100) / 100
+  newRequestData.value.association_budget_id = order.association_budget_id || ''
+  newRequestData.value.used_cpv_id = order.suggested_cpv_id || newRequestData.value.used_cpv_id || 1
+}
+
+const resetRequestForm = () => {
+  newRequestData.value.purchase_request_name = ''
+  newRequestData.value.budget_allocated_for_the_order = null
+  newRequestData.value.if_service = false
+  newRequestData.value.used_cpv_id = 1
+  newRequestData.value.association_budget_id = associationBudgets.value[0]?.association_budget_id || ''
+  newRequestData.value.can_add = true
+  newRequestData.value.shop_purchase_list_id = ''
+}
+
+const openAddRequestModal = async () => {
+  await fetchClosedOrdersForRequests()
+  resetRequestForm()
+  showAddRequestModal.value = true
+}
+
 const handleNewRequest = async () => {
   if (!currentFinanceManagerId.value) {
     alert("Błąd: Nie można utworzyć wniosku, brak ID skarbnika.")
+    return
+  }
+  if (!selectedClosedOrder.value) {
+    alert("Wybierz zamknięte zamówienie, z którego ma powstać wniosek.")
     return
   }
 
@@ -368,7 +471,8 @@ const handleNewRequest = async () => {
       association_budget_id: newRequestData.value.association_budget_id,
       created_at: new Date().toISOString(),
       can_add: newRequestData.value.can_add,
-      project_finance_manager_id: currentFinanceManagerId.value
+      project_finance_manager_id: currentFinanceManagerId.value,
+      shop_purchase_list_id: newRequestData.value.shop_purchase_list_id
     }
 
     const response = await fetch(`${API_URL}/create_purchase_requests`, {
@@ -383,14 +487,13 @@ const handleNewRequest = async () => {
       return
     }
 
-    newRequestData.value.purchase_request_name = ''
-    newRequestData.value.budget_allocated_for_the_order = null
-    newRequestData.value.if_service = false
+    resetRequestForm()
     showAddRequestModal.value = false
 
     fetchRequests()
     fetchRequestsBySpecificProjectFinanceManager()
     fetchAssociationBudgets()
+    fetchClosedOrdersForRequests()
 
   } catch (error) {
     console.error('Błąd przy dodawaniu wniosku:', error)
@@ -434,9 +537,17 @@ const formatMoney = (value) => {
   })
 }
 
+const orderLabel = (order) => {
+  const name = order.name?.trim() || `Zamówienie #${order.shop_purchase_list_id}`
+  const shop = order.shop_name || 'Brak sklepu'
+  const total = formatMoney(order.total_price || order.cost)
+  return `${name} - ${shop} - ${total} PLN`
+}
+
 onMounted(() => {
   fetchRequests()
   fetchAssociationBudgets()
+  fetchClosedOrdersForRequests()
 })
 
 // Obserwujemy ID użytkownika i pobieramy dane, gdy jest dostępne
@@ -446,6 +557,7 @@ watch(
     if (newId) {
       fetchRequestsBySpecificProjectFinanceManager()
       fetchAssociationBudgets()
+      fetchClosedOrdersForRequests()
     }
   },
   { immediate: true }
@@ -742,17 +854,30 @@ watch(
   background: rgba(0,0,0,0.7);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 5vh 0;
   z-index: 1000;
+  overflow-y: auto;
 }
 
 .modal-content {
   width: 100%;
   max-width: 35vw;
+  max-height: 90vh;
+  overflow-y: auto;
   background: #111827;
   border: 0.08vw solid rgba(148,163,184,0.15);
   border-radius: 1vw;
   padding: 2vw;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 0.45vw;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 1vw;
 }
 
 .modal-header {
@@ -808,6 +933,19 @@ watch(
   border-color: rgba(59,130,246,0.7);
 }
 
+.modal-form__input:disabled,
+.modal-form__input[readonly] {
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
+.modal-form__hint {
+  margin: 0;
+  color: #fcd34d;
+  font-size: 0.85vw;
+  line-height: 1.4;
+}
+
 .budget-preview {
   display: grid;
   gap: 0.6vw;
@@ -850,7 +988,13 @@ watch(
   display: flex;
   justify-content: flex-end;
   gap: 1vw;
-  margin-top: 1vw;
+  position: sticky;
+  bottom: -2vw;
+  margin: 1vw -2vw -2vw;
+  padding: 1vw 2vw 2vw;
+  background: #111827;
+  border-top: 0.08vw solid rgba(148,163,184,0.15);
+  z-index: 2;
 }
 
 .modal-btn {
@@ -874,5 +1018,10 @@ watch(
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
+}
+
+.modal-btn-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 </style>

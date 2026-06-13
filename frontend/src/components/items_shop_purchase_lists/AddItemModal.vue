@@ -85,7 +85,8 @@
 
         <div class="item-form-info">
           <span class="info-icon">ℹ️</span>
-          <p>Przedmiot zostanie przesłany do akceptacji przez skarbnika ze statusem <strong>Oczekujący (pending)</strong>.</p>
+          <p v-if="isTreasurer">Przedmiot zostanie od razu dodany do katalogu.</p>
+          <p v-else>Przedmiot zostanie przesłany do akceptacji przez skarbnika ze statusem <strong>Oczekujący (pending)</strong>.</p>
         </div>
 
         <div class="modal-actions">
@@ -93,7 +94,7 @@
           <button
             type="submit"
             class="modal-btn modal-btn-save"
-            :disabled="isLoading">{{ isLoading ? 'Zapisywanie...' : 'Dodaj do akceptacji' }}</button>
+            :disabled="isLoading">{{ isLoading ? 'Zapisywanie...' : submitButtonLabel }}</button>
         </div>
       </form>
     </div>
@@ -108,6 +109,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import RequestSubcategoryModal from './RequestSubcategoryModal.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -115,10 +117,13 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'submit-item'])
+const { user } = useAuth()
 
 const allSubcategories = ref([])
 const subcategorySearch = ref('')
 const showRequestModal = ref(false)
+const isTreasurer = computed(() => user.value?.role === 'treasurer')
+const submitButtonLabel = computed(() => isTreasurer.value ? 'Dodaj' : 'Dodaj do akceptacji')
 
 const fetchSubcategories = async () => {
   try {
