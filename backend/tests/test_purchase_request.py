@@ -4,7 +4,15 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 from datetime import datetime, timezone
 from src import app, get_session
-from src.relations import AssociationBudget, Project, ProjectBudget, PurchaseRequest
+from src.relations import (
+    AssociationBudget,
+    Funding,
+    Project,
+    ProjectBudget,
+    PublicPurchasePlan,
+    PublicPurchasePlanList,
+    PurchaseRequest,
+)
 
 
 sqlite_url = "sqlite://"
@@ -60,6 +68,16 @@ def seed_data_fixture(session: Session):
     )
     session.add(project_budget)
     session.commit()
+    session.add(Funding(
+        funding_id=1,
+        funding_name="Dofinansowanie testowe",
+        funding_price=50000.0,
+        spent_money=0.0,
+        project_id=1,
+        project_budget_id=1,
+        association_budget_id=1,
+    ))
+    session.commit()
 
     pr1 = PurchaseRequest(
         purchase_request_id=1,
@@ -68,6 +86,7 @@ def seed_data_fixture(session: Session):
         if_service=False,
         used_cpv_id=101,
         project_budget_id=1,
+        funding_id=1,
         created_at=datetime.now(timezone.utc),
         can_add=True,
         project_finance_manager_id=10
@@ -80,6 +99,7 @@ def seed_data_fixture(session: Session):
         if_service=True,
         used_cpv_id=202,
         project_budget_id=1,
+        funding_id=1,
         created_at=datetime.now(timezone.utc),
         can_add=False,
         project_finance_manager_id=20
@@ -151,6 +171,34 @@ def test_create_purchase_request(client: TestClient, session: Session):
         project_id=1,
     ))
     session.commit()
+    session.add(Funding(
+        funding_id=1,
+        funding_name="Dofinansowanie testowe",
+        funding_price=10000.0,
+        spent_money=0.0,
+        project_id=1,
+        project_budget_id=1,
+        association_budget_id=1,
+    ))
+    session.commit()
+    plan_list = PublicPurchasePlanList(
+        public_plan_list_name="Plan testowy",
+        plan_year=2026,
+        funding_id=1,
+    )
+    session.add(plan_list)
+    session.commit()
+    session.refresh(plan_list)
+    plan_position = PublicPurchasePlan(
+        public_purchase_plan_name="CPV 303",
+        cpv_code=303,
+        cost=5000.0,
+        funding_id=1,
+        public_purchase_plan_list_id=plan_list.public_purchase_plan_list_id,
+    )
+    session.add(plan_position)
+    session.commit()
+    session.refresh(plan_position)
 
     new_request_payload = {
         "purchase_request_name": "Nowe biurka",
@@ -158,9 +206,11 @@ def test_create_purchase_request(client: TestClient, session: Session):
         "if_service": False,
         "used_cpv_id": 303,
         "project_budget_id": 1,
+        "funding_id": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "can_add": True,
-        "project_finance_manager_id": 30
+        "project_finance_manager_id": 30,
+        "public_purchase_plan_id": plan_position.public_purchase_plan_id,
     }
     
     response = client.post("/api/create_purchase_requests", json=new_request_payload)
@@ -169,6 +219,8 @@ def test_create_purchase_request(client: TestClient, session: Session):
     data = response.json()
     assert data["purchase_request_name"] == "Nowe biurka"
     assert data["budget_allocated_for_the_order"] == 3000.50
+    assert data["plan_compliance_status"] == "compliant"
+    assert data["plan_position"]["remaining_amount"] == 1999.50
     assert "purchase_request_id" in data
     db_request = session.get(PurchaseRequest, data["purchase_request_id"])
     assert db_request is not None
@@ -179,6 +231,12 @@ def test_create_purchase_request(client: TestClient, session: Session):
     project_budget = budgets_response.json()[0]
     assert project_budget["purchase_requests_total_allocated"] == 3000.50
     assert project_budget["available_after_purchase_requests"] == 6999.50
+
+    fundings_response = client.get("/api/fundings")
+    assert fundings_response.status_code == 200
+    funding = fundings_response.json()[0]
+    assert funding["purchase_requests_total_allocated"] == 3000.50
+    assert funding["available_after_purchase_requests"] == 6999.50
 
 
 def test_delete_purchase_request(client: TestClient, session: Session, seed_data):

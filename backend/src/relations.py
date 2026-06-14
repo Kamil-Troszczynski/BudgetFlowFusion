@@ -33,7 +33,6 @@ class AssociationBudget(SQLModel, table=True):
     public_purchase_plan_list_id: Optional[int] = Field(default=None, foreign_key="public_purchase_plan_list.public_purchase_plan_list_id")
 
     project_budgets: list["ProjectBudget"] = Relationship(back_populates="association_budget")
-    public_purchase_plan_list: Optional["PublicPurchasePlanList"] = Relationship(back_populates="association_budget")
     fundings: list["Funding"] = Relationship(back_populates="association_budget")
 
 
@@ -50,6 +49,7 @@ class ProjectBudget(SQLModel, table=True):
 
     association_budget: Optional[AssociationBudget] = Relationship(back_populates="project_budgets")
     project: Optional["Project"] = Relationship(back_populates="project_budget")
+    fundings: list["Funding"] = Relationship(back_populates="project_budget")
     purchase_requests: list["PurchaseRequest"] = Relationship(back_populates="project_budget")
 
 
@@ -65,10 +65,18 @@ class PurchaseRequest(SQLModel, table=True):
     can_add: bool
 
     project_budget_id: int = Field(foreign_key="project_budget.project_budget_id")
+    funding_id: int = Field(foreign_key="funding.funding_id")
+    public_purchase_plan_id: Optional[int] = Field(
+        default=None, foreign_key="public_purchase_plan.public_purchase_plan_id"
+    )
+    plan_exception_justification: Optional[str] = Field(default=None)
+    plan_compliance_status: str = Field(default="compliant")
     gslbccf_id: Optional[int] = Field(default=None, foreign_key="grouped_shops_list_by_cpv_category_and_funding.gslbccf_id")
     project_finance_manager_id: Optional[int] = Field(default=None, foreign_key="project_finance_manager.project_finance_manager_id") 
 
     project_budget: Optional[ProjectBudget] = Relationship(back_populates="purchase_requests")
+    funding: Optional["Funding"] = Relationship(back_populates="purchase_requests")
+    public_purchase_plan: Optional["PublicPurchasePlan"] = Relationship(back_populates="purchase_requests")
     grouped_shops_list: Optional["GroupedShopsListByCpvCategoryAndFunding"] = Relationship(back_populates="purchase_requests")
     settlements: list["Settlement"] = Relationship(back_populates="purchase_request")
     project_finance_manager: Optional["ProjectFinanceManager"] = Relationship(back_populates="purchase_requests")
@@ -80,8 +88,10 @@ class PublicPurchasePlanList(SQLModel, table=True):
 
     public_purchase_plan_list_id: Optional[int] = Field(default=None, primary_key=True)
     public_plan_list_name: str
+    plan_year: int
+    funding_id: int = Field(foreign_key="funding.funding_id", unique=True)
 
-    association_budget: Optional[AssociationBudget] = Relationship(back_populates="public_purchase_plan_list")
+    funding: Optional["Funding"] = Relationship(back_populates="public_purchase_plan_list")
     public_purchase_plans: list["PublicPurchasePlan"] = Relationship(back_populates="public_purchase_plan_list")
 
 
@@ -94,11 +104,15 @@ class Funding(SQLModel, table=True):
     spent_money: float
 
     project_id: Optional[int] = Field(default=None, foreign_key="project.project_id")
+    project_budget_id: int = Field(foreign_key="project_budget.project_budget_id")
     association_budget_id: int = Field(foreign_key="association_budget.association_budget_id")
 
     association_budget: Optional[AssociationBudget] = Relationship(back_populates="fundings")
     project: Optional["Project"] = Relationship(back_populates="fundings")
+    project_budget: Optional[ProjectBudget] = Relationship(back_populates="fundings")
+    purchase_requests: list[PurchaseRequest] = Relationship(back_populates="funding")
     shop_purchase_lists: list["ShopPurchaseList"] = Relationship(back_populates="funding")
+    public_purchase_plan_list: Optional[PublicPurchasePlanList] = Relationship(back_populates="funding")
 
 
 class Settlement(SQLModel, table=True):
@@ -145,6 +159,7 @@ class PublicPurchasePlan(SQLModel, table=True):
 
     public_purchase_plan_id: Optional[int] = Field(default=None, primary_key=True)
     public_purchase_plan_name: str
+    cpv_code: int
     cost: float
 
     funding_id: Optional[int] = Field(default=None, foreign_key="funding.funding_id")
@@ -153,6 +168,7 @@ class PublicPurchasePlan(SQLModel, table=True):
 
     public_purchase_plan_list: Optional[PublicPurchasePlanList] = Relationship(back_populates="public_purchase_plans")
     grouped_shops_list: Optional[GroupedShopsListByCpvCategoryAndFunding] = Relationship(back_populates="public_purchase_plans")
+    purchase_requests: list[PurchaseRequest] = Relationship(back_populates="public_purchase_plan")
 
 
 class Project(SQLModel, table=True):

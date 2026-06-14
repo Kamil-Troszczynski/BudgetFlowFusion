@@ -12,6 +12,11 @@ class ListCreate(BaseModel):
     cost: float
     created_at: datetime
     funding_id: int
+    funding_name: Optional[str] = None
+    funding_total: float = 0.0
+    funding_spent_money: float = 0.0
+    funding_purchase_requests_total_allocated: float = 0.0
+    funding_available_after_purchase_requests: float = 0.0
     shop_id: int
     student_id: int
 
@@ -132,6 +137,21 @@ def create_purchase_list(new_list_data: ListCreate, session: Session = Depends(g
     if not creator.project_finance_manager_id:
         raise HTTPException(status_code=403, detail="Tylko skarbnik może tworzyć listy zamówień")
 
+    funding = session.get(Funding, new_list_data.funding_id)
+    if not funding:
+        raise HTTPException(status_code=404, detail="Dofinansowanie nie istnieje")
+    project_budget = session.get(ProjectBudget, funding.project_budget_id)
+    if not project_budget:
+        raise HTTPException(status_code=400, detail="Dofinansowanie nie ma budżetu sekcji")
+    project = session.get(Project, project_budget.project_id)
+    if not project or project.association_id != creator.association_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Możesz wybrać tylko dofinansowanie sekcji swojego koła",
+        )
+    if funding.funding_price - funding.spent_money <= 0:
+        raise HTTPException(status_code=400, detail="Wybrane dofinansowanie nie ma dostępnych środków")
+
     new_list = ShopPurchaseList(
         name=new_list_data.name,
         priority=new_list_data.priority,
@@ -219,14 +239,22 @@ def get_closed_lists_for_purchase_requests(
         )
         shop = session.get(Shop, purchase_list.shop_id)
         project_budget = (
-            session.exec(
-                select(ProjectBudget).where(ProjectBudget.project_id == funding.project_id)
-            ).first()
-            if funding and funding.project_id
+            session.get(ProjectBudget, funding.project_budget_id)
+            if funding and funding.project_budget_id
             else None
         )
         items_summary = _list_items_summary(purchase_list.shop_purchase_list_id, session)
         total_price = items_summary["total_price"] or purchase_list.cost or 0.0
+        funding_requests = (
+            session.exec(
+                select(PurchaseRequest).where(PurchaseRequest.funding_id == funding.funding_id)
+            ).all()
+            if funding
+            else []
+        )
+        funding_allocated = sum(
+            request.budget_allocated_for_the_order for request in funding_requests
+        )
 
         result.append(
             ClosedPurchaseListForRequestOut(
@@ -238,6 +266,15 @@ def get_closed_lists_for_purchase_requests(
                 item_total=items_summary["item_total"],
                 created_at=purchase_list.created_at,
                 funding_id=purchase_list.funding_id,
+                funding_name=funding.funding_name if funding else None,
+                funding_total=funding.funding_price if funding else 0.0,
+                funding_spent_money=funding.spent_money if funding else 0.0,
+                funding_purchase_requests_total_allocated=funding_allocated,
+                funding_available_after_purchase_requests=(
+                    funding.funding_price - funding.spent_money - funding_allocated
+                    if funding
+                    else 0.0
+                ),
                 association_budget_id=association_budget.association_budget_id if association_budget else None,
                 association_budget_name=association_budget.association_budget_name if association_budget else None,
                 project_budget_id=project_budget.project_budget_id if project_budget else None,

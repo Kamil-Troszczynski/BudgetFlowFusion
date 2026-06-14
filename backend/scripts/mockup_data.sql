@@ -10,20 +10,15 @@ INSERT INTO project (project_name, description, allocated_budget, rest_of_budget
 ('Dron Autonomiczny X-1', 'Projekt quadrocoptera do mapowania terenu.', 15000.00, 15000.00, 2);
 
 
-INSERT INTO public_purchase_plan_list (public_plan_list_name) VALUES
-('Plan Zamówień Publicznych Koła 2026'),
-('Rezerwowy Plan Zakupowy 2026');
-
-
 INSERT INTO association_budget (association_budget_name, total_budget, spent_money, public_purchase_plan_list_id) VALUES
-('Budżet Główny Koła 2026', 500000.00, 0.00, 1),
-('Fundusz Rozwojowy Wydziału', 100000.00, 0.00, 2);
+('Budżet Główny Koła 2026', 30000.00, 0.00, NULL),
+('Fundusz Rozwojowy Wydziału', 5000.00, 0.00, NULL);
 
 
 INSERT INTO project_budget (project_budget_name, total_budget, spent_money, association_budget_id, project_id) VALUES
-('Budżet projektu: Łazik Marsjański HAL_062', 25000.00, 0.00, 1, 1),
-('Budżet projektu: Ramię Robotyczne KUKA-Mini', 8000.00, 0.00, 1, 2),
-('Budżet projektu: Dron Autonomiczny X-1', 15000.00, 0.00, 2, 3);
+('Budżet sekcji: Łazik Marsjański HAL_062', 20000.00, 0.00, 1, 1),
+('Budżet sekcji: Ramię Robotyczne KUKA-Mini', 10000.00, 0.00, 1, 2),
+('Budżet sekcji: Dron Autonomiczny X-1', 5000.00, 0.00, 2, 3);
 
 
 INSERT INTO project_finance_manager (login, password_hash, access) VALUES
@@ -38,10 +33,16 @@ INSERT INTO student (name, surname, login, password_hash, position, is_in_sap, p
 ('Kasia',  'Wiśniewska', 'kasia.w@kolo.edu.pl',         'hashed_222', 'Mechanika', false, 2, 2);
 
 
-INSERT INTO funding (funding_name, funding_price, spent_money, project_id, association_budget_id) VALUES
-('Grant Rektora - HAL_062', 20000.00, 0.00, 1, 1),
-('Sponsor Główny - Dron', 10000.00, 0.00, 2, 1),
-('Środki Własne Instytutu', 5000.00, 0.00, 3, 2);
+INSERT INTO funding (funding_name, funding_price, spent_money, project_id, project_budget_id, association_budget_id) VALUES
+('Grant Rektora - HAL_062', 20000.00, 0.00, 1, 1, 1),
+('Sponsor Główny - Dron', 10000.00, 0.00, 2, 2, 1),
+('Środki Własne Instytutu', 5000.00, 0.00, 3, 3, 2);
+
+
+INSERT INTO public_purchase_plan_list (public_plan_list_name, plan_year, funding_id) VALUES
+('Plan ZP - Grant Rektora - HAL_062', 2026, 1),
+('Plan ZP - Sponsor Główny - Dron', 2026, 2),
+('Plan ZP - Środki Własne Instytutu', 2026, 3);
 
 
 INSERT INTO shop (shop_name, address, delivery_time, is_recommended, free_delivery_threshold) VALUES
@@ -73,9 +74,9 @@ INSERT INTO product_subcategory (product_subcategory_name, description, product_
 ('Narzędzia ręczne',   'Śrubokręty, szczypce', 4);
 
 
-INSERT INTO public_purchase_plan (public_purchase_plan_name, cost, funding_id, gslbccf_id, public_purchase_plan_list_id) VALUES
-('Zakup podzespołów napędowych do łazika HAL_062', 5000.00, 1, 1, 1),
-('Komponenty do systemu wizyjnego Drona X-1', 3000.00, 2, 2, 1);
+INSERT INTO public_purchase_plan (public_purchase_plan_name, cpv_code, cost, funding_id, gslbccf_id, public_purchase_plan_list_id) VALUES
+('CPV 42000000', 42000000, 5000.00, 1, 1, 1),
+('CPV 31700000', 31700000, 3000.00, 2, 2, 2);
 
 
 INSERT INTO item (name, price, currency, link, created_at, status, product_subcategory_id, student_id, shop_id) VALUES
@@ -103,9 +104,9 @@ INSERT INTO shop_purchase_list_item (shop_purchase_list_id, item_id, amount) VAL
 (2, 4, 4);
 
 
-INSERT INTO purchase_request (purchase_request_name, budget_allocated_for_the_order, if_service, used_cpv_id, created_at, can_add, project_budget_id, gslbccf_id, project_finance_manager_id) VALUES
-('Wniosek: Napęd i wizja łazika',      2562.00, false, 42000000, NOW(), false, 1, 1, 1),
-('Wniosek: Mikrokontrolery do ramienia', 399.60, false, 31700000, NOW(), false, 2, 2, 2);
+INSERT INTO purchase_request (purchase_request_name, budget_allocated_for_the_order, if_service, used_cpv_id, created_at, can_add, project_budget_id, funding_id, public_purchase_plan_id, plan_compliance_status, gslbccf_id, project_finance_manager_id) VALUES
+('Wniosek: Napęd i wizja łazika',      2562.00, false, 42000000, NOW(), false, 1, 1, 1, 'compliant', 1, 1),
+('Wniosek: Mikrokontrolery do ramienia', 399.60, false, 31700000, NOW(), false, 2, 2, 2, 'compliant', 2, 2);
 
 
 INSERT INTO settlement (created_at, paid_by_project_finance_manager_id, purchase_request_id) VALUES

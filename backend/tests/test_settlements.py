@@ -42,6 +42,7 @@ def seed_data_fixture(session: Session):
         if_service=True,
         used_cpv_id=101,  
         project_budget_id=1,
+        funding_id=1,
         created_at=datetime.now(timezone.utc),
         can_add=True,
         project_finance_manager_id=10

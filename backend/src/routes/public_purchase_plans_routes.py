@@ -12,23 +12,34 @@ class FundingOut(BaseModel):
     funding_price: float
     spent_money: float
     available_money: float
+    purchase_requests_total_allocated: float = 0.0
+    available_after_purchase_requests: float = 0.0
     project_id: Optional[int] = None
+    project_budget_id: int
+    project_budget_name: Optional[str] = None
 
 
 class PublicPurchasePlanOut(BaseModel):
     public_purchase_plan_id: int
-    public_purchase_plan_name: str
+    cpv_code: int
     cost: float
-    funding_id: Optional[int] = None
-    funding_name: Optional[str] = None
+    used_amount: float = 0.0
+    remaining_amount: float = 0.0
+    funding_id: int
     public_purchase_plan_list_id: int
 
 
 class PublicPurchasePlanListOut(BaseModel):
     public_purchase_plan_list_id: int
     public_plan_list_name: str
+    plan_year: int
+    funding_id: int
+    funding_name: str
+    funding_price: float
     public_purchase_plans: List[PublicPurchasePlanOut] = PydanticField(default_factory=list)
     total_cost: float = 0.0
+    total_used: float = 0.0
+    total_remaining: float = 0.0
 
 
 class PurchaseRequestForBudgetOut(BaseModel):
@@ -78,65 +89,84 @@ class AssociationBudgetOut(BaseModel):
 
 
 class PublicPurchasePlanListCreate(BaseModel):
-    association_budget_id: int
+    funding_id: int
     public_plan_list_name: str
+    plan_year: int
 
 
 class PublicPurchasePlanCreate(BaseModel):
     public_purchase_plan_list_id: int
-    public_purchase_plan_name: str
+    cpv_code: int
     cost: float
-    funding_id: int
 
 
-def _funding_out(funding: Funding) -> FundingOut:
+def _funding_out(funding: Funding, session: Session) -> FundingOut:
+    project_budget = session.get(ProjectBudget, funding.project_budget_id)
+    purchase_requests = session.exec(
+        select(PurchaseRequest).where(PurchaseRequest.funding_id == funding.funding_id)
+    ).all()
+    allocated = sum(
+        request.budget_allocated_for_the_order for request in purchase_requests
+    )
     return FundingOut(
         funding_id=funding.funding_id,
         funding_name=funding.funding_name,
         funding_price=funding.funding_price,
         spent_money=funding.spent_money,
         available_money=funding.funding_price - funding.spent_money,
+        purchase_requests_total_allocated=allocated,
+        available_after_purchase_requests=(
+            funding.funding_price - funding.spent_money - allocated
+        ),
         project_id=funding.project_id,
+        project_budget_id=funding.project_budget_id,
+        project_budget_name=(
+            project_budget.project_budget_name if project_budget else None
+        ),
     )
-
-
-def _get_funding_name_by_id(session: Session, funding_ids: set[int]) -> dict[int, str]:
-    if not funding_ids:
-        return {}
-
-    fundings = session.exec(
-        select(Funding).where(Funding.funding_id.in_(list(funding_ids)))
-    ).all()
-    return {funding.funding_id: funding.funding_name for funding in fundings}
 
 
 def _plan_list_out(plan_list: PublicPurchasePlanList, session: Session) -> PublicPurchasePlanListOut:
+    funding = session.get(Funding, plan_list.funding_id)
+    if not funding:
+        raise HTTPException(status_code=404, detail="Dofinansowanie planu nie znalezione")
+
     plans = session.exec(
         select(PublicPurchasePlan)
         .where(PublicPurchasePlan.public_purchase_plan_list_id == plan_list.public_purchase_plan_list_id)
-        .order_by(PublicPurchasePlan.public_purchase_plan_id.desc())
+        .order_by(PublicPurchasePlan.cpv_code)
     ).all()
-    funding_names = _get_funding_name_by_id(
-        session,
-        {plan.funding_id for plan in plans if plan.funding_id is not None},
-    )
-    public_plans = [
-        PublicPurchasePlanOut(
-            public_purchase_plan_id=plan.public_purchase_plan_id,
-            public_purchase_plan_name=plan.public_purchase_plan_name,
-            cost=plan.cost,
-            funding_id=plan.funding_id,
-            funding_name=funding_names.get(plan.funding_id),
-            public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
+    public_plans = []
+    for plan in plans:
+        requests = session.exec(
+            select(PurchaseRequest).where(
+                PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id
+            )
+        ).all()
+        used_amount = sum(
+            request.budget_allocated_for_the_order for request in requests
         )
-        for plan in plans
-    ]
+        public_plans.append(PublicPurchasePlanOut(
+            public_purchase_plan_id=plan.public_purchase_plan_id,
+            cpv_code=plan.cpv_code,
+            cost=plan.cost,
+            used_amount=used_amount,
+            remaining_amount=plan.cost - used_amount,
+            funding_id=plan_list.funding_id,
+            public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
+        ))
 
     return PublicPurchasePlanListOut(
         public_purchase_plan_list_id=plan_list.public_purchase_plan_list_id,
         public_plan_list_name=plan_list.public_plan_list_name,
+        plan_year=plan_list.plan_year,
+        funding_id=plan_list.funding_id,
+        funding_name=funding.funding_name,
+        funding_price=funding.funding_price,
         public_purchase_plans=public_plans,
         total_cost=sum(plan.cost for plan in plans),
+        total_used=sum(plan.used_amount for plan in public_plans),
+        total_remaining=sum(plan.remaining_amount for plan in public_plans),
     )
 
 
@@ -149,6 +179,31 @@ def _get_budget_fundings(
     if association_id:
         statement = statement.join(Project).where(Project.association_id == association_id)
     return session.exec(statement).all()
+
+
+def _project_budget_amounts(project_budget: ProjectBudget, session: Session) -> tuple[float, float]:
+    fundings = session.exec(
+        select(Funding).where(
+            Funding.project_budget_id == project_budget.project_budget_id
+        )
+    ).all()
+    if not fundings:
+        return project_budget.total_budget, project_budget.spent_money
+    return (
+        sum(funding.funding_price for funding in fundings),
+        sum(funding.spent_money for funding in fundings),
+    )
+
+
+def _association_budget_amounts(budget_id: int, session: Session) -> tuple[float, float]:
+    project_budgets = session.exec(
+        select(ProjectBudget).where(ProjectBudget.association_budget_id == budget_id)
+    ).all()
+    amounts = [_project_budget_amounts(project_budget, session) for project_budget in project_budgets]
+    return (
+        sum(total for total, _ in amounts),
+        sum(spent for _, spent in amounts),
+    )
 
 
 def _budget_out(
@@ -167,24 +222,21 @@ def _budget_out(
         purchase_request.budget_allocated_for_the_order
         for purchase_request in purchase_requests
     )
-    available_money = budget.total_budget - budget.spent_money
-    plan_list = (
-        session.get(PublicPurchasePlanList, budget.public_purchase_plan_list_id)
-        if budget.public_purchase_plan_list_id
-        else None
+    total_budget, spent_money = _association_budget_amounts(
+        budget.association_budget_id, session
     )
-
+    available_money = total_budget - spent_money
     return AssociationBudgetOut(
         association_budget_id=budget.association_budget_id,
         association_budget_name=budget.association_budget_name,
-        total_budget=budget.total_budget,
-        spent_money=budget.spent_money,
+        total_budget=total_budget,
+        spent_money=spent_money,
         available_money=available_money,
         purchase_requests_total_allocated=purchase_requests_total,
         available_after_purchase_requests=available_money - purchase_requests_total,
         public_purchase_plan_list_id=budget.public_purchase_plan_list_id,
-        public_purchase_plan_list=_plan_list_out(plan_list, session) if plan_list else None,
-        fundings=[_funding_out(funding) for funding in fundings],
+        public_purchase_plan_list=None,
+        fundings=[_funding_out(funding, session) for funding in fundings],
         purchase_requests=[
             PurchaseRequestForBudgetOut(
                 purchase_request_id=purchase_request.purchase_request_id,
@@ -200,39 +252,6 @@ def _budget_out(
             for purchase_request in purchase_requests
         ],
     )
-
-
-def _get_budget_for_plan_list(
-    public_purchase_plan_list_id: int,
-    session: Session,
-) -> AssociationBudget:
-    budget = session.exec(
-        select(AssociationBudget).where(
-            AssociationBudget.public_purchase_plan_list_id == public_purchase_plan_list_id
-        )
-    ).first()
-    if not budget:
-        raise HTTPException(
-            status_code=400,
-            detail="Lista planów publicznych nie jest przypięta do budżetu koła",
-        )
-    return budget
-
-
-def _validate_funding_for_budget(
-    funding_id: int,
-    association_budget_id: int,
-    session: Session,
-) -> Funding:
-    funding = session.get(Funding, funding_id)
-    if not funding:
-        raise HTTPException(status_code=404, detail="Dofinansowanie nie znalezione")
-    if funding.association_budget_id != association_budget_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Dofinansowanie nie należy do wskazanego budżetu koła",
-        )
-    return funding
 
 
 @app.get("/api/association_budgets", response_model=List[AssociationBudgetOut])
@@ -282,14 +301,15 @@ def get_project_budgets(
             AssociationBudget, project_budget.association_budget_id
         )
         project = session.get(Project, project_budget.project_id)
+        total_budget, spent_money = _project_budget_amounts(project_budget, session)
         result.append(ProjectBudgetOut(
             project_budget_id=project_budget.project_budget_id,
             project_budget_name=project_budget.project_budget_name,
-            total_budget=project_budget.total_budget,
-            spent_money=project_budget.spent_money,
+            total_budget=total_budget,
+            spent_money=spent_money,
             purchase_requests_total_allocated=allocated,
             available_after_purchase_requests=(
-                project_budget.total_budget - project_budget.spent_money - allocated
+                total_budget - spent_money - allocated
             ),
             association_budget_id=project_budget.association_budget_id,
             association_budget_name=(
@@ -311,14 +331,6 @@ def get_dashboard_budget_summary(
         .join(Project)
         .where(Project.association_id == association_id)
     ).all()
-    association_budget_ids = {
-        project_budget.association_budget_id for project_budget in project_budgets
-    }
-    association_budgets = [
-        session.get(AssociationBudget, budget_id)
-        for budget_id in association_budget_ids
-    ]
-    association_budgets = [budget for budget in association_budgets if budget]
     project_budget_ids = [
         project_budget.project_budget_id for project_budget in project_budgets
     ]
@@ -332,8 +344,12 @@ def get_dashboard_budget_summary(
         else []
     )
 
-    total_budget = sum(budget.total_budget for budget in association_budgets)
-    spent_money = sum(budget.spent_money for budget in association_budgets)
+    budget_amounts = [
+        _project_budget_amounts(project_budget, session)
+        for project_budget in project_budgets
+    ]
+    total_budget = sum(total for total, _ in budget_amounts)
+    spent_money = sum(spent for _, spent in budget_amounts)
     allocated = sum(request.budget_allocated_for_the_order for request in requests)
     return DashboardBudgetSummaryOut(
         total_budget=total_budget,
@@ -344,35 +360,57 @@ def get_dashboard_budget_summary(
 
 
 @app.post("/api/public_purchase_plan_lists", response_model=PublicPurchasePlanListOut)
-def create_or_attach_public_purchase_plan_list(
+def create_public_purchase_plan_list(
     new_list_data: PublicPurchasePlanListCreate,
     session: Session = Depends(get_session),
 ):
-    budget = session.get(AssociationBudget, new_list_data.association_budget_id)
-    if not budget:
-        raise HTTPException(status_code=404, detail="Budżet koła nie znaleziony")
+    funding = session.get(Funding, new_list_data.funding_id)
+    if not funding:
+        raise HTTPException(status_code=404, detail="Dofinansowanie nie znalezione")
+    if new_list_data.plan_year < 2000 or new_list_data.plan_year > 2100:
+        raise HTTPException(status_code=400, detail="Nieprawidłowy rok planu")
 
-    if budget.public_purchase_plan_list_id:
-        plan_list = session.get(PublicPurchasePlanList, budget.public_purchase_plan_list_id)
-        if not plan_list:
-            raise HTTPException(status_code=404, detail="Lista planów publicznych nie znaleziona")
+    plan_list = session.exec(
+        select(PublicPurchasePlanList).where(
+            PublicPurchasePlanList.funding_id == funding.funding_id
+        )
+    ).first()
+    if plan_list:
         plan_list.public_plan_list_name = new_list_data.public_plan_list_name
+        plan_list.plan_year = new_list_data.plan_year
     else:
         plan_list = PublicPurchasePlanList(
-            public_plan_list_name=new_list_data.public_plan_list_name
+            public_plan_list_name=new_list_data.public_plan_list_name,
+            plan_year=new_list_data.plan_year,
+            funding_id=funding.funding_id,
         )
-        session.add(plan_list)
-        session.commit()
-        session.refresh(plan_list)
 
-        budget.public_purchase_plan_list_id = plan_list.public_purchase_plan_list_id
-
-    session.add(budget)
     session.add(plan_list)
     session.commit()
     session.refresh(plan_list)
 
     return _plan_list_out(plan_list, session)
+
+
+@app.get("/api/public_purchase_plan_lists", response_model=List[PublicPurchasePlanListOut])
+def get_public_purchase_plan_lists(
+    association_id: Optional[int] = None,
+    funding_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
+    statement = select(PublicPurchasePlanList)
+    if funding_id:
+        statement = statement.where(PublicPurchasePlanList.funding_id == funding_id)
+    if association_id:
+        statement = (
+            statement.join(Funding)
+            .join(Project)
+            .where(Project.association_id == association_id)
+        )
+    plan_lists = session.exec(
+        statement.order_by(PublicPurchasePlanList.plan_year.desc())
+    ).all()
+    return [_plan_list_out(plan_list, session) for plan_list in plan_lists]
 
 
 @app.get(
@@ -396,23 +434,32 @@ def create_public_purchase_plan(
     session: Session = Depends(get_session),
 ):
     if new_plan_data.cost <= 0:
-        raise HTTPException(status_code=400, detail="Koszt planu musi być większy od zera")
+        raise HTTPException(status_code=400, detail="Kwota planowana musi być większa od zera")
+    if new_plan_data.cpv_code <= 0:
+        raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
 
     plan_list = session.get(PublicPurchasePlanList, new_plan_data.public_purchase_plan_list_id)
     if not plan_list:
         raise HTTPException(status_code=404, detail="Lista planów publicznych nie znaleziona")
 
-    budget = _get_budget_for_plan_list(new_plan_data.public_purchase_plan_list_id, session)
-    funding = _validate_funding_for_budget(
-        new_plan_data.funding_id,
-        budget.association_budget_id,
-        session,
-    )
+    duplicate = session.exec(
+        select(PublicPurchasePlan).where(
+            PublicPurchasePlan.public_purchase_plan_list_id
+            == plan_list.public_purchase_plan_list_id,
+            PublicPurchasePlan.cpv_code == new_plan_data.cpv_code,
+        )
+    ).first()
+    if duplicate:
+        raise HTTPException(
+            status_code=400,
+            detail="Ten kod CPV już istnieje w planie dofinansowania",
+        )
 
     new_plan = PublicPurchasePlan(
-        public_purchase_plan_name=new_plan_data.public_purchase_plan_name,
+        public_purchase_plan_name=f"CPV {new_plan_data.cpv_code}",
+        cpv_code=new_plan_data.cpv_code,
         cost=new_plan_data.cost,
-        funding_id=new_plan_data.funding_id,
+        funding_id=plan_list.funding_id,
         public_purchase_plan_list_id=new_plan_data.public_purchase_plan_list_id,
     )
     session.add(new_plan)
@@ -421,10 +468,11 @@ def create_public_purchase_plan(
 
     return PublicPurchasePlanOut(
         public_purchase_plan_id=new_plan.public_purchase_plan_id,
-        public_purchase_plan_name=new_plan.public_purchase_plan_name,
+        cpv_code=new_plan.cpv_code,
         cost=new_plan.cost,
+        used_amount=0.0,
+        remaining_amount=new_plan.cost,
         funding_id=new_plan.funding_id,
-        funding_name=funding.funding_name,
         public_purchase_plan_list_id=new_plan.public_purchase_plan_list_id,
     )
 
@@ -437,6 +485,16 @@ def delete_public_purchase_plan(
     plan = session.get(PublicPurchasePlan, public_purchase_plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan publiczny nie znaleziony")
+    linked_request = session.exec(
+        select(PurchaseRequest).where(
+            PurchaseRequest.public_purchase_plan_id == public_purchase_plan_id
+        )
+    ).first()
+    if linked_request:
+        raise HTTPException(
+            status_code=400,
+            detail="Nie można usunąć pozycji planu użytej we wniosku",
+        )
 
     session.delete(plan)
     session.commit()

@@ -32,15 +32,15 @@
         </div>
 
         <div class="list-form-group">
-          <label class="list-form-label">Projekt / Źródło finansowania</label>
+          <label class="list-form-label">Dofinansowanie</label>
           <select
             v-model="form.fundingId"
             class="list-form-select"
             required
           >
-            <option value="" disabled>Wybierz budżet...</option>
+            <option value="" disabled>Wybierz dofinansowanie...</option>
             <option v-for="funding in fundings" :key="funding.id" :value="funding.id">
-              {{ funding.name }} (Dostępne: {{ funding.available }} PLN)
+              {{ funding.name }} - {{ funding.sectionName }} (dostępne: {{ funding.available }} PLN)
             </option>
           </select>
         </div>
@@ -113,7 +113,8 @@ const fetchFundings = async () => {
     fundings.value = data.map(funding => ({
       id: funding.funding_id,
       name: funding.funding_name,
-      available: (funding.funding_price - funding.spent_money).toFixed(2)
+      sectionName: funding.project_budget_name || 'Brak sekcji',
+      available: Number(funding.available_after_purchase_requests).toFixed(2)
     }))
   } catch (error) {
     console.error("Błąd pobierania budżetów:", error)

@@ -36,8 +36,8 @@
                 <span class="request-card__value">{{ formatMoney(request.budget) }} PLN</span>
               </p>
               <p class="request-card__detail">
-                <span class="request-card__label">Budżet projektu:</span>
-                <span class="request-card__value">{{ request.projectBudgetName || 'Brak' }}</span>
+                <span class="request-card__label">Dofinansowanie:</span>
+                <span class="request-card__value">{{ request.fundingName || 'Brak' }}</span>
               </p>
               <p v-if="request.sourceList" class="request-card__detail">
                 <span class="request-card__label">Zamówienie:</span>
@@ -46,6 +46,10 @@
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
                 <span class="request-card__value">{{ request.ifService ? 'Usługa' : 'Produkt' }}</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Plan ZP:</span>
+                <span class="request-card__value">{{ formatPlanStatus(request.planComplianceStatus) }}</span>
               </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Data:</span>
@@ -94,8 +98,8 @@
                 <span class="request-card__value">{{ formatMoney(request.budget) }} PLN</span>
               </p>
               <p class="request-card__detail">
-                <span class="request-card__label">Budżet projektu:</span>
-                <span class="request-card__value">{{ request.projectBudgetName || 'Brak' }}</span>
+                <span class="request-card__label">Dofinansowanie:</span>
+                <span class="request-card__value">{{ request.fundingName || 'Brak' }}</span>
               </p>
               <p v-if="request.sourceList" class="request-card__detail">
                 <span class="request-card__label">Zamówienie:</span>
@@ -104,6 +108,10 @@
               <p class="request-card__detail">
                 <span class="request-card__label">Typ:</span>
                 <span class="request-card__value">{{ request.ifService ? 'Usługa' : 'Produkt' }}</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Plan ZP:</span>
+                <span class="request-card__value">{{ formatPlanStatus(request.planComplianceStatus) }}</span>
               </p>
               <p class="request-card__detail">
                 <span class="request-card__label">Data:</span>
@@ -144,8 +152,8 @@
             <strong>{{ activeRequest.sourceList.name }}</strong>
           </div>
           <div class="request-info">
-            <p>Budżet projektu</p>
-            <strong>{{ activeRequest.projectBudgetName || 'Brak' }}</strong>
+            <p>Dofinansowanie</p>
+            <strong>{{ activeRequest.fundingName || 'Brak' }}</strong>
           </div>
           <div class="request-info">
             <p>Typ wniosku</p>
@@ -160,16 +168,31 @@
             <strong>{{ activeRequest.used_cpv_id ?? 'Brak' }}</strong>
           </div>
           <div class="request-info">
-            <p>Cały budżet projektu</p>
-            <strong>{{ formatMoney(activeRequest.budgetInfo?.project_total_budget) }} PLN</strong>
+            <p>Zgodność z planem ZP</p>
+            <strong>{{ formatPlanStatus(activeRequest.planComplianceStatus) }}</strong>
+          </div>
+          <div v-if="activeRequest.planPosition" class="request-info">
+            <p>Pozycja planu</p>
+            <strong>
+              CPV {{ activeRequest.planPosition.cpv_code }},
+              {{ formatMoney(activeRequest.planPosition.remaining_amount) }} PLN pozostało
+            </strong>
+          </div>
+          <div v-if="activeRequest.planExceptionJustification" class="request-info request-info--wide">
+            <p>Uzasadnienie odstępstwa</p>
+            <strong>{{ activeRequest.planExceptionJustification }}</strong>
           </div>
           <div class="request-info">
-            <p>Zarezerwowane w projekcie</p>
-            <strong>{{ formatMoney(activeRequest.budgetInfo?.project_purchase_requests_total_allocated) }} PLN</strong>
+            <p>Kwota dofinansowania</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.funding_total) }} PLN</strong>
           </div>
           <div class="request-info">
-            <p>Pozostało w projekcie</p>
-            <strong>{{ formatMoney(activeRequest.budgetInfo?.project_available_after_purchase_requests) }} PLN</strong>
+            <p>Zarezerwowane z dofinansowania</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.funding_purchase_requests_total_allocated) }} PLN</strong>
+          </div>
+          <div class="request-info">
+            <p>Pozostało z dofinansowania</p>
+            <strong>{{ formatMoney(activeRequest.budgetInfo?.funding_available_after_purchase_requests) }} PLN</strong>
           </div>
         </div>
       </div>
@@ -227,39 +250,32 @@
             />
           </div>
           <div class="modal-form__group">
-            <label class="modal-form__label">Budżet projektu</label>
-            <select
-              v-model.number="newRequestData.project_budget_id"
+            <label class="modal-form__label">Dofinansowanie zamówienia</label>
+            <input
+              :value="selectedClosedOrder?.funding_name || ''"
+              type="text"
               class="modal-form__input"
-              disabled
+              readonly
               required
-            >
-              <option value="" disabled>Wybierz budżet projektu</option>
-              <option
-                v-for="budget in projectBudgets"
-                :key="budget.project_budget_id"
-                :value="budget.project_budget_id"
-              >
-                {{ budget.project_budget_name }}
-              </option>
-            </select>
+              placeholder="Najpierw wybierz zamówienie"
+            />
           </div>
-          <div v-if="selectedBudgetForForm" class="budget-preview">
+          <div v-if="selectedClosedOrder" class="budget-preview">
             <p>
-              <span>Budżet projektu</span>
-              <strong>{{ formatMoney(selectedBudgetForForm.total_budget) }} PLN</strong>
+              <span>Kwota dofinansowania</span>
+              <strong>{{ formatMoney(selectedClosedOrder.funding_total) }} PLN</strong>
             </p>
             <p>
               <span>Wydane</span>
-              <strong>{{ formatMoney(selectedBudgetForForm.spent_money) }} PLN</strong>
+              <strong>{{ formatMoney(selectedClosedOrder.funding_spent_money) }} PLN</strong>
             </p>
             <p>
-              <span>Zarezerwowane w projekcie</span>
-              <strong>{{ formatMoney(selectedBudgetForForm.purchase_requests_total_allocated) }} PLN</strong>
+              <span>Zarezerwowane z dofinansowania</span>
+              <strong>{{ formatMoney(selectedClosedOrder.funding_purchase_requests_total_allocated) }} PLN</strong>
             </p>
             <p>
               <span>Dostępne po wnioskach</span>
-              <strong>{{ formatMoney(projectedAvailableAfterRequest) }} PLN</strong>
+              <strong>{{ formatMoney(projectedFundingAfterRequest) }} PLN</strong>
             </p>
           </div>
           <div class="modal-form__group">
@@ -271,6 +287,37 @@
               class="modal-form__input"
               required
             />
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Pozycja planu zamówień publicznych</label>
+            <select
+              v-model="newRequestData.public_purchase_plan_id"
+              class="modal-form__input"
+            >
+              <option :value="null">Brak pozycji w planie</option>
+              <option
+                v-for="position in matchingPlanPositions"
+                :key="position.public_purchase_plan_id"
+                :value="position.public_purchase_plan_id"
+              >
+                CPV {{ position.cpv_code }} - pozostało {{ formatMoney(position.remaining_amount) }} PLN
+              </option>
+            </select>
+            <p v-if="selectedClosedOrder && matchingPlanPositions.length === 0" class="modal-form__hint">
+              To dofinansowanie nie ma pozycji z podanym kodem CPV.
+            </p>
+          </div>
+          <div v-if="requiresPlanException" class="modal-form__group">
+            <label class="modal-form__label">Uzasadnienie odstępstwa od planu</label>
+            <textarea
+              v-model="newRequestData.plan_exception_justification"
+              class="modal-form__input modal-form__textarea"
+              placeholder="Wyjaśnij brak pozycji w planie lub przekroczenie zaplanowanej kwoty"
+              required
+            ></textarea>
+            <p class="modal-form__hint">
+              Wniosek będzie wymagał wyjątkowego zatwierdzenia.
+            </p>
           </div>
           <div class="modal-form__group">
             <label class="modal-form__label">Czy to usługa?</label>
@@ -285,7 +332,7 @@
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
-            <button type="submit" class="modal-btn modal-btn-save" :disabled="!selectedClosedOrder || !selectedBudgetForForm">Złóż wniosek</button>
+            <button type="submit" class="modal-btn modal-btn-save" :disabled="!selectedClosedOrder">Złóż wniosek</button>
           </div>
         </form>
       </div>
@@ -305,8 +352,8 @@ const showAddRequestModal = ref(false)
 
 const userRequests = ref([])
 const allRequests = ref([])
-const projectBudgets = ref([])
 const closedOrders = ref([])
+const fundingPlan = ref(null)
 
 const currentFinanceManagerId = computed(() => {
   return user.value?.projectFinanceManagerId || user.value?.id
@@ -317,9 +364,10 @@ const newRequestData = ref({
   budget_allocated_for_the_order: null,
   if_service: false,
   used_cpv_id: 1,
-  project_budget_id: '',
   can_add: true,
-  shop_purchase_list_id: ''
+  shop_purchase_list_id: '',
+  public_purchase_plan_id: null,
+  plan_exception_justification: ''
 })
 
 const availableClosedOrders = computed(() => {
@@ -332,16 +380,30 @@ const selectedClosedOrder = computed(() => {
   )
 })
 
-const selectedBudgetForForm = computed(() => {
-  return projectBudgets.value.find(
-    budget => budget.project_budget_id === newRequestData.value.project_budget_id
+const projectedFundingAfterRequest = computed(() => {
+  const available = selectedClosedOrder.value?.funding_available_after_purchase_requests || 0
+  const requested = Number(newRequestData.value.budget_allocated_for_the_order || 0)
+  return available - requested
+})
+
+const matchingPlanPositions = computed(() => {
+  const cpv = Number(newRequestData.value.used_cpv_id)
+  return (fundingPlan.value?.public_purchase_plans || []).filter(
+    position => Number(position.cpv_code) === cpv
   )
 })
 
-const projectedAvailableAfterRequest = computed(() => {
-  const available = selectedBudgetForForm.value?.available_after_purchase_requests || 0
-  const requested = Number(newRequestData.value.budget_allocated_for_the_order || 0)
-  return available - requested
+const selectedPlanPosition = computed(() =>
+  matchingPlanPositions.value.find(
+    position => position.public_purchase_plan_id === newRequestData.value.public_purchase_plan_id
+  ) || null
+)
+
+const requiresPlanException = computed(() => {
+  if (!selectedClosedOrder.value) return false
+  if (!selectedPlanPosition.value) return true
+  return Number(newRequestData.value.budget_allocated_for_the_order || 0)
+    > Number(selectedPlanPosition.value.remaining_amount || 0)
 })
 
 const mapRequest = (req) => ({
@@ -354,6 +416,8 @@ const mapRequest = (req) => ({
   used_cpv_id: req.used_cpv_id,
   projectBudgetId: req.project_budget_id,
   projectBudgetName: req.project_budget_name,
+  fundingId: req.funding_id,
+  fundingName: req.funding_name,
   associationBudgetId: req.association_budget_id,
   associationBudgetName: req.association_budget_name,
   budgetInfo: req.budget_info,
@@ -363,9 +427,14 @@ const mapRequest = (req) => ({
         name: req.source_shop_purchase_list.name || `Zamówienie #${req.source_shop_purchase_list.shop_purchase_list_id}`,
         shopName: req.source_shop_purchase_list.shop_name,
         totalPrice: req.source_shop_purchase_list.total_price,
-        settlementId: req.source_shop_purchase_list.settlement_id
+        settlementId: req.source_shop_purchase_list.settlement_id,
+        fundingId: req.source_shop_purchase_list.funding_id,
+        fundingName: req.source_shop_purchase_list.funding_name
       }
     : null,
+  planPosition: req.plan_position,
+  planExceptionJustification: req.plan_exception_justification,
+  planComplianceStatus: req.plan_compliance_status,
   itemCount: 0
 })
 
@@ -395,22 +464,6 @@ const fetchRequestsBySpecificProjectFinanceManager = async () => {
   }
 }
 
-const fetchProjectBudgets = async () => {
-  if (!user.value?.association_id) return
-
-  try {
-    const response = await fetch(`${API_URL}/project_budgets?association_id=${user.value.association_id}`)
-    if (!response.ok) throw new Error('Błąd pobierania budżetów projektów')
-
-    projectBudgets.value = await response.json()
-    if (!newRequestData.value.project_budget_id && projectBudgets.value.length > 0) {
-      newRequestData.value.project_budget_id = projectBudgets.value[0].project_budget_id
-    }
-  } catch (error) {
-    console.error('Błąd pobierania budżetów projektów:', error)
-  }
-}
-
 const fetchClosedOrdersForRequests = async () => {
   if (!currentFinanceManagerId.value) return
 
@@ -426,7 +479,16 @@ const fetchClosedOrdersForRequests = async () => {
   }
 }
 
-const applySelectedClosedOrder = () => {
+const fetchFundingPlan = async fundingId => {
+  fundingPlan.value = null
+  if (!fundingId) return
+  const response = await fetch(`${API_URL}/public_purchase_plan_lists?funding_id=${fundingId}`)
+  if (!response.ok) return
+  const plans = await response.json()
+  fundingPlan.value = plans[0] || null
+}
+
+const applySelectedClosedOrder = async () => {
   const order = selectedClosedOrder.value
   if (!order) return
 
@@ -434,8 +496,12 @@ const applySelectedClosedOrder = () => {
   const total = Number(order.total_price || order.cost || 0)
   newRequestData.value.purchase_request_name = `Wniosek: ${orderName}`
   newRequestData.value.budget_allocated_for_the_order = Math.round(total * 100) / 100
-  newRequestData.value.project_budget_id = order.project_budget_id || ''
   newRequestData.value.used_cpv_id = order.suggested_cpv_id || newRequestData.value.used_cpv_id || 1
+  newRequestData.value.public_purchase_plan_id = null
+  newRequestData.value.plan_exception_justification = ''
+  await fetchFundingPlan(order.funding_id)
+  const match = matchingPlanPositions.value[0]
+  if (match) newRequestData.value.public_purchase_plan_id = match.public_purchase_plan_id
 }
 
 const resetRequestForm = () => {
@@ -443,9 +509,11 @@ const resetRequestForm = () => {
   newRequestData.value.budget_allocated_for_the_order = null
   newRequestData.value.if_service = false
   newRequestData.value.used_cpv_id = 1
-  newRequestData.value.project_budget_id = projectBudgets.value[0]?.project_budget_id || ''
   newRequestData.value.can_add = true
   newRequestData.value.shop_purchase_list_id = ''
+  newRequestData.value.public_purchase_plan_id = null
+  newRequestData.value.plan_exception_justification = ''
+  fundingPlan.value = null
 }
 
 const openAddRequestModal = async () => {
@@ -470,11 +538,12 @@ const handleNewRequest = async () => {
       budget_allocated_for_the_order: newRequestData.value.budget_allocated_for_the_order,
       if_service: newRequestData.value.if_service,
       used_cpv_id: newRequestData.value.used_cpv_id,
-      project_budget_id: newRequestData.value.project_budget_id,
       created_at: new Date().toISOString(),
       can_add: newRequestData.value.can_add,
       project_finance_manager_id: currentFinanceManagerId.value,
-      shop_purchase_list_id: newRequestData.value.shop_purchase_list_id
+      shop_purchase_list_id: newRequestData.value.shop_purchase_list_id,
+      public_purchase_plan_id: newRequestData.value.public_purchase_plan_id,
+      plan_exception_justification: newRequestData.value.plan_exception_justification
     }
 
     const response = await fetch(`${API_URL}/create_purchase_requests`, {
@@ -495,7 +564,6 @@ const handleNewRequest = async () => {
     await Promise.all([
       fetchRequests(),
       fetchRequestsBySpecificProjectFinanceManager(),
-      fetchProjectBudgets(),
       fetchClosedOrdersForRequests()
     ])
     emit('budget-changed')
@@ -513,7 +581,7 @@ const deleteRequest = async (id) => {
     if (response.ok) {
       userRequests.value = userRequests.value.filter(r => r.id !== id)
       allRequests.value = allRequests.value.filter(r => r.id !== id)
-      await fetchProjectBudgets()
+      await fetchClosedOrdersForRequests()
       emit('budget-changed')
       
       // Jeśli usunięty wniosek był aktualnie otwarty, zamknij go
@@ -529,6 +597,12 @@ const deleteRequest = async (id) => {
 const formatStatus = (status) => {
   const map = { pending: 'Oczekujący', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
   return map[status] || status
+}
+
+const formatPlanStatus = status => {
+  if (status === 'compliant') return 'Zgodny z planem'
+  if (status === 'requires_approval') return 'Wymaga zgody'
+  return status || 'Brak danych'
 }
 
 const formatDate = (dateStr) => {
@@ -552,7 +626,6 @@ const orderLabel = (order) => {
 
 onMounted(() => {
   fetchRequests()
-  fetchProjectBudgets()
   fetchClosedOrdersForRequests()
 })
 
@@ -562,11 +635,19 @@ watch(
   (newId) => {
     if (newId) {
       fetchRequestsBySpecificProjectFinanceManager()
-      fetchProjectBudgets()
       fetchClosedOrdersForRequests()
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => newRequestData.value.used_cpv_id,
+  () => {
+    if (!selectedPlanPosition.value) {
+      newRequestData.value.public_purchase_plan_id = null
+    }
+  }
 )
 </script>
 
@@ -839,6 +920,10 @@ watch(
   font-size: 1vw;
 }
 
+.request-info--wide {
+  grid-column: 1 / -1;
+}
+
 .request-details__items h3 {
   color: #bfdbfe;
   margin: 0;
@@ -950,6 +1035,11 @@ watch(
   color: #fcd34d;
   font-size: 0.85vw;
   line-height: 1.4;
+}
+
+.modal-form__textarea {
+  min-height: 110px;
+  resize: vertical;
 }
 
 .budget-preview {
