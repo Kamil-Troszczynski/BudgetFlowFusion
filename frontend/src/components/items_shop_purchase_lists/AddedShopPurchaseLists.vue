@@ -62,6 +62,18 @@
               <span class="list-card__label">Utworzył:</span>
               <span class="list-card__value">{{ list.creatorName }}</span>
             </p>
+            <p v-if="list.lastContributionTime" class="list-card__detail">
+              <span class="list-card__label">Ostatnia edycja:</span>
+              <span class="list-card__value">{{ formatTimeAgo(list.lastContributionTime) }}</span>
+            </p>
+            <p v-if="list.lastContributorName" class="list-card__detail">
+              <span class="list-card__label">Ostatnio edytował:</span>
+              <span class="list-card__value">{{ list.lastContributorName }}</span>
+            </p>
+            <p v-if="list.contributedStudentsNames && list.contributedStudentsNameList.length > 0" class="list-card__detail">
+              <span class="list-card__label">Współtwórcy:</span>
+              <span class="list-card__value">{{ list.contributedStudentsNameList.join(', ') }}</span>
+            </p>
           </div>
           <div class="list-card__actions">
             <button class="list-card__button view" @click="openList(list)">Otwórz listę</button>
@@ -182,6 +194,27 @@ const listToClose = computed(() => allLists.value.find(list => list.id === listT
 const listToDeleteName = computed(() => listToDelete.value?.name || 'tę listę')
 const listToCloseName = computed(() => listToClose.value?.name || activeList.value?.name || 'tę listę')
 
+const formatTimeAgo = (dateInput) => {
+  if (!dateInput) return '-'
+
+  const date = new Date(dateInput)
+  const now = new Date()
+
+  const serverTimeMs = date.getTime() + (2 * 60 * 60 * 1000)
+  const diffMs = now.getTime() - serverTimeMs
+
+  if (diffMs < 60000) return 'przed chwilą'
+
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffMin < 60) return `${diffMin} min temu`
+  if (diffHour < 24) return `${diffHour} godz. temu`
+  return `${diffDay} dni temu`
+}
+
 const fetchShops = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/shops')
@@ -205,7 +238,7 @@ const fetchStudents = async () => {
 const fetchLists = async () => {
   try {
     await fetchShops()
-    if (isTreasurer.value) await fetchStudents()
+    await fetchStudents()
 
     let fundings = []
     if (isTreasurer.value || user.value?.association_id) {
@@ -250,6 +283,31 @@ const fetchLists = async () => {
       const itemTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
       const totalPrice = items.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0)
 
+      const studentIdsSet = new Set()
+      let latestTime = null
+      let latestContributorId = null
+
+      items.forEach(item => {
+        const sId = item.student_id
+        if (sId) {
+          studentIdsSet.add(sId)
+        }
+        const itemTime = item.updated_at || item.created_at
+        const itemTimeMs = itemTime ? new Date(itemTime).getTime() : null
+        if (itemTimeMs && (!latestTime || itemTimeMs > latestTime)) {
+          latestTime = itemTimeMs
+          latestContributorId = sId
+        }
+      })
+
+      const lastEditedByStudent = students.value.find(s => Number(s.student_id) === Number(latestContributorId))
+      const lastContributorName = lastEditedByStudent ? `${lastEditedByStudent.name} ${lastEditedByStudent.surname}` : (latestContributorId ? `Student #${latestContributorId}` : null)
+
+      const contributedStudentsNameList = Array.from(studentIdsSet).map(id => {
+        const match = students.value.find(s => Number(s.student_id) === Number(id))
+        return match ? `${match.name} ${match.surname.substring(0, 1)}.` : `Student #${id}`
+      })
+
       return {
         ...list,
         id: list.shop_purchase_list_id,
@@ -261,7 +319,12 @@ const fetchLists = async () => {
         participants: 1,
         maxBudget,
         isOpen: list.settlement_id === null || list.settlement_id === undefined,
-        creatorName: creator ? `${creator.name} ${creator.surname}` : `Student #${list.student_id}`
+        creatorName: creator ? `${creator.name} ${creator.surname}` : `Student #${list.student_id}`,
+        lastContributionTime: latestTime ? new Date(latestTime).toISOString() : null,
+        lastContributor_id: latestContributorId,
+        lastContributorName,
+        contributedStudents_id: Array.from(studentIdsSet),
+        contributedStudentsNameList
       }
     }))
 
@@ -595,7 +658,8 @@ const executeCloseList = async () => {
 }
 
 .list-card__title {
-  font-size: 1.2vw;
+  padding: 0.4vw 0.0vw;
+  font-size: 1.25vw;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -607,7 +671,7 @@ const executeCloseList = async () => {
 .list-card__shop {
   padding: 0.4vw 0.8vw;
   border-radius: 0.4vw;
-  font-size: 0.85vw;
+  font-size: 1.25vw;
   font-weight: 600;
   background: rgba(59, 130, 246, 0.2);
   color: #93c5fd;

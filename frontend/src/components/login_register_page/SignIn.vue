@@ -174,13 +174,25 @@ const handleSubmit = async () => {
 .hero__bottom:hover .hero__link {
   opacity: 0;
   transform: translateY(0.8vh);
+
 }
 
 .hero__bottom:hover .login-sheet,
-.login-sheet:hover {
+.login-sheet:hover,
+.hero__bottom:focus-within .login-sheet
+ {
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, 0);
+}
+
+.login-sheet:hover::before {
+  content: "";
+  position: fixed;
+  inset: -200vh -200vw; 
+  z-index: -1;          
+  background: transparent; 
+  pointer-events: auto;
 }
 
 .login-sheet__card {
@@ -229,6 +241,7 @@ const handleSubmit = async () => {
   color: #ffffff;
   font: inherit;
   outline: none;
+  
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -257,6 +270,7 @@ const handleSubmit = async () => {
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.38);
+  
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -267,6 +281,7 @@ const handleSubmit = async () => {
   transform: translateY(-0.3vh);
   filter: brightness(1.05);
   box-shadow: 0 18px 34px rgba(37, 99, 235, 0.5);
+
 }
 
 .login-sheet__submit:focus-visible {

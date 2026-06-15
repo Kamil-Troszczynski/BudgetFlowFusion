@@ -67,7 +67,10 @@ def _list_items_summary(shop_purchase_list_id: int, session: Session):
     total_price = 0.0
     item_total = 0
     suggested_cpv_id = None
-
+    contributed_students_id = set()
+    last_contributor_id = None
+    last_contribution_time = None
+    
     for line in line_items:
         item = session.get(Item, line.item_id)
         if not item:
@@ -75,6 +78,24 @@ def _list_items_summary(shop_purchase_list_id: int, session: Session):
 
         total_price += (item.price or 0) * line.amount
         item_total += line.amount
+        
+        contributions = session.exec(
+            select(ShopPurchaseListItemContribution).where(
+                ShopPurchaseListItemContribution.shop_purchase_list_id == shop_purchase_list_id,
+                ShopPurchaseListItemContribution.item_id == line.item_id
+            )
+        ).all()
+        
+        for c in contributions:
+            contributed_students_id.add(c.student_id)
+            if not last_contribution_time or c.created_at > last_contribution_time:
+                last_contributor_id = c.student_id
+                last_contribution_time = c.created_at
+
+        if hasattr(line, 'last_edited_at') and line.last_edited_at:
+            if not last_contribution_time or line.last_edited_at > last_contribution_time:
+                last_contribution_time = line.last_edited_at
+                last_contributor_id = getattr(line, 'last_edited_by_student_id', last_contributor_id)
 
         if suggested_cpv_id is None:
             subcategory = session.get(ProductSubcategory, item.product_subcategory_id)
@@ -90,10 +111,13 @@ def _list_items_summary(shop_purchase_list_id: int, session: Session):
         "item_total": item_total,
         "total_price": total_price,
         "suggested_cpv_id": suggested_cpv_id,
+        "contributed_students_id": list(contributed_students_id),
+        "last_contributor_id": last_contributor_id,
+        "last_contribution_time": last_contribution_time,
     }
 
 
-@app.get("/api/lists", response_model=List[ShopPurchaseList])
+@app.get("/api/lists", response_model=List[dict])
 def get_all_lists(
     student_id: Optional[int] = None,
     association_id: Optional[int] = None,
@@ -126,7 +150,20 @@ def get_all_lists(
         statement = statement.where(ShopPurchaseList.settlement_id == None)
 
     statement = statement.order_by(ShopPurchaseList.shop_purchase_list_id.desc())
-    return session.exec(statement).all()
+    lists = session.exec(statement).all()
+    
+    result = []
+    for l in lists:
+        summary = _list_items_summary(l.shop_purchase_list_id, session)
+        list_dict = l.model_dump()
+        list_dict.update({
+            "last_contribution_time": summary["last_contribution_time"],
+            "last_contributor": summary["last_contributor_id"],
+            "contributed_students": summary["contributed_students_id"]
+        })
+        result.append(list_dict)
+        
+    return result
 
 
 @app.post("/api/lists", response_model=ShopPurchaseList)
@@ -326,6 +363,7 @@ def get_items_for_list(
     statement = select(ShopPurchaseListItem).where(ShopPurchaseListItem.shop_purchase_list_id == list_id)
     line_items = session.exec(statement).all()
     results = []
+    
     for line in line_items:
         item_details = session.get(Item, line.item_id)
         if item_details:
@@ -337,6 +375,22 @@ def get_items_for_list(
                 )
                 current_student_amount = contribution.amount if contribution else 0
 
+            last_edited_by = getattr(line, 'last_edited_by_student_id', None)
+            last_edited_time = getattr(line, 'last_edited_at', None)
+
+            if not last_edited_by:
+                latest_contribution = session.exec(
+                    select(ShopPurchaseListItemContribution)
+                    .where(
+                        ShopPurchaseListItemContribution.shop_purchase_list_id == list_id,
+                        ShopPurchaseListItemContribution.item_id == line.item_id
+                    )
+                    .order_by(ShopPurchaseListItemContribution.created_at.desc())
+                ).first()
+                if latest_contribution:
+                    last_edited_by = latest_contribution.student_id
+                    last_edited_time = latest_contribution.created_at
+
             results.append({
                 "line_item_id": line.item_id,
                 "item_id": item_details.item_id,
@@ -347,7 +401,11 @@ def get_items_for_list(
                 "total_price": item_details.price * line.amount,
                 "current_student_amount": current_student_amount,
                 "can_remove_by_current_student": current_student_amount > 0,
+                "student_id": last_edited_by if last_edited_by else item_details.student_id,
+                "updated_at": last_edited_time.isoformat() if last_edited_time else item_details.created_at.isoformat() if item_details.created_at else None,
+                "created_at": last_edited_time.isoformat() if last_edited_time else item_details.created_at.isoformat() if item_details.created_at else None
             })
+            
     return results
 
 
@@ -372,9 +430,13 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
         raise HTTPException(status_code=404, detail="Student nie istnieje")
 
     try:
+        now_time = datetime.now()
         existing_line_item = session.get(ShopPurchaseListItem, (list_id, item_data.item_id))
         if existing_line_item:
             existing_line_item.amount += item_data.amount
+            if hasattr(existing_line_item, 'last_edited_by_student_id'):
+                existing_line_item.last_edited_by_student_id = item_data.student_id
+                existing_line_item.last_edited_at = now_time
             session.add(existing_line_item)
         else:
             existing_line_item = ShopPurchaseListItem(
@@ -382,6 +444,9 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
                 item_id=item_data.item_id,
                 amount=item_data.amount
             )
+            if hasattr(existing_line_item, 'last_edited_by_student_id'):
+                existing_line_item.last_edited_by_student_id = item_data.student_id
+                existing_line_item.last_edited_at = now_time
             session.add(existing_line_item)
 
         contribution = session.get(
@@ -390,6 +455,7 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
         )
         if contribution:
             contribution.amount += item_data.amount
+            contribution.created_at = now_time
             session.add(contribution)
         else:
             contribution = ShopPurchaseListItemContribution(
@@ -397,7 +463,7 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
                 item_id=item_data.item_id,
                 student_id=item_data.student_id,
                 amount=item_data.amount,
-                created_at=datetime.now(),
+                created_at=now_time,
             )
             session.add(contribution)
 
@@ -461,11 +527,68 @@ def remove_item_from_list(
         raise HTTPException(status_code=403, detail="Możesz usunąć tylko pozycje dodane przez siebie")
 
     item_to_delete.amount -= contribution.amount
+    if hasattr(item_to_delete, 'last_edited_by_student_id'):
+        item_to_delete.last_edited_by_student_id = student_id
+        item_to_delete.last_edited_at = datetime.now()
+
     session.delete(contribution)
     if item_to_delete.amount <= 0:
         session.delete(item_to_delete)
     else:
         session.add(item_to_delete)
 
+    session.commit()
+    return {"status": "success"}
+
+
+@app.put("/api/lists/{list_id}/items/{item_id}")
+def update_item_on_list(
+    list_id: int,
+    item_id: int,
+    update_data: ListItemCreate,
+    session: Session = Depends(get_session),
+):
+    list_to_update = session.get(ShopPurchaseList, list_id)
+    if not list_to_update:
+        raise HTTPException(status_code=404, detail="Lista nie znaleziona")
+    if list_to_update.settlement_id is not None:
+        raise HTTPException(status_code=400, detail="Nie można edytować pozycji na zamkniętej liście")
+
+    line_item = session.get(ShopPurchaseListItem, (list_id, item_id))
+    if not line_item:
+        raise HTTPException(status_code=404, detail="Pozycja nie znaleziona")
+
+    if update_data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Ilość musi być większa od zera")
+
+    student = session.get(Student, update_data.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student nie istnieje")
+
+    contribution = session.get(
+        ShopPurchaseListItemContribution,
+        (list_id, item_id, update_data.student_id),
+    )
+
+    can_manage_whole_item = (
+        student.project_finance_manager_id is not None
+        and list_to_update.student_id == student.student_id
+    )
+
+    if not can_manage_whole_item and not contribution:
+        raise HTTPException(status_code=403, detail="Brak uprawnień do edycji tej pozycji")
+
+    now_time = datetime.now()
+    if contribution:
+        contribution.amount = update_data.amount
+        contribution.created_at = now_time
+        session.add(contribution)
+
+    line_item.amount = update_data.amount
+    if hasattr(line_item, 'last_edited_by_student_id'):
+        line_item.last_edited_by_student_id = update_data.student_id
+        line_item.last_edited_at = now_time
+        
+    session.add(line_item)
     session.commit()
     return {"status": "success"}

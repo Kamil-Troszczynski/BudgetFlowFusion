@@ -23,7 +23,7 @@
         </div>
 
         <div class="item-form-group">
-          <label class="item-form-label">Ilość sztuk</label>
+          <label class="item-form-label">Ilość</label>
           <input
             v-model.number="form.amount"
             type="number"
@@ -60,6 +60,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -68,7 +69,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'add-to-list'])
+const { user } = useAuth()
 const catalogItems = ref([])
+
+const currentStudentId = computed(() => user.value?.id)
 
 const fetchItems = async () => {
   try {
@@ -111,7 +115,8 @@ const handleSubmit = () => {
   emit('add-to-list', {
     ...selectedItem,
     amount: form.value.amount,
-    totalPrice: calculatedItemTotal.value
+    totalPrice: calculatedItemTotal.value,
+    student_id: currentStudentId.value
   })
   closeModal()
 }
@@ -137,8 +142,8 @@ const handleSubmit = () => {
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; }
 .modal-btn-save:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transform: translateY(-2px); }
-.error-bg {background: rgba(239, 68, 68, 0.1) !important;border-color: rgba(239, 68, 68, 0.3) !important;}
+.error-bg { background: rgba(239, 68, 68, 0.1) !important; border-color: rgba(239, 68, 68, 0.3) !important; }
 .text-red { color: #fca5a5 !important; }
 .font-bold { font-weight: bold; }
-.modal-btn-save:disabled {background: rgba(239, 68, 68, 0.5);color: rgba(255, 255, 255, 0.6);cursor: not-allowed;box-shadow: none;transform: none;}
+.modal-btn-save:disabled { background: rgba(239, 68, 68, 0.5); color: rgba(255, 255, 255, 0.6); cursor: not-allowed; box-shadow: none; transform: none; }
 </style>
