@@ -11,52 +11,142 @@
           </p>
         </div>
         <div class="list-details__actions">
+          <div class="sort-select-container">
+            <label class="sort-label">Sortuj:</label>
+            <select v-model="sortBy" class="excel-sort-select">
+              <option value="default">Kolejność dodawania</option>
+              <option value="price-asc">Cena jednostkowa: rosnąco</option>
+              <option value="price-desc">Cena jednostkowa: malejąco</option>
+              <option value="total-asc">Suma brutto: rosnąco</option>
+              <option value="total-desc">Suma brutto: malejąco</option>
+              <option value="modified">Ostatnia modyfikacja</option>
+              <option value="author">Współtwórca (alfabetycznie)</option>
+            </select>
+          </div>
+
           <div class="view-toggle-container">
             <button 
               class="toggle-view-btn" 
               :class="{ 'toggle-view-btn--active': currentView === 'basic' }"
-              @click="currentView = 'basic'"
+              @click="setView('basic')"
             >
               Podstawowy
             </button>
             <button 
               class="toggle-view-btn" 
+              :class="{ 'toggle-view-btn--active': currentView === 'accounting' }"
+              @click="setView('accounting')"
+            >
+              Księgowy
+            </button>
+            <button 
+              class="toggle-view-btn" 
               :class="{ 'toggle-view-btn--active': currentView === 'detailed' }"
-              @click="currentView = 'detailed'"
+              @click="setView('detailed')"
             >
               Szczegółowy
             </button>
           </div>
-          <button v-if="isListOpen" class="add-item-btn" @click="showModal = true">+ Dodaj pozycję do listy</button>
-          <button v-if="canCloseList" class="close-list-btn" @click="$emit('close-list')">Zamknij zamówienie</button>
-          <span v-else-if="!isListOpen" class="closed-badge">Lista zamknięta</span>
+          <button class="columns-toggle-btn" @click="showColumnPicker = !showColumnPicker">⚙ Kolumny</button>
+          <button v-if="isListOpen" class="add-item-btn" @click="showModal = true">+ Dodaj pozycję</button>
+          <button v-if="canCloseList" class="close-list-btn" @click="$emit('close-list')">Zamknij</button>
+          <span v-else-if="!isListOpen" class="closed-badge">Zamknięta</span>
         </div>
       </div>
 
-      <div class="items-table-container">
-        <table class="items-table" :class="`items-table--view-${currentView}`">
+      <div v-if="showColumnPicker" class="column-picker-panel">
+        <span class="column-picker-title">Widoczne kolumny:</span>
+        <div class="column-picker-grid">
+          <label v-for="(visible, key) in visibleColumns" :key="key" class="column-checkbox-label">
+            <input type="checkbox" v-model="visibleColumns[key]" class="column-checkbox" />
+            {{ columnLabels[key] }}
+          </label>
+        </div>
+      </div>
+
+      <div class="items-table-container custom-scrollbar">
+        <table class="items-table">
           <thead>
             <tr>
-              <th>Nazwa przedmiotu z katalogu</th>
-              <th>Cena jednostkowa</th>
-              <th>Ilość sztuk</th>
-              <th>Suma</th>
-              <th v-if="currentView === 'detailed'">Ostatnia modyfikacja</th>
+              <th v-if="visibleColumns.name">Przedmiot z katalogu</th>
+              <th v-if="visibleColumns.net">Jedn. Netto</th>
+              <th v-if="visibleColumns.taxRate">Stawka VAT</th>
+              <th v-if="visibleColumns.taxVal">Wartość VAT</th>
+              <th v-if="visibleColumns.gross">Jedn. Brutto</th>
+              <th v-if="visibleColumns.amount">Ilość</th>
+              <th v-if="visibleColumns.totalNet">Suma Netto</th>
+              <th v-if="visibleColumns.totalGross">Suma Brutto</th>
+              <th v-if="visibleColumns.link">Link</th>
+              <th v-if="visibleColumns.notes">Uwagi / Szczegóły</th>
+              <th v-if="visibleColumns.modified">Ostatnia modyfikacja</th>
               <th v-if="canShowActions">Akcje</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in listItems" :key="item.id" :class="{ 'excel-row--editing': editingItemId === item.id }">
-              <td class="font-bold excel-cell--left">{{ item.name }}</td>
+            <tr v-for="item in sortedListItems" :key="item.id" :class="{ 'excel-row--editing': editingItemId === item.id }">
+              <td v-if="visibleColumns.name" class="font-bold excel-cell--left">
+                <template v-if="editingItemId === item.id">
+                  <input 
+                    v-model="editFormData.name" 
+                    type="text" 
+                    class="excel-inline-input text-left font-bold" 
+                    placeholder="Nazwa przedmiotu..."
+                  />
+                </template>
+                <div v-else class="excel-product-cell">
+                  <span class="product-name">{{ item.name }}</span>
+                  <span v-if="currentView === 'detailed' && item.description" class="product-desc">{{ item.description }}</span>
+                </div>
+              </td>
 
-              <td class="excel-cell--price">
+              <td v-if="visibleColumns.net" class="excel-cell--price excel-cell--muted">
+                <template v-if="editingItemId === item.id">
+                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ item.currency }}
+                </template>
+                <template v-else>
+                  {{ Number(calculateNet(item.price, item.tax_rate)).toFixed(2) }} {{ item.currency }}
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.taxRate" class="excel-cell--center excel-cell--muted">
+                <template v-if="editingItemId === item.id">
+                  <div class="excel-tax-input-wrapper">
+                    <input 
+                      v-model.number="editFormData.taxRate" 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      step="0.01"
+                      class="excel-inline-input text-center font-bold"
+                      style="width: 4.5vw;"
+                      @input="onTaxRateChange"
+                    />
+                    <span class="tax-percent-sign">%</span>
+                  </div>
+                </template>
+                <template v-else>
+                  {{ item.tax_rate ?? 23 }}%
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.taxVal" class="excel-cell--price excel-cell--muted">
+                <template v-if="editingItemId === item.id">
+                  {{ Number(editFormData.price - calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ item.currency }}
+                </template>
+                <template v-else>
+                  {{ Number(item.price - calculateNet(item.price, item.tax_rate)).toFixed(2) }} {{ item.currency }}
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.gross" class="excel-cell--price">
                 <template v-if="editingItemId === item.id">
                   <input 
                     v-model.number="editFormData.price" 
                     type="number" 
                     step="0.01" 
                     min="0"
-                    class="excel-inline-input text-right"
+                    class="excel-inline-input text-right text-blue"
+                    @input="onGrossInput"
                   />
                 </template>
                 <template v-else>
@@ -64,7 +154,7 @@
                 </template>
               </td>
 
-              <td class="excel-cell--center">
+              <td v-if="visibleColumns.amount" class="excel-cell--center">
                 <template v-if="editingItemId === item.id">
                   <input 
                     v-model.number="editFormData.amount" 
@@ -79,7 +169,16 @@
                 </template>
               </td>
 
-              <td class="font-bold text-blue excel-cell--price">
+              <td v-if="visibleColumns.totalNet" class="excel-cell--price font-medium text-amber">
+                <template v-if="editingItemId === item.id">
+                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate) * editFormData.amount).toFixed(2) }} {{ item.currency }}
+                </template>
+                <template v-else>
+                  {{ Number(calculateNet(item.price, item.tax_rate) * item.amount).toFixed(2) }} {{ item.currency }}
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.totalGross" class="font-bold text-blue excel-cell--price">
                 <template v-if="editingItemId === item.id">
                   {{ (editFormData.price * editFormData.amount).toFixed(2) }} {{ item.currency }}
                 </template>
@@ -88,7 +187,37 @@
                 </template>
               </td>
 
-              <td v-if="currentView === 'detailed'" class="excel-cell--muted text-center">
+              <td v-if="visibleColumns.link" class="excel-cell--center">
+                <template v-if="editingItemId === item.id">
+                  <input 
+                    v-model="editFormData.link" 
+                    type="text" 
+                    class="excel-inline-input text-left" 
+                    placeholder="URL przedmiotu..."
+                  />
+                </template>
+                <template v-else>
+                  <a v-if="item.link" :href="item.link" target="_blank" class="excel-hyperlink">Otwórz ↗</a>
+                  <span v-else class="excel-cell--muted">-</span>
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.notes" class="excel-cell--left">
+                <template v-if="editingItemId === item.id">
+                  <textarea 
+                    v-model="editFormData.notes" 
+                    rows="1" 
+                    placeholder="Dodaj uwagi..." 
+                    class="excel-inline-textarea"
+                  ></textarea>
+                </template>
+                <template v-else>
+                  <span v-if="item.notes" class="excel-notes-text">{{ item.notes }}</span>
+                  <span v-else class="excel-cell--muted font-italic">- brak uwag -</span>
+                </template>
+              </td>
+
+              <td v-if="visibleColumns.modified" class="excel-cell--muted text-center">
                 <div v-if="item.lastEditedAt" class="excel-modification-cell">
                   <span class="excel-time-ago">{{ formatTimeAgo(item.lastEditedAt) }}</span>
                   <span v-if="item.lastEditedByName" class="excel-user-id-badge">{{ item.lastEditedByName }}</span>
@@ -102,32 +231,37 @@
                     <button class="save-btn" @click="saveItemEdit(item)">Zapisz</button>
                     <button class="cancel-btn" @click="cancelEdit">X</button>
                   </template>
-                  
-                  <template v-else-if="canRemoveItem(item)">
+                  <template v-else>
                     <button class="edit-btn" @click="startEdit(item)">Edytuj</button>
                     <button class="delete-btn" @click="promptRemoveItem(item)">Usuń</button>
                   </template>
-                  
-                  <span v-else class="muted-action">-</span>
                 </div>
               </td>
             </tr>
             <tr v-if="listItems.length === 0">
-              <td :colspan="currentView === 'detailed' ? (canShowActions ? 6 : 5) : (canShowActions ? 5 : 4)" class="empty-table">
+              <td :colspan="getDynamicColspan()" class="empty-table">
                 Koszyk jest pusty. Kliknij "+ Dodaj pozycję do listy".
               </td>
             </tr>
 
             <tr v-if="listItems.length > 0" class="excel-summary-row">
-              <td class="excel-cell--left">RAZEM (SUMA)</td>
-              <td></td>
-              <td class="excel-cell--center font-bold">
+              <td v-if="visibleColumns.name" class="excel-cell--left">RAZEM (SUMA)</td>
+              <td v-if="visibleColumns.net"></td>
+              <td v-if="visibleColumns.taxRate"></td>
+              <td v-if="visibleColumns.taxVal"></td>
+              <td v-if="visibleColumns.gross"></td>
+              <td v-if="visibleColumns.amount" class="excel-cell--center font-bold">
                 {{ listItems.reduce((sum, item) => sum + item.amount, 0) }} szt.
               </td>
-              <td class="font-bold excel-cell--price-total">
+              <td v-if="visibleColumns.totalNet" class="font-bold excel-cell--price excel-cell--price-net">
+                {{ totalNet.toFixed(2) }} {{ listItems[0]?.currency || 'PLN' }}
+              </td>
+              <td v-if="visibleColumns.totalGross" class="font-bold excel-cell--price-total">
                 {{ (currentTotal || 0).toFixed(2) }} {{ listItems[0]?.currency || 'PLN' }}
               </td>
-              <td v-if="currentView === 'detailed'"></td>
+              <td v-if="visibleColumns.link"></td>
+              <td v-if="visibleColumns.notes"></td>
+              <td v-if="visibleColumns.modified"></td>
               <td v-if="canShowActions"></td>
             </tr>
           </tbody>
@@ -147,9 +281,7 @@
     <div v-if="showDeleteModal" class="confirm-modal-overlay" @click="showDeleteModal = false">
       <div class="confirm-modal-content" @click.stop>
         <h2 class="confirm-modal-title">Usuwanie przedmiotu</h2>
-        <p class="confirm-modal-text">
-          Czy na pewno chcesz usunąć tę pozycję z koszyka?
-        </p>
+        <p class="confirm-modal-text">Czy na pewno chcesz usunąć tę pozycję z koszyka?</p>
         <div class="confirm-modal-actions">
           <button class="confirm-btn confirm-btn-cancel" @click="showDeleteModal = false">Anuluj</button>
           <button class="confirm-btn confirm-btn-danger" @click="executeRemoveItem">Tak, usuń</button>
@@ -170,20 +302,13 @@ const { user } = useAuth()
 const showDeleteModal = ref(false)
 const itemToDeleteId = ref(null)
 const currentView = ref('basic')
+const sortBy = ref('default')
+const showColumnPicker = ref(false)
 
 const props = defineProps({
-  list: {
-    type: Object,
-    required: true
-  },
-  canManageItems: {
-    type: Boolean,
-    default: false
-  },
-  canCloseList: {
-    type: Boolean,
-    default: false
-  }
+  list: { type: Object, required: true },
+  canManageItems: { type: Boolean, default: false },
+  canCloseList: { type: Boolean, default: false }
 })
 
 defineEmits(['back', 'close-list'])
@@ -192,33 +317,97 @@ const showModal = ref(false)
 const listItems = ref([])
 const students = ref({})
 const isListOpen = computed(() => props.list?.isOpen !== false)
-const canEditItems = computed(() => props.canManageItems && isListOpen.value)
-const canShowActions = computed(() => {
-  return isListOpen.value && (
-    props.canManageItems || listItems.value.some(item => item.canRemoveByCurrentStudent)
-  )
-})
+const canShowActions = computed(() => isListOpen.value)
 
 const currentStudentId = computed(() => user.value?.id)
 
+const visibleColumns = ref({
+  name: true,
+  net: false,
+  taxRate: false,
+  taxVal: false,
+  gross: true,
+  amount: true,
+  totalNet: false,
+  totalGross: true,
+  link: true,
+  notes: true,
+  modified: false
+})
+
+const columnLabels = {
+  name: 'Nazwa przedmiotu',
+  net: 'Cena Netto',
+  taxRate: 'Stawka VAT',
+  taxVal: 'Wartość VAT',
+  gross: 'Cena Brutto',
+  amount: 'Ilość',
+  totalNet: 'Suma Netto',
+  totalGross: 'Suma Brutto',
+  link: 'Link',
+  notes: 'Uwagi',
+  modified: 'Ostatnia modyfikacja'
+}
+
+const setView = (view) => {
+  currentView.value = view
+  if (view === 'basic') {
+    visibleColumns.value = { name: true, net: false, taxRate: false, taxVal: false, gross: true, amount: true, totalNet: false, totalGross: true, link: true, notes: true, modified: false }
+  } else if (view === 'accounting') {
+    visibleColumns.value = { name: true, net: true, taxRate: true, taxVal: true, gross: true, amount: true, totalNet: true, totalGross: true, link: true, notes: true, modified: false }
+  } else if (view === 'detailed') {
+    visibleColumns.value = { name: true, net: false, taxRate: false, taxVal: false, gross: true, amount: true, totalNet: false, totalGross: true, link: true, notes: true, modified: true }
+  }
+}
+
+const sortedListItems = computed(() => {
+  const itemsCopy = [...listItems.value]
+  if (sortBy.value === 'price-asc') return itemsCopy.sort((a, b) => Number(a.price) - Number(b.price))
+  if (sortBy.value === 'price-desc') return itemsCopy.sort((a, b) => Number(b.price) - Number(a.price))
+  if (sortBy.value === 'total-asc') return itemsCopy.sort((a, b) => Number(a.totalPrice) - Number(b.totalPrice))
+  if (sortBy.value === 'total-desc') return itemsCopy.sort((a, b) => Number(b.totalPrice) - Number(a.totalPrice))
+  if (sortBy.value === 'modified') {
+    return itemsCopy.sort((a, b) => {
+      const timeA = a.lastEditedAt ? new Date(a.lastEditedAt).getTime() : 0
+      const timeB = b.lastEditedAt ? new Date(b.lastEditedAt).getTime() : 0
+      return timeB - timeA
+    })
+  }
+  if (sortBy.value === 'author') {
+    return itemsCopy.sort((a, b) => {
+      return (a.lastEditedByName || '').toLowerCase().localeCompare((b.lastEditedByName || '').toLowerCase(), 'pl')
+    })
+  }
+  return itemsCopy
+})
+
+const calculateNet = (grossPrice, taxRate) => {
+  const rate = taxRate !== undefined ? (Number(taxRate) / 100) : 0.23
+  return Number(grossPrice) / (1 + rate)
+}
+
+const totalNet = computed(() => {
+  return listItems.value.reduce((sum, item) => sum + (calculateNet(item.price, item.tax_rate) * item.amount), 0)
+})
+
+const getDynamicColspan = () => {
+  let count = Object.values(visibleColumns.value).filter(Boolean).length
+  if (canShowActions.value) count += 1
+  return count
+}
+
 const formatTimeAgo = (dateInput) => {
   if (!dateInput) return '-'
-  
-  const dateStr = String(dateInput).endsWith('Z') || String(dateInput).includes('+') 
-    ? dateInput 
-    : `${dateInput}Z`
-    
+  const dateStr = String(dateInput).endsWith('Z') || String(dateInput).includes('+') ? dateInput : `${dateInput}Z`
   const date = new Date(dateStr)
   const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-
-  if (diffMs < 0) return 'przed chwilą'
-
+  const serverTimeMs = date.getTime() + (2 * 60 * 60 * 1000)
+  const diffMs = now.getTime() - serverTimeMs
+  if (diffMs < 0 && diffMs > -60000) return 'przed chwilą'
   const diffSec = Math.floor(diffMs / 1000)
   const diffMin = Math.floor(diffSec / 60)
   const diffHour = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHour / 24)
-
   if (diffSec < 60) return 'przed chwilą'
   if (diffMin < 60) return `${diffMin} min temu`
   if (diffHour < 24) return `${diffHour} godz. temu`
@@ -238,7 +427,7 @@ const fetchStudents = async () => {
     })
     students.value = map
   } catch (error) {
-    console.error('Błąd pobierania studentów:', error)
+    console.error(error)
   }
 }
 
@@ -247,10 +436,7 @@ const fetchListItems = async () => {
     const timestamp = new Date().getTime()
     const params = new URLSearchParams({ t: String(timestamp) })
     if (currentStudentId.value) params.set('student_id', currentStudentId.value)
-
-    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items?${params.toString()}`, {
-      cache: 'no-store'
-    })
+    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items?${params.toString()}`, { cache: 'no-store' })
     if (!response.ok) throw new Error('Błąd sieci')
     const data = await response.json()
     listItems.value = data.map(item => {
@@ -260,168 +446,117 @@ const fetchListItems = async () => {
         id: item.line_item_id,
         amount: item.amount,
         totalPrice: item.total_price,
+        notes: item.notes || '',
         currentStudentAmount: item.current_student_amount || 0,
-        canRemoveByCurrentStudent: item.can_remove_by_current_student === true,
+        canRemoveByCurrentStudent: true,
         lastEditedAt: item.updated_at || item.created_at,
         lastEditedById: byId,
         lastEditedByName: byId ? (students.value?.[byId] || `ID: ${byId}`) : null
       }
     })
   } catch (error) {
-    console.error("Błąd pobierania przedmiotów:", error)
+    console.error(error)
   }
 }
 
 const addItemToList = async (arg1, arg2) => {
   try {
-    let targetItemId = null;
-    let targetAmount = null;
-
-    if (arg1 && typeof arg1 === 'object') {
-      targetItemId = arg1.item_id || arg1.id;
-      targetAmount = arg1.amount || arg1.quantity || 1;
-    } else {
-      targetItemId = arg1;
-      targetAmount = arg2 || 1;
-    }
-
-    if (!targetItemId) {
-      toast.error('Błąd: Formularz nie przesłał ID przedmiotu.');
-      return;
-    }
-
-    const payload = {
-      item_id: parseInt(targetItemId),
-      amount: parseInt(targetAmount),
-      student_id: currentStudentId.value
-    };
-
-    if (!payload.student_id) {
-      toast.error('Błąd: Brak ID zalogowanego studenta.');
-      return;
-    }
-
+    let targetItemId = arg1 && typeof arg1 === 'object' ? (arg1.item_id || arg1.id) : arg1
+    let targetAmount = arg1 && typeof arg1 === 'object' ? (arg1.amount || arg1.quantity || 1) : (arg2 || 1)
+    if (!targetItemId) return
+    const payload = { item_id: parseInt(targetItemId), amount: parseInt(targetAmount), student_id: currentStudentId.value, notes: '' }
     const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorJson = JSON.parse(errorText);
-        toast.error(`Backend: ${errorJson.detail || 'Błąd zapisu'}`);
-      } catch (e) {
-        console.error("Zrzut błędu z FastAPI (HTML):", errorText);
-        toast.error('Błąd serwera. Prawdopodobnie próbujesz dodać element do usuniętej listy.');
-      }
-      return;
-    }
-
-    await fetchListItems();
-    toast.success('Przedmiot wylądował w koszyku!');
-
+    })
+    if (!response.ok) return
+    await fetchListItems()
+    toast.success('Dodano do koszyka!')
   } catch (error) {
-    console.error("Całkowita awaria sieci:", error);
-    toast.error(`Awaria sieci: ${error.message}`);
+    console.error(error)
   }
 }
 
-const canRemoveItem = (item) => {
-  return isListOpen.value && (props.canManageItems || item.canRemoveByCurrentStudent)
-}
+const canRemoveItem = () => isListOpen.value
 
-const promptRemoveItem = (item) => {
-  if (!canRemoveItem(item)) return
-  itemToDeleteId.value = item.id
-  showDeleteModal.value = true
-}
+const promptRemoveItem = (item) => { if (canRemoveItem()) { itemToDeleteId.value = item.id; showDeleteModal.value = true; } }
 
 const executeRemoveItem = async () => {
   if (!itemToDeleteId.value) return
-
   try {
     const params = new URLSearchParams()
     if (currentStudentId.value) params.set('student_id', currentStudentId.value)
-
-    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items/${itemToDeleteId.value}?${params.toString()}`, {
-      method: 'DELETE',
-    })
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}))
-      throw new Error(err.detail || 'Błąd serwera podczas usuwania')
-    }
-
-    await fetchListItems()
-    toast.info('Przedmiot usunięty z koszyka.')
-
+    const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items/${itemToDeleteId.value}?${params.toString()}`, { method: 'DELETE' })
+    if (response.ok) { await fetchListItems(); toast.info('Usunięto przedmiot.'); }
   } catch (error) {
-    console.error("Błąd podczas usuwania przedmiotu:", error)
-    toast.error(error.message || "Wystąpił błąd. Nie udało się usunąć przedmiotu.")
-  } finally {
-    showDeleteModal.value = false
-    itemToDeleteId.value = null
-  }
+    console.error(error)
+  } finally { showDeleteModal.value = false; itemToDeleteId.value = null; }
 }
 
-const currentTotal = computed(() => {
-  return listItems.value.reduce((sum, item) => sum + item.totalPrice, 0)
-})
-
-onMounted(async () => {
-  await fetchStudents()
-  await fetchListItems()
-})
+const currentTotal = computed(() => listItems.value.reduce((sum, item) => sum + item.totalPrice, 0))
 
 const editingItemId = ref(null)
-
-const editFormData = ref({
-  price: 0,
-  amount: 0
-})
+const editFormData = ref({ name: '', price: 0, netPrice: 0, taxRate: 23, amount: 0, link: '', notes: '' })
 
 const startEdit = (item) => {
   editingItemId.value = item.id
+  const calculatedNetVal = calculateNet(item.price, item.tax_rate)
   editFormData.value = {
+    name: item.name || '',
     price: item.price,
-    amount: item.amount
+    netPrice: parseFloat(calculatedNetVal.toFixed(2)),
+    taxRate: item.tax_rate !== undefined ? item.tax_rate : 23,
+    amount: item.amount,
+    link: item.link || '',
+    notes: item.notes || ''
   }
 }
 
-const cancelEdit = () => {
-  editingItemId.value = null
+const cancelEdit = () => { editingItemId.value = null }
+
+const onNetInput = () => {
+  const factor = 1 + (editFormData.value.taxRate / 100)
+  const calculatedGross = editFormData.value.netPrice * factor
+  editFormData.value.price = parseFloat(calculatedGross.toFixed(2))
+}
+
+const onGrossInput = () => {
+  const factor = 1 + (editFormData.value.taxRate / 100)
+  const calculatedNetVal = editFormData.value.price / factor
+  editFormData.value.netPrice = parseFloat(calculatedNetVal.toFixed(2))
+}
+
+const onTaxRateChange = () => {
+  const factor = 1 + (editFormData.value.taxRate / 100)
+  const calculatedGross = editFormData.value.netPrice * factor
+  editFormData.value.price = parseFloat(calculatedGross.toFixed(2))
 }
 
 const saveItemEdit = async (item) => {
   try {
     const payload = {
       item_id: item.item_id,
+      name: editFormData.value.name,
       price: parseFloat(editFormData.value.price),
+      tax_rate: parseFloat(editFormData.value.taxRate || 0),
       amount: parseInt(editFormData.value.amount),
-      student_id: currentStudentId.value
+      link: editFormData.value.link,
+      student_id: currentStudentId.value,
+      notes: editFormData.value.notes
     }
-
     const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items/${item.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}))
-      throw new Error(err.detail || 'Nie udało się zaktualizować elementu')
-    }
-
-    toast.success('Pozycja zaktualizowana!')
-    editingItemId.value = null
-    await fetchListItems()
+    if (response.ok) { toast.success('Zapisano zmiany!'); editingItemId.value = null; await fetchListItems(); }
   } catch (error) {
-    console.error('Błąd aktualizacji:', error)
-    toast.error(error.message || 'Wystąpił błąd podczas zapisu zmian.')
+    console.error(error)
   }
 }
+
+onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 </script>
 
 <style scoped>
@@ -437,231 +572,103 @@ const saveItemEdit = async (item) => {
 
 .list-details__actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.8vw; flex-wrap: wrap; }
 
-.view-toggle-container {
-  display: flex;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 0.6vw;
-  padding: 0.2vw;
-  margin-right: 0.5vw;
-}
+.sort-select-container { display: flex; align-items: center; gap: 0.4vw; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; padding: 0.2vw 0.6vw; }
+.sort-label { font-size: 0.8vw; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+.excel-sort-select { background: transparent; border: none; color: #60a5fa; font-size: 0.85vw; font-weight: 700; cursor: pointer; outline: none; font-family: 'Nunito', system-ui, sans-serif; }
+.excel-sort-select option { background: #0f172a; color: #ffffff; }
 
-.toggle-view-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 0.5vw 1vw;
-  font-size: 0.85vw;
-  font-weight: 700;
-  border-radius: 0.4vw;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Nunito', system-ui, sans-serif;
-}
+.view-toggle-container { display: flex; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; padding: 0.2vw; }
+.toggle-view-btn { background: transparent; border: none; color: #94a3b8; padding: 0.5vw 1vw; font-size: 0.85vw; font-weight: 700; border-radius: 0.4vw; cursor: pointer; transition: all 0.2s ease; font-family: 'Nunito', system-ui, sans-serif; }
+.toggle-view-btn--active { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 
-.toggle-view-btn--active {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
+.columns-toggle-btn { padding: 0.6vw 1.2vw; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #e2e8f0; font-size: 0.85vw; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', system-ui, sans-serif; }
+.columns-toggle-btn:hover { background: rgba(148, 163, 184, 0.15); }
+
+.column-picker-panel { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.8vw; padding: 1.2vw; margin-bottom: 2vh; animation: fadeIn 0.2s ease; backdrop-filter: blur(5px); }
+.column-picker-title { display: block; font-size: 0.85vw; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.8vw; letter-spacing: 0.05em; }
+.column-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11vw, 1fr)); gap: 0.8vw; }
+.column-checkbox-label { display: flex; align-items: center; gap: 0.5vw; color: #e2e8f0; font-size: 0.9vw; font-weight: 600; cursor: pointer; transition: color 0.2s; }
+.column-checkbox-label:hover { color: #60a5fa; }
+.column-checkbox { width: 0.95vw; height: 0.95vw; accent-color: #3b82f6; cursor: pointer; }
 
 .add-item-btn { padding: 0.8vw 1.5vw; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 0.8vw; color: white; font-weight: 700; cursor: pointer; font-size: 0.95vw; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: all 0.2s; }
 .add-item-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
 
 .close-list-btn { padding: 0.8vw 1.3vw; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 0.8vw; color: #fcd34d; font-weight: 800; cursor: pointer; font-size: 0.95vw; transition: all 0.2s; }
 .close-list-btn:hover { background: rgba(245, 158, 11, 0.3); transform: translateY(-2px); }
-
 .closed-badge { padding: 0.7vw 1vw; border-radius: 0.7vw; background: rgba(148, 163, 184, 0.14); color: #cbd5e1; font-size: 0.9vw; font-weight: 800; }
 
-.items-table-container { 
-  background: rgba(15, 23, 42, 0.4); 
-  border: 1px solid rgba(148, 163, 184, 0.15); 
-  border-radius: 0.8vw; 
-  overflow: hidden; 
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); 
-}
+.items-table-container { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); width: 100%; max-width: 100%; box-sizing: border-box; }
 
-.items-table { 
-  width: 100%; 
-  border-collapse: collapse; 
-  text-align: left; 
-  font-size: 0.95vw; 
-}
+.items-table-container::-webkit-scrollbar { height: 7px; background: rgba(30, 41, 59, 0.5); border-radius: 10px; }
+.items-table-container::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; border: 1px solid transparent; background-clip: padding-box; transition: background 0.2s ease; }
+.items-table-container::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.7); }
 
-.items-table th, .items-table td { 
-  padding: 0.9vw 1.2vw; 
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1); 
-  vertical-align: middle;
-}
+.items-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85vw; table-layout: auto; }
+.items-table th, .items-table td { padding: 0.8vw 1.2vw; border-bottom: 1px solid rgba(148, 163, 184, 0.1); vertical-align: middle; }
+.items-table th { background: rgba(30, 41, 59, 0.8); color: #94a3b8; font-weight: 700; text-transform: uppercase; font-size: 0.75vw; letter-spacing: 0.05em; border-bottom: 2px solid rgba(148, 163, 184, 0.2); white-space: nowrap; }
+.items-table tr:hover { background: rgba(59, 130, 246, 0.03); }
 
-.items-table th { 
-  background: rgba(30, 41, 59, 0.8); 
-  color: #94a3b8; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  font-size: 0.8vw; 
-  letter-spacing: 0.05em; 
-  border-bottom: 2px solid rgba(148, 163, 184, 0.2);
-}
+.items-table--view-accounting { min-width: 1200px; }
+.items-table--view-accounting th, .items-table--view-accounting td { font-size: 0.8vw !important; padding: 0.7vw 0.8vw !important; }
 
-.items-table--view-basic th:nth-child(1) { width: 40%; text-align: left; }
-.items-table--view-basic th:nth-child(2) { width: 15%; text-align: right; }
-.items-table--view-basic th:nth-child(3) { width: 15%; text-align: center; }
-.items-table--view-basic th:nth-child(4) { width: 15%; text-align: right; }
-.items-table--view-basic th:nth-child(5) { width: 15%; text-align: center; }
+.excel-cell--left { text-align: left; }
+.excel-cell--center { text-align: center; }
+.excel-cell--price { text-align: right; font-family: monospace; font-size: 0.9vw; color: #e2e8f0; white-space: nowrap; }
+.excel-cell--muted { color: #64748b; font-size: 0.85vw; }
+.text-amber { color: #fbbf24 !important; }
+.text-blue { color: #60a5fa; }
 
-.items-table--view-detailed th:nth-child(1) { width: 30%; text-align: left; }
-.items-table--view-detailed th:nth-child(2) { width: 12%; text-align: right; }
-.items-table--view-detailed th:nth-child(3) { width: 12%; text-align: center; }
-.items-table--view-detailed th:nth-child(4) { width: 13%; text-align: right; }
-.items-table--view-detailed th:nth-child(5) { width: 20%; text-align: center; }
-.items-table--view-detailed th:nth-child(6) { width: 13%; text-align: center; }
+.excel-product-cell { display: flex; flex-direction: column; gap: 0.2vw; }
+.product-name { color: #ffffff; white-space: nowrap; }
+.product-desc { font-size: 0.75vw; color: #64748b; font-weight: 500; }
 
-.items-table tr:hover { 
-  background: rgba(59, 130, 246, 0.03); 
-}
+.excel-hyperlink { color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 0.85vw; padding: 0.2vw 0.5vw; background: rgba(56, 189, 248, 0.1); border-radius: 0.3vw; transition: all 0.2s; display: inline-block; white-space: nowrap; }
+.excel-hyperlink:hover { background: #38bdf8; color: #0f172a; }
 
-.excel-cell--left {
-  text-align: left;
-}
+.excel-notes-text { font-size: 0.8vw; color: #cbd5e1; word-break: break-word; max-width: 15vw; display: inline-block; }
+.excel-inline-textarea { width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #3b82f6; border-radius: 0.3vw; color: #ffffff; padding: 0.4vw 0.6vw; font-family: inherit; font-size: 0.8vw; outline: none; resize: none; }
 
-.excel-cell--center {
-  text-align: center;
-}
+.excel-modification-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1vw; white-space: nowrap; }
+.excel-time-ago { font-size: 0.75vw; color: #94a3b8; }
+.excel-user-id-badge { display: inline-block; padding: 0.15vw 0.4vw; background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-radius: 0.3vw; font-size: 0.7vw; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.2); }
 
-.excel-cell--price {
-  text-align: right;
-  font-family: monospace;
-  font-size: 1vw;
-  color: #e2e8f0;
-}
+.excel-summary-row { background: rgba(30, 41, 59, 0.5) !important; }
+.excel-summary-row td { border-top: 2px solid rgba(148, 163, 184, 0.3); border-bottom: 2px double rgba(148, 163, 184, 0.4) !important; color: #94a3b8; font-weight: 700; font-size: 0.85vw; }
+.excel-cell--price-net { text-align: right; font-family: monospace; font-size: 0.95vw; color: #fbbf24 !important; }
+.excel-cell--price-total { text-align: right; font-family: monospace; font-size: 0.95vw; color: #38bdf8 !important; }
 
-.excel-cell--muted {
-  color: #64748b;
-  font-size: 0.85vw;
-}
+.excel-inline-input { width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #3b82f6; border-radius: 0.3vw; color: #ffffff; padding: 0.2vw 0.4vw; font-size: 0.85vw; outline: none; }
+.excel-inline-input:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
+.excel-inline-input.text-right { font-family: monospace; width: 6.5vw; }
+.excel-inline-input.text-center { width: 3.5vw; }
+.excel-inline-input.text-left { width: 100%; font-family: inherit; }
 
-.excel-modification-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2vw;
-}
-
-.excel-time-ago {
-  font-size: 0.85vw;
-  color: #94a3b8;
-}
-
-.excel-user-id-badge {
-  display: inline-block;
-  padding: 0.15vw 0.4vw;
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-  border-radius: 0.3vw;
-  font-size: 0.75vw;
-  font-weight: 700;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.excel-summary-row {
-  background: rgba(30, 41, 59, 0.5) !important;
-}
-
-.excel-summary-row td {
-  border-top: 2px solid rgba(148, 163, 184, 0.3);
-  border-bottom: 2px double rgba(148, 163, 184, 0.4) !important;
-  color: #94a3b8;
-  font-weight: 700;
-  font-size: 0.9vw;
-}
-
-.excel-cell--price-total {
-  text-align: right;
-  font-family: monospace;
-  font-size: 1.1vw;
-  color: #38bdf8 !important;
-}
-
-.excel-inline-input {
-  width: 100%;
-  box-sizing: border-box;
-  background: #1e293b;
-  border: 1px solid #3b82f6;
-  border-radius: 0.3vw;
-  color: #ffffff;
-  padding: 0.3vw 0.5vw;
-  font-family: monospace;
-  font-size: 0.95vw;
-  outline: none;
-}
-
-.excel-inline-input:focus {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-}
+.excel-tax-input-wrapper { display: flex; align-items: center; justify-content: center; gap: 0.1vw; }
+.tax-percent-sign { color: #64748b; font-size: 0.85vw; font-weight: 700; font-family: monospace; }
 
 .text-right { text-align: right; }
 .text-center { text-align: center; }
-
-.excel-row--editing {
-  background: rgba(59, 130, 246, 0.08) !important;
-}
-
-.excel-row-actions {
-  display: flex;
-  gap: 0.4vw;
-  justify-content: center;
-}
-
-.edit-btn {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 0.4vw 0.8vw;
-  border-radius: 0.4vw;
-  font-size: 0.8vw;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.edit-btn:hover { background: rgba(16, 185, 129, 0.3); }
-
-.save-btn {
-  background: rgba(52, 211, 153, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  padding: 0.4vw 0.8vw;
-  border-radius: 0.4vw;
-  font-size: 0.8vw;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.save-btn:hover { background: rgba(52, 211, 153, 0.3); }
-
-.cancel-btn {
-  background: #475569;
-  color: #ffffff;
-  border: none;
-  padding: 0.4vw 0.6vw;
-  border-radius: 0.4vw;
-  font-size: 0.8vw;
-  font-weight: 700;
-  cursor: pointer;
-}
-.cancel-btn:hover { background: #64748b; }
-
 .font-bold { font-weight: 700; }
-.text-blue { color: #60a5fa; }
-.empty-table { text-align: center; color: rgba(226, 232, 240, 0.5); padding: 4vw; font-style: italic; }
+.font-medium { font-weight: 500; }
+.font-italic { font-style: italic; }
+.empty-table { text-align: center; color: rgba(226, 232, 240, 0.5); padding: 3vw; font-style: italic; }
 
-.delete-btn { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.8vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.excel-row--editing { background: rgba(59, 130, 246, 0.08) !important; }
+.excel-row-actions { display: flex; gap: 0.4vw; justify-content: center; }
+.edit-btn { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.edit-btn:hover { background: rgba(16, 185, 129, 0.3); }
+.save-btn { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; }
+.save-btn:hover { background: rgba(52, 211, 153, 0.3); }
+.cancel-btn { background: #475569; color: #ffffff; border: none; padding: 0.4vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; }
+.cancel-btn:hover { background: #64748b; }
+.delete-btn { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
-.muted-action { color: rgba(226, 232, 240, 0.03); font-size: 0.9vw; }
+.muted-action { color: rgba(226, 232, 240, 0.03); font-size: 0.8vw; }
 
 .confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
 .confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes modalPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-.confirm-modal-icon { font-size: 3.5vw; margin-bottom: 1vw; filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); }
 .confirm-modal-title { color: #ef4444; font-size: 2vw; font-weight: 800; margin: 0 0 1vw 0; }
 .confirm-modal-text { color: #e2e8f0; font-size: 1.1vw; line-height: 1.6; margin-bottom: 2.5vw; }
 .confirm-modal-actions { display: flex; gap: 1.5vw; justify-content: center; }
