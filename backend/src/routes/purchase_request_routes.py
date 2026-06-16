@@ -24,6 +24,16 @@ class PurchaseRequestCreate(BaseModel):
     plan_exception_justification: Optional[str] = None
 
 
+class PurchaseRequestUpdate(BaseModel):
+    purchase_request_name: str
+    budget_allocated_for_the_order: float
+    if_service: bool
+    used_cpv_id: Optional[int]
+    can_add: bool = True
+    public_purchase_plan_id: Optional[int] = None
+    plan_exception_justification: Optional[str] = None
+
+
 class PurchaseRequestBudgetOut(BaseModel):
     project_budget_id: int
     project_budget_name: str
@@ -101,6 +111,24 @@ def _shop_purchase_list_total(shop_purchase_list: ShopPurchaseList, session: Ses
         if item:
             total += (item.price or 0) * line.amount
     return total or shop_purchase_list.cost or 0.0
+
+
+def _ensure_group_for_plan(plan: PublicPurchasePlan, session: Session) -> int:
+    if plan.gslbccf_id:
+        return plan.gslbccf_id
+
+    grouped_shops_list = GroupedShopsListByCpvCategoryAndFunding(
+        allocated_money=plan.cost
+    )
+    session.add(grouped_shops_list)
+    session.commit()
+    session.refresh(grouped_shops_list)
+
+    plan.gslbccf_id = grouped_shops_list.gslbccf_id
+    session.add(plan)
+    session.commit()
+    session.refresh(plan)
+    return plan.gslbccf_id
 
 
 def _project_budget_amounts(project_budget: ProjectBudget, session: Session) -> tuple[float, float]:
@@ -288,8 +316,18 @@ def get_single_purchase_request(purchase_request_id: int, session: Session = Dep
 
 
 @app.get("/api/purchase_requests", response_model=List[PurchaseRequestOut])
-def get_purchase_requests(session: Session = Depends(get_session)):
+def get_purchase_requests(
+    association_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
     statement = select(PurchaseRequest)
+    if association_id:
+        statement = (
+            statement
+            .join(ProjectBudget)
+            .join(Project)
+            .where(Project.association_id == association_id)
+        )
     purchase_requests = session.exec(statement).all()
     return [_purchase_request_out(purchase_request, session) for purchase_request in purchase_requests]
 
@@ -450,6 +488,18 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
             ),
         )
 
+    if not source_gslbccf_id:
+        if plan:
+            source_gslbccf_id = _ensure_group_for_plan(plan, session)
+        else:
+            grouped_shops_list = GroupedShopsListByCpvCategoryAndFunding(
+                allocated_money=budget_allocated
+            )
+            session.add(grouped_shops_list)
+            session.commit()
+            session.refresh(grouped_shops_list)
+            source_gslbccf_id = grouped_shops_list.gslbccf_id
+
     new_purchase_request = PurchaseRequest(
         purchase_request_name = new_purchase_request_data.purchase_request_name,
         budget_allocated_for_the_order = budget_allocated,
@@ -476,6 +526,74 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
     session.refresh(new_purchase_request)
 
     return _purchase_request_out(new_purchase_request, session)
+
+
+@app.patch("/api/purchase_requests/{purchase_request_id}", response_model=PurchaseRequestOut)
+def update_purchase_request(
+    purchase_request_id: int,
+    update_data: PurchaseRequestUpdate,
+    session: Session = Depends(get_session),
+):
+    purchase_request = session.get(PurchaseRequest, purchase_request_id)
+    if not purchase_request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if update_data.budget_allocated_for_the_order <= 0:
+        raise HTTPException(status_code=400, detail="Kwota wniosku musi byc wieksza od zera")
+    if not update_data.used_cpv_id or update_data.used_cpv_id <= 0:
+        raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
+
+    plan = None
+    plan_compliance_status = "compliant"
+    justification = (update_data.plan_exception_justification or "").strip()
+    if update_data.public_purchase_plan_id:
+        plan = session.get(PublicPurchasePlan, update_data.public_purchase_plan_id)
+        if not plan:
+            raise HTTPException(status_code=404, detail="Pozycja planu nie znaleziona")
+        if plan.funding_id != purchase_request.funding_id:
+            raise HTTPException(status_code=400, detail="Pozycja planu nie nalezy do dofinansowania")
+        if plan.cpv_code != update_data.used_cpv_id:
+            raise HTTPException(status_code=400, detail="Kod CPV nie zgadza sie z pozycja planu")
+        used_from_plan = sum(
+            request.budget_allocated_for_the_order
+            for request in session.exec(
+                select(PurchaseRequest).where(
+                    PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id,
+                    PurchaseRequest.purchase_request_id != purchase_request_id,
+                )
+            ).all()
+        )
+        if update_data.budget_allocated_for_the_order > plan.cost - used_from_plan:
+            plan_compliance_status = "requires_approval"
+    else:
+        plan_compliance_status = "requires_approval"
+
+    if plan_compliance_status == "requires_approval" and not justification:
+        raise HTTPException(status_code=400, detail="Uzasadnienie odstepstwa jest wymagane")
+
+    purchase_request.purchase_request_name = update_data.purchase_request_name
+    purchase_request.budget_allocated_for_the_order = update_data.budget_allocated_for_the_order
+    purchase_request.if_service = update_data.if_service
+    purchase_request.used_cpv_id = update_data.used_cpv_id
+    purchase_request.can_add = update_data.can_add
+    purchase_request.public_purchase_plan_id = plan.public_purchase_plan_id if plan else None
+    purchase_request.plan_exception_justification = justification or None
+    purchase_request.plan_compliance_status = plan_compliance_status
+    if plan and not purchase_request.gslbccf_id:
+        purchase_request.gslbccf_id = _ensure_group_for_plan(plan, session)
+
+    if purchase_request.gslbccf_id:
+        grouped_shops_list = session.get(
+            GroupedShopsListByCpvCategoryAndFunding,
+            purchase_request.gslbccf_id,
+        )
+        if grouped_shops_list:
+            grouped_shops_list.allocated_money = update_data.budget_allocated_for_the_order
+            session.add(grouped_shops_list)
+
+    session.add(purchase_request)
+    session.commit()
+    session.refresh(purchase_request)
+    return _purchase_request_out(purchase_request, session)
 
 
 @app.delete("/api/purchase_requests/{purchase_request_id}")

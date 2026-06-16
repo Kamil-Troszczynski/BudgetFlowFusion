@@ -19,6 +19,9 @@ class ListCreate(BaseModel):
     funding_available_after_purchase_requests: float = 0.0
     shop_id: int
     student_id: int
+    public_purchase_plan_id: Optional[int] = None
+    purchase_request_id: Optional[int] = None
+    gslbccf_id: Optional[int] = None
 
 class ListItemCreate(BaseModel):
     item_id: int
@@ -56,6 +59,58 @@ def _cpv_to_int(cpv: Optional[str]) -> Optional[int]:
         return int(cpv.split("-")[0])
     except ValueError:
         return None
+
+
+def _ensure_group_for_public_plan(public_plan: PublicPurchasePlan, session: Session) -> int:
+    if public_plan.gslbccf_id:
+        return public_plan.gslbccf_id
+
+    grouped_shops_list = GroupedShopsListByCpvCategoryAndFunding(
+        allocated_money=public_plan.cost
+    )
+    session.add(grouped_shops_list)
+    session.commit()
+    session.refresh(grouped_shops_list)
+
+    public_plan.gslbccf_id = grouped_shops_list.gslbccf_id
+    session.add(public_plan)
+    session.commit()
+    session.refresh(public_plan)
+    return public_plan.gslbccf_id
+
+
+def _public_plan_for_group(gslbccf_id: Optional[int], session: Session) -> Optional[PublicPurchasePlan]:
+    if not gslbccf_id:
+        return None
+    return session.exec(
+        select(PublicPurchasePlan).where(PublicPurchasePlan.gslbccf_id == gslbccf_id)
+    ).first()
+
+
+def _ensure_group_for_purchase_request(purchase_request: PurchaseRequest, session: Session) -> int:
+    if purchase_request.gslbccf_id:
+        return purchase_request.gslbccf_id
+
+    grouped_shops_list = GroupedShopsListByCpvCategoryAndFunding(
+        allocated_money=purchase_request.budget_allocated_for_the_order
+    )
+    session.add(grouped_shops_list)
+    session.commit()
+    session.refresh(grouped_shops_list)
+
+    purchase_request.gslbccf_id = grouped_shops_list.gslbccf_id
+    session.add(purchase_request)
+    session.commit()
+    session.refresh(purchase_request)
+    return purchase_request.gslbccf_id
+
+
+def _purchase_request_for_group(gslbccf_id: Optional[int], session: Session) -> Optional[PurchaseRequest]:
+    if not gslbccf_id:
+        return None
+    return session.exec(
+        select(PurchaseRequest).where(PurchaseRequest.gslbccf_id == gslbccf_id)
+    ).first()
 
 
 def _list_items_summary(shop_purchase_list_id: int, session: Session):
@@ -122,6 +177,9 @@ def get_all_lists(
     student_id: Optional[int] = None,
     association_id: Optional[int] = None,
     shop_id: Optional[int] = None,
+    public_purchase_plan_id: Optional[int] = None,
+    purchase_request_id: Optional[int] = None,
+    gslbccf_id: Optional[int] = None,
     open_only: bool = False,
     treasurer_view: bool = False,
     session: Session = Depends(get_session)
@@ -133,18 +191,33 @@ def get_all_lists(
             raise HTTPException(status_code=400, detail="Brak ID koła naukowego")
         statement = statement.join(Student).where(
             Student.association_id == association_id,
-            Student.project_finance_manager_id != None,
         )
     elif student_id:
         statement = statement.where(ShopPurchaseList.student_id == student_id)
     elif association_id:
         statement = statement.join(Student).where(
             Student.association_id == association_id,
-            Student.project_finance_manager_id != None,
         )
 
     if shop_id:
         statement = statement.where(ShopPurchaseList.shop_id == shop_id)
+
+    if purchase_request_id:
+        purchase_request = session.get(PurchaseRequest, purchase_request_id)
+        if not purchase_request:
+            raise HTTPException(status_code=404, detail="Zamowienie nie znalezione")
+        if not purchase_request.gslbccf_id:
+            return []
+        statement = statement.where(ShopPurchaseList.gslbccf_id == purchase_request.gslbccf_id)
+    elif public_purchase_plan_id:
+        public_plan = session.get(PublicPurchasePlan, public_purchase_plan_id)
+        if not public_plan:
+            raise HTTPException(status_code=404, detail="Zamowienie publiczne nie znalezione")
+        if not public_plan.gslbccf_id:
+            return []
+        statement = statement.where(ShopPurchaseList.gslbccf_id == public_plan.gslbccf_id)
+    elif gslbccf_id:
+        statement = statement.where(ShopPurchaseList.gslbccf_id == gslbccf_id)
 
     if open_only:
         statement = statement.where(ShopPurchaseList.settlement_id == None)
@@ -155,11 +228,18 @@ def get_all_lists(
     result = []
     for l in lists:
         summary = _list_items_summary(l.shop_purchase_list_id, session)
+        public_plan = _public_plan_for_group(l.gslbccf_id, session)
+        purchase_request = _purchase_request_for_group(l.gslbccf_id, session)
         list_dict = l.model_dump()
         list_dict.update({
             "last_contribution_time": summary["last_contribution_time"],
             "last_contributor": summary["last_contributor_id"],
-            "contributed_students": summary["contributed_students_id"]
+            "contributed_students": summary["contributed_students_id"],
+            "public_purchase_plan_id": public_plan.public_purchase_plan_id if public_plan else None,
+            "public_purchase_plan_name": public_plan.public_purchase_plan_name if public_plan else None,
+            "public_purchase_plan_cpv_code": public_plan.cpv_code if public_plan else None,
+            "purchase_request_id": purchase_request.purchase_request_id if purchase_request else None,
+            "purchase_request_name": purchase_request.purchase_request_name if purchase_request else None,
         })
         result.append(list_dict)
         
@@ -171,9 +251,6 @@ def create_purchase_list(new_list_data: ListCreate, session: Session = Depends(g
     creator = session.get(Student, new_list_data.student_id)
     if not creator:
         raise HTTPException(status_code=404, detail="Student nie istnieje")
-    if not creator.project_finance_manager_id:
-        raise HTTPException(status_code=403, detail="Tylko skarbnik może tworzyć listy zamówień")
-
     funding = session.get(Funding, new_list_data.funding_id)
     if not funding:
         raise HTTPException(status_code=404, detail="Dofinansowanie nie istnieje")
@@ -186,6 +263,45 @@ def create_purchase_list(new_list_data: ListCreate, session: Session = Depends(g
             status_code=403,
             detail="Możesz wybrać tylko dofinansowanie sekcji swojego koła",
         )
+    gslbccf_id = new_list_data.gslbccf_id
+    if new_list_data.purchase_request_id:
+        purchase_request = session.get(PurchaseRequest, new_list_data.purchase_request_id)
+        if not purchase_request:
+            raise HTTPException(status_code=404, detail="Zamowienie nie istnieje")
+        if not purchase_request.can_add:
+            raise HTTPException(status_code=400, detail="Zamowienie jest zamkniete dla nowych sklepow")
+        if purchase_request.funding_id != funding.funding_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Zamowienie nie nalezy do wybranego dofinansowania",
+            )
+        request_project_budget = session.get(ProjectBudget, purchase_request.project_budget_id)
+        request_project = (
+            session.get(Project, request_project_budget.project_id)
+            if request_project_budget
+            else None
+        )
+        if not request_project or request_project.association_id != creator.association_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Zamowienie nie nalezy do kola uzytkownika",
+            )
+        gslbccf_id = _ensure_group_for_purchase_request(purchase_request, session)
+    elif new_list_data.public_purchase_plan_id:
+        public_plan = session.get(PublicPurchasePlan, new_list_data.public_purchase_plan_id)
+        if not public_plan:
+            raise HTTPException(status_code=404, detail="Zamowienie publiczne nie istnieje")
+        if public_plan.funding_id != funding.funding_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Zamowienie publiczne nie nalezy do wybranego dofinansowania",
+            )
+        gslbccf_id = _ensure_group_for_public_plan(public_plan, session)
+    elif not creator.project_finance_manager_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Zwykly uzytkownik musi wybrac zamowienie",
+        )
     if funding.funding_price - funding.spent_money <= 0:
         raise HTTPException(status_code=400, detail="Wybrane dofinansowanie nie ma dostępnych środków")
 
@@ -197,7 +313,7 @@ def create_purchase_list(new_list_data: ListCreate, session: Session = Depends(g
         funding_id=new_list_data.funding_id,
         shop_id=new_list_data.shop_id,
         student_id=new_list_data.student_id,
-        gslbccf_id=1
+        gslbccf_id=gslbccf_id
     )
     session.add(new_list)
     session.commit()

@@ -58,6 +58,7 @@
             </div>
             <div class="request-card__actions">
               <button class="request-card__button view" @click="activeRequest = request">Otwórz wniosek</button>
+              <button class="request-card__button view" @click="openEditRequestModal(request)">Edytuj</button>
               <button class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
             </div>
           </div>
@@ -206,24 +207,24 @@
         </div>
         <form class="modal-form" @submit.prevent="handleNewRequest">
           <div class="modal-form__group">
-            <label class="modal-form__label">Zamknięte zamówienie</label>
+            <label class="modal-form__label">Dofinansowanie zamowienia</label>
             <select
-              v-model.number="newRequestData.shop_purchase_list_id"
+              v-model.number="newRequestData.funding_id"
               class="modal-form__input"
               required
-              @change="applySelectedClosedOrder"
+              @change="applySelectedFunding"
             >
-              <option value="" disabled>Wybierz własne zamknięte zamówienie</option>
+              <option value="" disabled>Wybierz dofinansowanie...</option>
               <option
-                v-for="order in availableClosedOrders"
-                :key="order.shop_purchase_list_id"
-                :value="order.shop_purchase_list_id"
+                v-for="funding in fundings"
+                :key="funding.funding_id"
+                :value="funding.funding_id"
               >
-                {{ orderLabel(order) }}
+                {{ funding.funding_name }} - {{ funding.project_budget_name }} ({{ formatMoney(funding.available_after_purchase_requests) }} PLN)
               </option>
             </select>
-            <p v-if="availableClosedOrders.length === 0" class="modal-form__hint">
-              Nie masz zamkniętych zamówień bez utworzonego wniosku.
+            <p v-if="fundings.length === 0" class="modal-form__hint">
+              Brak dostepnych dofinansowan w kole.
             </p>
           </div>
           <div class="modal-form__group">
@@ -245,14 +246,13 @@
               step="0.01"
               placeholder="0.00"
               class="modal-form__input"
-              readonly
               required
             />
           </div>
           <div class="modal-form__group">
             <label class="modal-form__label">Dofinansowanie zamówienia</label>
             <input
-              :value="selectedClosedOrder?.funding_name || ''"
+              :value="selectedFunding?.funding_name || ''"
               type="text"
               class="modal-form__input"
               readonly
@@ -260,18 +260,18 @@
               placeholder="Najpierw wybierz zamówienie"
             />
           </div>
-          <div v-if="selectedClosedOrder" class="budget-preview">
+          <div v-if="selectedFunding" class="budget-preview">
             <p>
               <span>Kwota dofinansowania</span>
-              <strong>{{ formatMoney(selectedClosedOrder.funding_total) }} PLN</strong>
+              <strong>{{ formatMoney(selectedFunding.funding_price) }} PLN</strong>
             </p>
             <p>
               <span>Wydane</span>
-              <strong>{{ formatMoney(selectedClosedOrder.funding_spent_money) }} PLN</strong>
+              <strong>{{ formatMoney(selectedFunding.spent_money) }} PLN</strong>
             </p>
             <p>
               <span>Zarezerwowane z dofinansowania</span>
-              <strong>{{ formatMoney(selectedClosedOrder.funding_purchase_requests_total_allocated) }} PLN</strong>
+              <strong>{{ formatMoney(selectedFunding.purchase_requests_total_allocated) }} PLN</strong>
             </p>
             <p>
               <span>Dostępne po wnioskach</span>
@@ -303,7 +303,7 @@
                 CPV {{ position.cpv_code }} - pozostało {{ formatMoney(position.remaining_amount) }} PLN
               </option>
             </select>
-            <p v-if="selectedClosedOrder && matchingPlanPositions.length === 0" class="modal-form__hint">
+            <p v-if="selectedFunding && matchingPlanPositions.length === 0" class="modal-form__hint">
               To dofinansowanie nie ma pozycji z podanym kodem CPV.
             </p>
           </div>
@@ -332,7 +332,7 @@
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
-            <button type="submit" class="modal-btn modal-btn-save" :disabled="!selectedClosedOrder">Złóż wniosek</button>
+            <button type="submit" class="modal-btn modal-btn-save" :disabled="!selectedFunding">Złóż wniosek</button>
           </div>
         </form>
       </div>
@@ -349,10 +349,12 @@ const { user } = useAuth()
 const emit = defineEmits(['budget-changed'])
 const activeRequest = ref(null)
 const showAddRequestModal = ref(false)
+const editingRequestId = ref(null)
 
 const userRequests = ref([])
 const allRequests = ref([])
 const closedOrders = ref([])
+const fundings = ref([])
 const fundingPlan = ref(null)
 
 const currentFinanceManagerId = computed(() => {
@@ -366,9 +368,15 @@ const newRequestData = ref({
   used_cpv_id: 1,
   can_add: true,
   shop_purchase_list_id: '',
+  funding_id: '',
+  project_budget_id: null,
   public_purchase_plan_id: null,
   plan_exception_justification: ''
 })
+
+const selectedFunding = computed(() =>
+  fundings.value.find(funding => Number(funding.funding_id) === Number(newRequestData.value.funding_id)) || null
+)
 
 const availableClosedOrders = computed(() => {
   return closedOrders.value.filter(order => !order.purchase_request_id)
@@ -381,7 +389,7 @@ const selectedClosedOrder = computed(() => {
 })
 
 const projectedFundingAfterRequest = computed(() => {
-  const available = selectedClosedOrder.value?.funding_available_after_purchase_requests || 0
+  const available = selectedFunding.value?.available_after_purchase_requests || 0
   const requested = Number(newRequestData.value.budget_allocated_for_the_order || 0)
   return available - requested
 })
@@ -395,12 +403,12 @@ const matchingPlanPositions = computed(() => {
 
 const selectedPlanPosition = computed(() =>
   matchingPlanPositions.value.find(
-    position => position.public_purchase_plan_id === newRequestData.value.public_purchase_plan_id
+    position => Number(position.public_purchase_plan_id) === Number(newRequestData.value.public_purchase_plan_id)
   ) || null
 )
 
 const requiresPlanException = computed(() => {
-  if (!selectedClosedOrder.value) return false
+  if (!selectedFunding.value) return false
   if (!selectedPlanPosition.value) return true
   return Number(newRequestData.value.budget_allocated_for_the_order || 0)
     > Number(selectedPlanPosition.value.remaining_amount || 0)
@@ -479,6 +487,17 @@ const fetchClosedOrdersForRequests = async () => {
   }
 }
 
+const fetchFundings = async () => {
+  if (!user.value?.association_id) return
+  try {
+    const response = await fetch(`${API_URL}/fundings?association_id=${user.value.association_id}`)
+    if (!response.ok) throw new Error('Blad pobierania dofinansowan')
+    fundings.value = await response.json()
+  } catch (error) {
+    console.error('Blad pobierania dofinansowan:', error)
+  }
+}
+
 const fetchFundingPlan = async fundingId => {
   fundingPlan.value = null
   if (!fundingId) return
@@ -486,6 +505,27 @@ const fetchFundingPlan = async fundingId => {
   if (!response.ok) return
   const plans = await response.json()
   fundingPlan.value = plans[0] || null
+}
+
+const applySelectedFunding = async () => {
+  const funding = selectedFunding.value
+  if (!funding) return
+
+  newRequestData.value.project_budget_id = funding.project_budget_id
+  newRequestData.value.public_purchase_plan_id = null
+  newRequestData.value.plan_exception_justification = ''
+  if (!newRequestData.value.purchase_request_name) {
+    newRequestData.value.purchase_request_name = `Zamowienie: ${funding.funding_name}`
+  }
+  if (!newRequestData.value.budget_allocated_for_the_order) {
+    newRequestData.value.budget_allocated_for_the_order = Math.max(
+      0,
+      Number(funding.available_after_purchase_requests || 0)
+    )
+  }
+  await fetchFundingPlan(funding.funding_id)
+  const match = matchingPlanPositions.value[0]
+  if (match) newRequestData.value.public_purchase_plan_id = match.public_purchase_plan_id
 }
 
 const applySelectedClosedOrder = async () => {
@@ -511,14 +551,34 @@ const resetRequestForm = () => {
   newRequestData.value.used_cpv_id = 1
   newRequestData.value.can_add = true
   newRequestData.value.shop_purchase_list_id = ''
+  newRequestData.value.funding_id = ''
+  newRequestData.value.project_budget_id = null
   newRequestData.value.public_purchase_plan_id = null
   newRequestData.value.plan_exception_justification = ''
   fundingPlan.value = null
 }
 
 const openAddRequestModal = async () => {
-  await fetchClosedOrdersForRequests()
+  await fetchFundings()
   resetRequestForm()
+  editingRequestId.value = null
+  showAddRequestModal.value = true
+}
+
+const openEditRequestModal = async (request) => {
+  await fetchFundings()
+  editingRequestId.value = request.id
+  newRequestData.value.purchase_request_name = request.name
+  newRequestData.value.budget_allocated_for_the_order = request.budget
+  newRequestData.value.if_service = request.ifService
+  newRequestData.value.used_cpv_id = request.used_cpv_id || 1
+  newRequestData.value.can_add = request.status === 'pending'
+  newRequestData.value.shop_purchase_list_id = ''
+  newRequestData.value.funding_id = request.fundingId
+  newRequestData.value.project_budget_id = request.projectBudgetId
+  newRequestData.value.public_purchase_plan_id = request.planPosition?.public_purchase_plan_id || null
+  newRequestData.value.plan_exception_justification = request.planExceptionJustification || ''
+  await fetchFundingPlan(request.fundingId)
   showAddRequestModal.value = true
 }
 
@@ -527,7 +587,7 @@ const handleNewRequest = async () => {
     alert("Błąd: Nie można utworzyć wniosku, brak ID skarbnika.")
     return
   }
-  if (!selectedClosedOrder.value) {
+  if (!selectedFunding.value) {
     alert("Wybierz zamknięte zamówienie, z którego ma powstać wniosek.")
     return
   }
@@ -541,13 +601,18 @@ const handleNewRequest = async () => {
       created_at: new Date().toISOString(),
       can_add: newRequestData.value.can_add,
       project_finance_manager_id: currentFinanceManagerId.value,
-      shop_purchase_list_id: newRequestData.value.shop_purchase_list_id,
+      project_budget_id: selectedFunding.value.project_budget_id,
+      funding_id: selectedFunding.value.funding_id,
+      shop_purchase_list_id: null,
       public_purchase_plan_id: newRequestData.value.public_purchase_plan_id,
       plan_exception_justification: newRequestData.value.plan_exception_justification
     }
 
-    const response = await fetch(`${API_URL}/create_purchase_requests`, {
-      method: 'POST',
+    const requestUrl = editingRequestId.value
+      ? `${API_URL}/purchase_requests/${editingRequestId.value}`
+      : `${API_URL}/create_purchase_requests`
+    const response = await fetch(requestUrl, {
+      method: editingRequestId.value ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
@@ -559,6 +624,7 @@ const handleNewRequest = async () => {
     }
 
     resetRequestForm()
+    editingRequestId.value = null
     showAddRequestModal.value = false
 
     await Promise.all([

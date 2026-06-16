@@ -7,6 +7,17 @@
       </div>
 
       <form class="list-form" @submit.prevent="handleSubmit">
+        <div v-if="publicPurchasePlan" class="shop-meta-preview">
+          <div class="meta-preview-item">
+            <span class="meta-preview-label">Zamowienie publiczne:</span>
+            <span class="meta-preview-value text-blue">CPV {{ publicPurchasePlan.cpv_code }}</span>
+          </div>
+          <div class="meta-preview-item">
+            <span class="meta-preview-label">Limit:</span>
+            <span class="meta-preview-value text-emerald">{{ Number(publicPurchasePlan.cost || 0).toFixed(2) }} PLN</span>
+          </div>
+        </div>
+
         <div class="list-form-group">
           <label class="list-form-label">Sklep docelowy</label>
           <select
@@ -96,6 +107,10 @@ const props = defineProps({
   isOpen: {
     type: Boolean,
     required: true
+  },
+  publicPurchasePlan: {
+    type: Object,
+    default: null
   }
 })
 
@@ -176,6 +191,8 @@ const handleSubmit = () => {
     ...form.value,
     name: form.value.name.trim(),
     shopName: selectedShop.name,
+    publicPurchasePlanId: props.publicPurchasePlan?.public_purchase_plan_id || null,
+    fundingId: props.publicPurchasePlan?.funding_id || form.value.fundingId,
     itemCount: 0,
     itemTotal: 0,
     totalPrice: 0.00,

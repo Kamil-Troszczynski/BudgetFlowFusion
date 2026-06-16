@@ -21,12 +21,14 @@ class FundingOut(BaseModel):
 
 class PublicPurchasePlanOut(BaseModel):
     public_purchase_plan_id: int
+    public_purchase_plan_name: str
     cpv_code: int
     cost: float
     used_amount: float = 0.0
     remaining_amount: float = 0.0
     funding_id: int
     public_purchase_plan_list_id: int
+    gslbccf_id: Optional[int] = None
 
 
 class PublicPurchasePlanListOut(BaseModel):
@@ -100,6 +102,11 @@ class PublicPurchasePlanCreate(BaseModel):
     cost: float
 
 
+class PublicPurchasePlanUpdate(BaseModel):
+    cpv_code: int
+    cost: float
+
+
 def _funding_out(funding: Funding, session: Session) -> FundingOut:
     project_budget = session.get(ProjectBudget, funding.project_budget_id)
     purchase_requests = session.exec(
@@ -148,12 +155,14 @@ def _plan_list_out(plan_list: PublicPurchasePlanList, session: Session) -> Publi
         )
         public_plans.append(PublicPurchasePlanOut(
             public_purchase_plan_id=plan.public_purchase_plan_id,
+            public_purchase_plan_name=plan.public_purchase_plan_name,
             cpv_code=plan.cpv_code,
             cost=plan.cost,
             used_amount=used_amount,
             remaining_amount=plan.cost - used_amount,
             funding_id=plan_list.funding_id,
             public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
+            gslbccf_id=plan.gslbccf_id,
         ))
 
     return PublicPurchasePlanListOut(
@@ -455,11 +464,19 @@ def create_public_purchase_plan(
             detail="Ten kod CPV już istnieje w planie dofinansowania",
         )
 
+    grouped_shops_list = GroupedShopsListByCpvCategoryAndFunding(
+        allocated_money=new_plan_data.cost
+    )
+    session.add(grouped_shops_list)
+    session.commit()
+    session.refresh(grouped_shops_list)
+
     new_plan = PublicPurchasePlan(
         public_purchase_plan_name=f"CPV {new_plan_data.cpv_code}",
         cpv_code=new_plan_data.cpv_code,
         cost=new_plan_data.cost,
         funding_id=plan_list.funding_id,
+        gslbccf_id=grouped_shops_list.gslbccf_id,
         public_purchase_plan_list_id=new_plan_data.public_purchase_plan_list_id,
     )
     session.add(new_plan)
@@ -468,12 +485,80 @@ def create_public_purchase_plan(
 
     return PublicPurchasePlanOut(
         public_purchase_plan_id=new_plan.public_purchase_plan_id,
+        public_purchase_plan_name=new_plan.public_purchase_plan_name,
         cpv_code=new_plan.cpv_code,
         cost=new_plan.cost,
         used_amount=0.0,
         remaining_amount=new_plan.cost,
         funding_id=new_plan.funding_id,
         public_purchase_plan_list_id=new_plan.public_purchase_plan_list_id,
+        gslbccf_id=new_plan.gslbccf_id,
+    )
+
+
+@app.patch("/api/public_purchase_plans/{public_purchase_plan_id}", response_model=PublicPurchasePlanOut)
+def update_public_purchase_plan(
+    public_purchase_plan_id: int,
+    update_data: PublicPurchasePlanUpdate,
+    session: Session = Depends(get_session),
+):
+    if update_data.cost <= 0:
+        raise HTTPException(status_code=400, detail="Kwota planowana musi byc wieksza od zera")
+    if update_data.cpv_code <= 0:
+        raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
+
+    plan = session.get(PublicPurchasePlan, public_purchase_plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan publiczny nie znaleziony")
+
+    duplicate = session.exec(
+        select(PublicPurchasePlan).where(
+            PublicPurchasePlan.public_purchase_plan_list_id == plan.public_purchase_plan_list_id,
+            PublicPurchasePlan.cpv_code == update_data.cpv_code,
+            PublicPurchasePlan.public_purchase_plan_id != public_purchase_plan_id,
+        )
+    ).first()
+    if duplicate:
+        raise HTTPException(
+            status_code=400,
+            detail="Ten kod CPV juz istnieje w planie dofinansowania",
+        )
+
+    plan.cpv_code = update_data.cpv_code
+    plan.cost = update_data.cost
+    plan.public_purchase_plan_name = f"CPV {update_data.cpv_code}"
+
+    if plan.gslbccf_id:
+        grouped_shops_list = session.get(
+            GroupedShopsListByCpvCategoryAndFunding,
+            plan.gslbccf_id,
+        )
+        if grouped_shops_list:
+            grouped_shops_list.allocated_money = update_data.cost
+            session.add(grouped_shops_list)
+
+    session.add(plan)
+    session.commit()
+    session.refresh(plan)
+
+    plan_requests = session.exec(
+        select(PurchaseRequest).where(
+            PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id
+        )
+    ).all()
+    used_amount = sum(
+        request.budget_allocated_for_the_order for request in plan_requests
+    )
+    return PublicPurchasePlanOut(
+        public_purchase_plan_id=plan.public_purchase_plan_id,
+        public_purchase_plan_name=plan.public_purchase_plan_name,
+        cpv_code=plan.cpv_code,
+        cost=plan.cost,
+        used_amount=used_amount,
+        remaining_amount=plan.cost - used_amount,
+        funding_id=plan.funding_id,
+        public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
+        gslbccf_id=plan.gslbccf_id,
     )
 
 
@@ -485,6 +570,18 @@ def delete_public_purchase_plan(
     plan = session.get(PublicPurchasePlan, public_purchase_plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan publiczny nie znaleziony")
+    linked_list = None
+    if plan.gslbccf_id:
+        linked_list = session.exec(
+            select(ShopPurchaseList).where(
+                ShopPurchaseList.gslbccf_id == plan.gslbccf_id
+            )
+        ).first()
+    if linked_list:
+        raise HTTPException(
+            status_code=400,
+            detail="Nie mozna usunac zamowienia, do ktorego dodano sklepy",
+        )
     linked_request = session.exec(
         select(PurchaseRequest).where(
             PurchaseRequest.public_purchase_plan_id == public_purchase_plan_id

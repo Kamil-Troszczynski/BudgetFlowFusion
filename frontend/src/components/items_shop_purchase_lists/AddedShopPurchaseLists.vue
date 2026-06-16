@@ -7,10 +7,23 @@
           {{ isTreasurer ? 'Zarządzaj wszystkimi listami koła z tego poziomu' : 'Wybierz otwartą listę dla sklepu lub utwórz nową i dodaj swoje pozycje' }}
         </p>
       </div>
-      <button class="lists-add-button" @click="showAddListModal = true">Nowy koszyk sklepowy</button>
+      <button class="lists-add-button" :disabled="!canCreateList" @click="showAddListModal = true">Nowy koszyk sklepowy</button>
     </div>
 
     <div class="lists-filter-bar">
+      <div class="lists-filter">
+        <label class="lists-filter__label">Zamowienie publiczne</label>
+        <select v-model="selectedPublicPurchasePlanId" class="lists-filter__select lists-filter__select--wide" @change="fetchLists">
+          <option value="">{{ isTreasurer ? 'Wszystkie zamowienia publiczne' : 'Wybierz zamowienie publiczne...' }}</option>
+          <option
+            v-for="plan in publicPurchasePlans"
+            :key="plan.purchase_request_id"
+            :value="plan.purchase_request_id"
+          >
+            {{ plan.purchase_request_name }} - {{ plan.funding_name }} ({{ formatMoney(plan.remaining_amount) }} PLN)
+          </option>
+        </select>
+      </div>
       <div v-if="!isTreasurer" class="lists-filter">
         <label class="lists-filter__label">Sklep</label>
         <select v-model="selectedShopId" class="lists-filter__select" @change="fetchLists">
@@ -189,6 +202,7 @@
 
   <AddListModal
     :isOpen="showAddListModal"
+    :public-purchase-plan="selectedPublicPurchasePlan"
     @close="showAddListModal = false"
     @submit-list="handleNewList"
   />
@@ -208,15 +222,21 @@ const toast = useToast()
 const allLists = ref([])
 const shops = ref([])
 const students = ref([])
+const publicPurchasePlans = ref([])
 const showDeleteModal = ref(false)
 const showCloseModal = ref(false)
 const listToDeleteId = ref(null)
 const listToCloseId = ref(null)
 const selectedShopId = ref('')
+const selectedPublicPurchasePlanId = ref('')
 const currentLayout = ref('grid')
 
 const isTreasurer = computed(() => user.value?.role === 'treasurer')
 const currentStudentId = computed(() => Number(user.value?.id))
+const selectedPublicPurchasePlan = computed(() =>
+  publicPurchasePlans.value.find(plan => Number(plan.purchase_request_id) === Number(selectedPublicPurchasePlanId.value)) || null
+)
+const canCreateList = computed(() => !!selectedPublicPurchasePlan.value)
 
 const userLists = computed(() => allLists.value)
 const ownLists = computed(() => allLists.value.filter(list => Number(list.student_id) === currentStudentId.value))
@@ -297,10 +317,40 @@ const fetchStudents = async () => {
   }
 }
 
+const fetchPublicPurchasePlans = async () => {
+  try {
+    if (!user.value?.association_id) return
+    const response = await fetch(`http://localhost:8080/api/purchase_requests?association_id=${user.value.association_id}`)
+    if (!response.ok) throw new Error('Blad sieci przy pobieraniu zamowien')
+    const requests = await response.json()
+    publicPurchasePlans.value = requests
+      .filter(request => request.can_add)
+      .map(request => ({
+        purchase_request_id: request.purchase_request_id,
+        purchase_request_name: request.purchase_request_name,
+        funding_id: request.funding_id,
+        funding_name: request.funding_name,
+        public_purchase_plan_id: request.public_purchase_plan_id,
+        gslbccf_id: request.gslbccf_id,
+        cpv_code: request.used_cpv_id,
+        cost: request.budget_allocated_for_the_order,
+        remaining_amount: request.budget_allocated_for_the_order
+      }))
+  } catch (error) {
+    console.error('Blad pobierania zamowien:', error)
+  }
+}
+
 const fetchLists = async () => {
   try {
     await fetchShops()
     await fetchStudents()
+    await fetchPublicPurchasePlans()
+
+    if (!selectedPublicPurchasePlan.value) {
+      allLists.value = []
+      return
+    }
 
     let fundings = []
     if (isTreasurer.value || user.value?.association_id) {
@@ -320,6 +370,9 @@ const fetchLists = async () => {
       params.set('open_only', 'true')
       if (user.value?.association_id) params.set('association_id', user.value.association_id)
       if (selectedShopId.value) params.set('shop_id', selectedShopId.value)
+    }
+    if (selectedPublicPurchasePlan.value) {
+      params.set('purchase_request_id', selectedPublicPurchasePlan.value.purchase_request_id)
     }
 
     const response = await fetch(`http://localhost:8080/api/lists?${params.toString()}`, {
@@ -423,14 +476,23 @@ const openList = (list) => {
 
 const handleNewList = async (listData) => {
   try {
+    if (!selectedPublicPurchasePlan.value) {
+      toast.error('Najpierw wybierz zamowienie publiczne.')
+      return
+    }
+
+    const publicPlan = selectedPublicPurchasePlan.value || null
     const payload = {
       name: listData.name,
       priority: listData.priority || 1,
       cost: 0.0,
       created_at: new Date().toISOString(),
-      funding_id: listData.fundingId || listData.funding_id,
+      funding_id: publicPlan?.funding_id || listData.fundingId || listData.funding_id,
       shop_id: listData.shopId || listData.shop_id,
-      student_id: currentStudentId.value
+      student_id: currentStudentId.value,
+      purchase_request_id: publicPlan?.purchase_request_id || null,
+      public_purchase_plan_id: publicPlan?.public_purchase_plan_id || listData.publicPurchasePlanId || null,
+      gslbccf_id: publicPlan?.gslbccf_id || null
     }
 
     const response = await fetch('http://localhost:8080/api/lists', {
@@ -570,6 +632,13 @@ const executeCloseList = async () => {
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
+.lists-add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
 .lists-filter-bar {
   display: flex;
   justify-content: space-between;
@@ -612,6 +681,10 @@ const executeCloseList = async () => {
 
 .lists-filter__select:focus {
   border-color: rgba(96, 165, 250, 0.7);
+}
+
+.lists-filter__select--wide {
+  min-width: 28vw;
 }
 
 .view-toggle-container {
