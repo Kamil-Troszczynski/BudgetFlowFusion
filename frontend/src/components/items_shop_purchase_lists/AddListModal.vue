@@ -201,13 +201,16 @@ const handleSubmit = () => {
   }
 
   emit('submit-list', newList)
-  closeModal()
 }
 </script>
 
 <style scoped>
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-.modal-content { background: #0f172a; border: 0.1vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.5vw; width: 90%; max-width: 35vw; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: modalPop 0.25s ease; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); padding: 3vh 0; box-sizing: border-box; }
+.modal-content { background: #0f172a; border: 0.1vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.5vw; width: 90%; max-width: 35vw; max-height: 94vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.75) rgba(15, 23, 42, 0.8); box-sizing: border-box; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: modalPop 0.25s ease; }
+.modal-content::-webkit-scrollbar { width: 0.55vw; }
+.modal-content::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.75); border-radius: 999px; margin: 0.9vw 0; }
+.modal-content::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #60a5fa, #2563eb); border-radius: 999px; border: 0.12vw solid rgba(15, 23, 42, 0.95); }
+.modal-content::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #93c5fd, #3b82f6); }
 @keyframes modalPop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vw; padding-bottom: 1.5vw; border-bottom: 0.1vw solid rgba(148, 163, 184, 0.1); }

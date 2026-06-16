@@ -24,16 +24,7 @@
           </option>
         </select>
       </div>
-      <div v-if="!isTreasurer" class="lists-filter">
-        <label class="lists-filter__label">Sklep</label>
-        <select v-model="selectedShopId" class="lists-filter__select" @change="fetchLists">
-          <option value="">Wszystkie sklepy</option>
-          <option v-for="shop in shops" :key="shop.shop_id" :value="shop.shop_id">
-            {{ shop.shop_name }}
-          </option>
-        </select>
-      </div>
-      <div v-else class="search-placeholder-block"></div>
+     
 
       <div class="view-toggle-container">
         <button 
@@ -76,7 +67,13 @@
             :class="{ 'list-card--closed': !list.isOpen }"
           >
             <div class="list-card__header">
-              <h3 class="list-card__title">{{ list.name }}</h3>
+              <div style="display: flex; align-items: center; gap: 0.5vw;">
+                <h3 class="list-card__title" :class="{ 'list-title--closed': !list.isOpen }">
+                  <span v-if="!list.isOpen" class="lock-icon-small">🔒</span>
+                  {{ list.name }}
+                </h3>
+                <span v-if="!list.isOpen" class="status-closed-badge">Zamknięta</span>
+              </div>
               <span class="list-card__shop">{{ list.shopName }}</span>
             </div>
             <div class="list-card__content">
@@ -112,6 +109,7 @@
             <div class="list-card__actions">
               <button class="list-card__button view" @click="openList(list)">Otwórz listę</button>
               <button v-if="canCloseList(list)" class="list-card__button close" @click.stop="promptCloseList(list)">Zamknij</button>
+              <button v-if="canReopenList(list)" class="list-card__button reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
               <button v-if="canDeleteList(list)" class="list-card__button delete" @click.stop="promptDeleteList(list)">Usuń</button>
             </div>
           </div>
@@ -151,7 +149,8 @@
                 <td>
                   <div class="table-row-actions">
                     <button class="table-btn view" @click="openList(list)">Otwórz</button>
-                    <button v-if="canCloseList(list)" class="table-btn close" @click.stop="promptCloseList(list)">Zamknij</button>
+                    <button v-if="canCloseList(list)" class="table-btn close" @click.stop="promptCloseList(list)">Zamknij i zablokuj</button>
+                    <button v-if="canReopenList(list)" class="table-btn reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
                     <button v-if="canDeleteList(list)" class="table-btn delete" @click.stop="promptDeleteList(list)">Usuń</button>
                   </div>
                 </td>
@@ -168,8 +167,10 @@
     :list="activeList"
     :can-manage-items="true" 
     :can-close-list="canCloseList(activeList)"
+    :can-reopen-list="canReopenList(activeList)"
     @back="activeList = null"
     @close-list="promptCloseList(activeList)"
+    @reopen-list="reopenList(activeList)"
   />
 
   <div v-if="showDeleteModal" class="confirm-modal-overlay" @click="showDeleteModal = false">
@@ -209,13 +210,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
 import AddListModal from './AddListModal.vue'
 
 const { user } = useAuth()
+const props = defineProps({
+  initialPurchaseRequestId: {
+    type: [Number, String],
+    default: null
+  }
+})
 const activeList = ref(null)
 const showAddListModal = ref(false)
 const toast = useToast()
@@ -229,7 +236,7 @@ const listToDeleteId = ref(null)
 const listToCloseId = ref(null)
 const selectedShopId = ref('')
 const selectedPublicPurchasePlanId = ref('')
-const currentLayout = ref('grid')
+const currentLayout = ref('list')
 
 const isTreasurer = computed(() => user.value?.role === 'treasurer')
 const currentStudentId = computed(() => Number(user.value?.id))
@@ -249,24 +256,24 @@ const listSections = computed(() => {
       title: '',
       subtitle: '',
       lists: userLists.value,
-      emptyText: 'Brak aktywnego zamówienia dla wybranego sklepu',
-      emptySubtext: 'Utwórz nowe klikając przycisk "+ Nowa lista" na górze strony'
+      emptyText: 'Brak aktywnego wniosku',
+      emptySubtext: 'Poproś skarbnika o dodanie nowego wniosku lub wybierz otwarty wniosek z listy powyżej'
     }]
   }
 
   return [
     {
       key: 'own',
-      title: 'Zamówienia utworzone przeze mnie',
-      subtitle: 'Listy zakupowe zarejestrowane z Twojego konta.',
+      title: 'Koszyki utworzone przez Ciebie',
+      subtitle: 'Tu znajdziesz stworzone przez Ciebie koszyki.',
       lists: ownLists.value,
       emptyText: 'Nie utworzyłeś jeszcze żadnej listy zakupowej',
       emptySubtext: 'Kliknij przycisk powyżej, aby zainicjować koszyk'
     },
     {
       key: 'others',
-      title: 'Wszystkie pozostałe zamówienia koła',
-      subtitle: 'Listy zainicjowane przez innych członków organizacji. Jako skarbnik masz do nich pełne prawa modyfikacji.',
+      title: 'Wszystkie pozostałe koszyki w tym wniosku',
+      subtitle: 'Tu znajdziesz koszyki utworzone przez innych w tym wniosku.',
       lists: otherTreasurerLists.value,
       emptyText: 'Brak list od innych członków organizacji',
       emptySubtext: 'Gdy ktoś inny założy listę, pojawi się ona w tej sekcji'
@@ -336,6 +343,9 @@ const fetchPublicPurchasePlans = async () => {
         cost: request.budget_allocated_for_the_order,
         remaining_amount: request.budget_allocated_for_the_order
       }))
+    if (props.initialPurchaseRequestId) {
+      selectedPublicPurchasePlanId.value = String(props.initialPurchaseRequestId)
+    }
   } catch (error) {
     console.error('Blad pobierania zamowien:', error)
   }
@@ -367,7 +377,6 @@ const fetchLists = async () => {
       params.set('treasurer_view', 'true')
       if (user.value?.association_id) params.set('association_id', user.value.association_id)
     } else {
-      params.set('open_only', 'true')
       if (user.value?.association_id) params.set('association_id', user.value.association_id)
       if (selectedShopId.value) params.set('shop_id', selectedShopId.value)
     }
@@ -439,7 +448,9 @@ const fetchLists = async () => {
         lastContributor_id: latestContributorId,
         lastContributorName,
         contributedStudents_id: Array.from(studentIdsSet),
-        contributedStudentsNameList
+        contributedStudentsNameList,
+        closedByName: list.closed_by_name || null,
+        closedAt: list.closed_at || null
       }
     }))
 
@@ -453,6 +464,16 @@ onMounted(() => {
   fetchLists()
 })
 
+watch(
+  () => props.initialPurchaseRequestId,
+  async (requestId) => {
+    if (!requestId) return
+    selectedPublicPurchasePlanId.value = String(requestId)
+    activeList.value = null
+    await fetchLists()
+  }
+)
+
 const isOwnList = (list) => {
   return Number(list?.student_id) === currentStudentId.value
 }
@@ -460,6 +481,10 @@ const isOwnList = (list) => {
 // Zmiana reguł: Tylko skarbnik może zamykać i usuwać dowolne listy
 const canCloseList = (list) => {
   return isTreasurer.value && list?.isOpen
+}
+
+const canReopenList = (list) => {
+  return isTreasurer.value && list && !list.isOpen
 }
 
 const canDeleteList = (list) => {
@@ -569,6 +594,30 @@ const executeCloseList = async () => {
   } finally {
     showCloseModal.value = false
     listToCloseId.value = null
+  }
+}
+
+const reopenList = async (list) => {
+  if (!canReopenList(list)) {
+    toast.error('Tylko skarbnik ma uprawnienia do ponownego otwierania list.')
+    return
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${list.id}/reopen`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: currentStudentId.value })
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.detail || 'Nie udalo sie ponownie otworzyc listy')
+    }
+    toast.success('Lista zostala ponownie otwarta do edycji.')
+    activeList.value = null
+    await fetchLists()
+  } catch (error) {
+    toast.error(error.message || 'Wystapil problem przy ponownym otwieraniu listy.')
   }
 }
 </script>
@@ -684,7 +733,7 @@ const executeCloseList = async () => {
 }
 
 .lists-filter__select--wide {
-  min-width: 28vw;
+  min-width: 50vw;
 }
 
 .view-toggle-container {
@@ -874,4 +923,26 @@ const executeCloseList = async () => {
 .text-white { color: #ffffff; }
 .custom-scrollbar::-webkit-scrollbar { height: 7px; background: rgba(30, 41, 59, 0.5); border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+
+.list-title--closed {
+  color: #94a3b8 !important;
+  opacity: 0.75;
+}
+
+.lock-icon-small {
+  font-size: 0.9vw;
+  margin-right: 0.3vw;
+}
+
+.status-closed-badge {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  padding: 0.3vw 0.7vw;
+  border-radius: 0.4vw;
+  font-size: 0.7vw;
+  font-weight: 800;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
 </style>

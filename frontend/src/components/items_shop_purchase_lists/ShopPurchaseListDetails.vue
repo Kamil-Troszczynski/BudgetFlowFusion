@@ -5,7 +5,10 @@
 
       <div class="list-details__header">
         <div>
-          <h2 class="list-details__title">{{ list?.name || 'Nowe zamówienie' }}</h2>
+          <h2 class="list-details__title" :class="{ 'list-title--closed': !isListOpen }">
+            <span v-if="!isListOpen" class="lock-icon">🔒</span>
+            {{ list?.name || 'Nowe zamówienie' }}
+          </h2>
           <div class="list-details__meta-grid">
             <p class="list-details__subtitle">
               Sklep: <span class="text-white">{{ list?.shopName || 'Brak' }}</span>
@@ -90,10 +93,27 @@
             </button>
           </div>
           <button class="columns-toggle-btn" @click="showColumnPicker = !showColumnPicker">⚙ Kolumny</button>
-          <button v-if="isListOpen" class="add-item-btn" @click="showModal = true">+ Dodaj pozycję</button>
-          <button v-if="canCloseList" class="close-list-btn" @click="$emit('close-list')">Zamknij</button>
+          <button v-if="isListOpen" class="add-item-btn" @click="showModal = true">Dodaj pozycję</button>
+          <button v-if="canCloseList" class="close-list-btn" @click="$emit('close-list')">Zamknij koszyk i zablokuj dodawanie</button>
+          <button v-else-if="canReopenList" class="reopen-list-btn" @click="$emit('reopen-list')">Otwórz ponownie do edycji</button>
           <span v-else-if="!isListOpen" class="closed-badge">Zamknięta</span>
         </div>
+      </div>
+
+      <div v-if="!isListOpen && settledInfo" class="closed-list-banner">
+        <div class="closed-banner-content">
+          <span class="closed-banner-icon">🔒</span>
+          <div class="closed-banner-text">
+            <strong>Ta lista jest zamknięta</strong>
+            <span class="closed-banner-details">
+              przez {{ settledInfo.closedByName }}
+              <span v-if="settledInfo.closedAt">
+                • {{ formatTimeAgo(settledInfo.closedAt) }}
+              </span>
+            </span>
+          </div>
+        </div>
+        <span class="closed-banner-status">READ-ONLY</span>
       </div>
 
       <div class="procurement-tracker-banner" :class="{ 'procurement-tracker-banner--active': currentTotal > 500 }">
@@ -301,7 +321,7 @@
             </tr>
             <tr v-if="listItems.length === 0">
               <td :colspan="getDynamicColspan()" class="empty-table">
-                Koszyk jest pusty. Kliknij "+ Dodaj pozycję do listy".
+                Koszyk jest pusty. Kliknij "Dodaj pozycję".
               </td>
             </tr>
 
@@ -436,16 +456,26 @@ const exchangeRateInput = ref(1.0000)
 const props = defineProps({
   list: { type: Object, required: true },
   canManageItems: { type: Boolean, default: false },
-  canCloseList: { type: Boolean, default: false }
+  canCloseList: { type: Boolean, default: false },
+  canReopenList: { type: Boolean, default: false }
 })
 
-defineEmits(['back', 'close-list'])
+defineEmits(['back', 'close-list', 'reopen-list'])
 
 const showModal = ref(false)
 const listItems = ref([])
 const students = ref({})
 const isListOpen = computed(() => props.list?.isOpen !== false)
 const canShowActions = computed(() => isListOpen.value)
+
+const settledInfo = computed(() => {
+  if (isListOpen.value) return null
+  
+  return {
+    closedByName: props.list?.closedByName || props.list?.settledByName || 'Skarbnik',
+    closedAt: props.list?.closedAt || props.list?.settlementDate || null
+  }
+})
 
 const currentStudentId = computed(() => user.value?.id)
 
@@ -795,6 +825,8 @@ onMounted(async () => {
 
 .close-list-btn { padding: 0.8vw 1.3vw; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 0.8vw; color: #fcd34d; font-weight: 800; cursor: pointer; font-size: 0.95vw; transition: all 0.2s; }
 .close-list-btn:hover { background: rgba(245, 158, 11, 0.3); transform: translateY(-2px); }
+.reopen-list-btn { padding: 0.8vw 1.3vw; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 0.8vw; color: #6ee7b7; font-weight: 800; cursor: pointer; font-size: 0.95vw; transition: all 0.2s; }
+.reopen-list-btn:hover { background: rgba(16, 185, 129, 0.32); transform: translateY(-2px); }
 .closed-badge { padding: 0.7vw 1vw; border-radius: 0.7vw; background: rgba(148, 163, 184, 0.14); color: #cbd5e1; font-size: 0.9vw; font-weight: 800; }
 
 .items-table-container { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); width: 100%; max-width: 100%; box-sizing: border-box; }
@@ -892,4 +924,69 @@ onMounted(async () => {
 .cancel-btn:hover { background: #64748b; }
 .delete-btn { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.3vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+
+.list-title--closed {
+  color: #94a3b8 !important;
+  opacity: 0.75;
+}
+.lock-icon {
+  margin-right: 0.5vw;
+  font-size: 1.8vw;
+}
+
+.closed-list-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2vw 1.5vw;
+  background: rgba(71, 85, 105, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.8vw;
+  margin-bottom: 2vh;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { transform: translateY(-1vh); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.closed-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  flex: 1;
+}
+
+.closed-banner-icon {
+  font-size: 1.6vw;
+  opacity: 0.8;
+}
+
+.closed-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vw;
+}
+
+.closed-banner-text strong {
+  color: #cbd5e1;
+  font-size: 0.95vw;
+}
+
+.closed-banner-details {
+  color: #94a3b8;
+  font-size: 0.85vw;
+  font-weight: 500;
+}
+
+.closed-banner-status {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  padding: 0.5vw 1vw;
+  border-radius: 0.5vw;
+  font-size: 0.8vw;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 </style>

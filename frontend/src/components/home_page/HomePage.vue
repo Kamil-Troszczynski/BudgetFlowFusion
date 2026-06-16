@@ -120,8 +120,11 @@
             <AddedItems />
           </section>
 
-          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Wnioski do zamówień'">
-            <PurchaseRequest @budget-changed="fetchBudgetSummary" />
+          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Wnioski o zamówienie publiczne'">
+            <PurchaseRequest
+              @budget-changed="fetchBudgetSummary"
+              @open-shopping="openShoppingForRequest"
+            />
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Rozliczenia'">
@@ -129,7 +132,7 @@
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex]?.includes('Listy') && navLinks[activeNavIndex]?.includes('zakupów')">
-            <AddedShopPurchaseLists />
+            <AddedShopPurchaseLists :initial-purchase-request-id="selectedShoppingRequestId" />
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Plany publiczne'">
@@ -301,6 +304,7 @@ const showUserMenu = ref(false)
 const showEditProfileModal = ref(false)
 const showAddItemModal = ref(false)
 const activeNavIndex = ref(0)
+const selectedShoppingRequestId = ref(null)
 const sectionsContainer = ref(null)
 const toast = useToast()
 const userMenuRef = ref(null)
@@ -326,7 +330,7 @@ const navLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Plany publiczne', 'Wnioski do zamówień', 'Rozliczenia', 'Akceptacja CPV']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia', 'Akceptacja CPV']
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
@@ -339,6 +343,16 @@ const navigateToSection = (index) => {
       left: sectionWidth * index,
       behavior: 'smooth'
     })
+  }
+}
+
+const openShoppingForRequest = (request) => {
+  selectedShoppingRequestId.value = request?.id || null
+  const listsIndex = navLinks.value.findIndex(link =>
+    link.includes('Listy') && link.includes('zakup')
+  )
+  if (listsIndex >= 0) {
+    navigateToSection(listsIndex)
   }
 }
 
