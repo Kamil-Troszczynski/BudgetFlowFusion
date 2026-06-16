@@ -6,11 +6,53 @@
       <div class="list-details__header">
         <div>
           <h2 class="list-details__title">{{ list?.name || 'Nowe zamówienie' }}</h2>
-          <p class="list-details__subtitle">
-            Sklep: {{ list?.shopName || 'Brak' }} | Budżet: {{ (currentTotal || 0).toFixed(2) }} / {{ (list?.maxBudget || 0).toFixed(2) }} PLN
-          </p>
+          <div class="list-details__meta-grid">
+            <p class="list-details__subtitle">
+              Sklep: <span class="text-white">{{ list?.shopName || 'Brak' }}</span>
+            </p>
+            <div class="list-details__subtitle">
+              Dostawa: 
+              <template v-if="isListOpen">
+                <input 
+                  v-model.number="shippingCostInput" 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  class="excel-inline-input shipping-cost-editable-input"
+                  :disabled="isFreeDelivery"
+                />
+                <span class="currency-append-label">{{ currentCurrency }}</span>
+              </template>
+              <span v-else :class="isFreeDelivery ? 'text-emerald strike-through' : 'text-blue'">
+                {{ Number(shippingCostInput).toFixed(2) }} {{ currentCurrency }}
+              </span>
+              <span v-if="isFreeDelivery" class="delivery-free-badge">Darmowa dostawa!</span>
+            </div>
+            <p v-if="list?.freeDeliveryThreshold" class="list-details__subtitle">
+              Próg darmowej dostawy: <span class="text-amber">{{ (Number(list.freeDeliveryThreshold) * exchangeRate).toFixed(2) }} {{ currentCurrency }}</span>
+            </p>
+          </div>
         </div>
         <div class="list-details__actions">
+          <div class="currency-select-container">
+            <label class="sort-label">Waluta:</label>
+            <select v-model="currentCurrency" class="excel-sort-select currency-dropdown" @change="handleCurrencyChange">
+              <option value="PLN">PLN (zł)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="USD">USD ($)</option>
+            </select>
+            <div v-if="currentCurrency !== 'PLN'" class="currency-rate-input-block">
+              <label class="sort-label rate-label">Kurs:</label>
+              <input 
+                v-model.number="exchangeRateInput" 
+                type="number" 
+                step="0.0001" 
+                min="0.0001" 
+                class="excel-inline-input currency-rate-input"
+              />
+            </div>
+          </div>
+
           <div class="sort-select-container">
             <label class="sort-label">Sortuj:</label>
             <select v-model="sortBy" class="excel-sort-select">
@@ -52,6 +94,25 @@
           <button v-if="canCloseList" class="close-list-btn" @click="$emit('close-list')">Zamknij</button>
           <span v-else-if="!isListOpen" class="closed-badge">Zamknięta</span>
         </div>
+      </div>
+
+      <div class="procurement-tracker-banner" :class="{ 'procurement-tracker-banner--active': currentTotal > 500 }">
+        <div class="procurement-banner-info">
+          <span class="banner-status-icon">{{ currentTotal > 500 ? '⚠' : 'ℹ' }}</span>
+          <span v-if="currentTotal > 500">
+            <strong>Przekroczono próg 500 zł (Obecnie: {{ (currentTotal * exchangeRate).toFixed(2) }} {{ currentCurrency }}).</strong> Wymagane uzupełnienie rozeznania rynkowego.
+          </span>
+          <span v-else>
+            Pamiętaj, że przy koszyku przekraczającym 500 zł konieczne jest uzupełnienie rozeznania rynkowego, aby spełnić wymogi formalne i zapewnić transparentność wyboru dostawcy.
+          </span>
+        </div>
+        <button 
+          v-if="currentTotal > 500" 
+          class="procurement-action-btn" 
+          @click="showProcurementModal = true"
+        >
+          {{ hasSavedProcurement ? 'Edytuj rozeznanie' : 'Uzupełnij rozeznanie rynkowe' }}
+        </button>
       </div>
 
       <div v-if="showColumnPicker" class="column-picker-panel">
@@ -101,10 +162,10 @@
 
               <td v-if="visibleColumns.net" class="excel-cell--price excel-cell--muted">
                 <template v-if="editingItemId === item.id">
-                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ item.currency }}
+                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ currentCurrency }}
                 </template>
                 <template v-else>
-                  {{ Number(calculateNet(item.price, item.tax_rate)).toFixed(2) }} {{ item.currency }}
+                  {{ Number(calculateNet(item.price, item.tax_rate) * exchangeRate).toFixed(2) }} {{ currentCurrency }}
                 </template>
               </td>
 
@@ -131,10 +192,10 @@
 
               <td v-if="visibleColumns.taxVal" class="excel-cell--price excel-cell--muted">
                 <template v-if="editingItemId === item.id">
-                  {{ Number(editFormData.price - calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ item.currency }}
+                  {{ Number(editFormData.price - calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ currentCurrency }}
                 </template>
                 <template v-else>
-                  {{ Number(item.price - calculateNet(item.price, item.tax_rate)).toFixed(2) }} {{ item.currency }}
+                  {{ Number((item.price - calculateNet(item.price, item.tax_rate)) * exchangeRate).toFixed(2) }} {{ currentCurrency }}
                 </template>
               </td>
 
@@ -150,7 +211,7 @@
                   />
                 </template>
                 <template v-else>
-                  {{ Number(item.price).toFixed(2) }} {{ item.currency }}
+                  {{ Number(item.price * exchangeRate).toFixed(2) }} {{ currentCurrency }}
                 </template>
               </td>
 
@@ -171,19 +232,19 @@
 
               <td v-if="visibleColumns.totalNet" class="excel-cell--price font-medium text-amber">
                 <template v-if="editingItemId === item.id">
-                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate) * editFormData.amount).toFixed(2) }} {{ item.currency }}
+                  {{ Number(editFormData.netPrice * editFormData.amount).toFixed(2) }} {{ currentCurrency }}
                 </template>
                 <template v-else>
-                  {{ Number(calculateNet(item.price, item.tax_rate) * item.amount).toFixed(2) }} {{ item.currency }}
+                  {{ Number(calculateNet(item.price, item.tax_rate) * item.amount * exchangeRate).toFixed(2) }} {{ currentCurrency }}
                 </template>
               </td>
 
               <td v-if="visibleColumns.totalGross" class="font-bold text-blue excel-cell--price">
                 <template v-if="editingItemId === item.id">
-                  {{ (editFormData.price * editFormData.amount).toFixed(2) }} {{ item.currency }}
+                  {{ (editFormData.price * editFormData.amount).toFixed(2) }} {{ currentCurrency }}
                 </template>
                 <template v-else>
-                  {{ Number(item.totalPrice).toFixed(2) }} {{ item.currency }}
+                  {{ Number(item.totalPrice * exchangeRate).toFixed(2) }} {{ currentCurrency }}
                 </template>
               </td>
 
@@ -254,10 +315,10 @@
                 {{ listItems.reduce((sum, item) => sum + item.amount, 0) }} szt.
               </td>
               <td v-if="visibleColumns.totalNet" class="font-bold excel-cell--price excel-cell--price-net">
-                {{ totalNet.toFixed(2) }} {{ listItems[0]?.currency || 'PLN' }}
+                {{ (totalNet * exchangeRate).toFixed(2) }} {{ currentCurrency }}
               </td>
               <td v-if="visibleColumns.totalGross" class="font-bold excel-cell--price-total">
-                {{ (currentTotal || 0).toFixed(2) }} {{ listItems[0]?.currency || 'PLN' }}
+                {{ (actualTotalWithShipping * exchangeRate).toFixed(2) }} {{ currentCurrency }}
               </td>
               <td v-if="visibleColumns.link"></td>
               <td v-if="visibleColumns.notes"></td>
@@ -288,6 +349,64 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showProcurementModal" class="confirm-modal-overlay" @click="showProcurementModal = false">
+      <div class="confirm-modal-content confirm-modal-content--procurement" @click.stop>
+        <h2 class="confirm-modal-title text-amber">Rozeznanie Rynkowe</h2>
+        
+        <div class="procurement-dashboard">
+          <div class="dashboard-card">
+            <span class="card-icon">📸</span>
+            <span class="card-title">Przynajmnniej 3 screeny</span>
+            <p class="card-desc">Porównaj ceny tej samej zawartości w <strong>minimum 3 różnych sklepach</strong> konkurencyjnych.</p>
+          </div>
+          <div class="dashboard-card">
+            <span class="card-icon">🔄</span>
+            <span class="card-title">Koszyk nie musi być 1:1</span>
+            <p class="card-desc">Możesz porównać część produktów w różnych sklepach. Np. przy zamówieniu różnych 10 produktów, 6 może być porównywanych w sklepach A i B, a 4 w sklepach C i D.</p>
+          </div>
+          <div class="dashboard-card">
+            <span class="card-icon">⚖</span>
+            <span class="card-title">Częściowo drożej?</span>
+            <p class="card-desc">W koszyku jest bulbulator za 450 zł oraz 20 różnych produktów o sumie 60 zł. Możesz porównać tylko bulbulator i napisać, że reszta produktów ma porównywalne ceny w innych sklepach.</p>
+          </div>
+          <div class="dashboard-card">
+            <span class="card-icon">🚚</span>
+            <span class="card-title">Inne argumenty</span>
+            <p class="card-desc">Brak produktów w innych sklepach na terenie UE, brak produktów na magazynie mimo niskiej ceny, czy inne okoliczności, to też argumenty, które można przytoczyć w rozeznaniu.</p>
+          </div>
+        </div>
+
+        <div class="procurement-form-body">
+          <div class="form-group">
+            <label class="form-label">Komentarz do rozeznania<span class="text-danger">*</span></label>
+            <textarea 
+              v-model="procurementComment" 
+              placeholder="Jeśli sprawa wymaga dodatkowego komentarza, tutaj możesz go zamieścić" 
+              rows="3" 
+              class="excel-inline-textarea procurement-textarea"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Zrzuty ekranu / Zestawienie cenowe (najlepiej w docx)</label>
+            <div class="file-upload-dropzone">
+              <input type="file" accept=".pdf,.docx,.doc" @change="handleProcurementFileChange" class="hidden-file-input" id="procurementFile" />
+              <label for="procurementFile" class="file-upload-label" @click="$el.querySelector('#procurementFile').click()">
+                <span class="upload-icon">📁</span>
+                <span v-if="procurementFile" class="text-white font-bold">{{ procurementFile.name }}</span>
+                <span v-else class="text-muted">Kliknij, aby podpiąć plik</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="confirm-modal-actions">
+          <button class="confirm-btn confirm-btn-cancel" @click="showProcurementModal = false">Anuluj</button>
+          <button class="confirm-btn confirm-btn-save-procurement" :disabled="!isProcurementValid" @click="saveProcurementData">Zatwierdź rozeznanie</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -304,6 +423,15 @@ const itemToDeleteId = ref(null)
 const currentView = ref('basic')
 const sortBy = ref('default')
 const showColumnPicker = ref(false)
+
+const shippingCostInput = ref(0)
+const showProcurementModal = ref(false)
+const procurementFile = ref(null)
+const procurementComment = ref('')
+const hasSavedProcurement = ref(false)
+
+const currentCurrency = ref('PLN')
+const exchangeRateInput = ref(1.0000)
 
 const props = defineProps({
   list: { type: Object, required: true },
@@ -349,6 +477,21 @@ const columnLabels = {
   modified: 'Ostatnia modyfikacja'
 }
 
+const exchangeRate = computed(() => {
+  if (currentCurrency.value === 'PLN') return 1.0000
+  return Number(exchangeRateInput.value) || 1.0000
+})
+
+const handleCurrencyChange = () => {
+  if (currentCurrency.value === 'PLN') {
+    exchangeRateInput.value = 1.0000
+  } else if (currentCurrency.value === 'EUR') {
+    exchangeRateInput.value = 0.2300 
+  } else if (currentCurrency.value === 'USD') {
+    exchangeRateInput.value = 0.2500
+  }
+}
+
 const setView = (view) => {
   currentView.value = view
   if (view === 'basic') {
@@ -390,10 +533,39 @@ const totalNet = computed(() => {
   return listItems.value.reduce((sum, item) => sum + (calculateNet(item.price, item.tax_rate) * item.amount), 0)
 })
 
+const isFreeDelivery = computed(() => {
+  if (!props.list?.freeDeliveryThreshold) return false
+  return currentTotal.value >= Number(props.list.freeDeliveryThreshold)
+})
+
+const actualTotalWithShipping = computed(() => {
+  const base = currentTotal.value
+  if (isFreeDelivery.value) return base
+  return base + Number(shippingCostInput.value || 0)
+})
+
+const isProcurementValid = computed(() => {
+  return procurementComment.value.trim().length >= 10
+})
+
 const getDynamicColspan = () => {
   let count = Object.values(visibleColumns.value).filter(Boolean).length
   if (canShowActions.value) count += 1
   return count
+}
+
+const handleProcurementFileChange = (e) => {
+  const files = e.target.files
+  if (files && files.length > 0) {
+    procurementFile.value = files[0]
+  }
+}
+
+const saveProcurementData = () => {
+  if (!isProcurementValid.value) return
+  hasSavedProcurement.value = true
+  showProcurementModal.value = false
+  toast.success('Uproszczone rozeznanie rynkowe zostało zatwierdzone.')
 }
 
 const formatTimeAgo = (dateInput) => {
@@ -478,8 +650,6 @@ const addItemToList = async (arg1, arg2) => {
   }
 }
 
-const canRemoveItem = () => isListOpen.value
-
 const promptRemoveItem = (item) => { if (canRemoveItem()) { itemToDeleteId.value = item.id; showDeleteModal.value = true; } }
 
 const executeRemoveItem = async () => {
@@ -501,11 +671,12 @@ const editFormData = ref({ name: '', price: 0, netPrice: 0, taxRate: 23, amount:
 
 const startEdit = (item) => {
   editingItemId.value = item.id
-  const calculatedNetVal = calculateNet(item.price, item.tax_rate)
+  const localGross = item.price * exchangeRate.value
+  const localNet = calculateNet(item.price, item.tax_rate) * exchangeRate.value
   editFormData.value = {
     name: item.name || '',
-    price: item.price,
-    netPrice: parseFloat(calculatedNetVal.toFixed(2)),
+    price: parseFloat(localGross.toFixed(2)),
+    netPrice: parseFloat(localNet.toFixed(2)),
     taxRate: item.tax_rate !== undefined ? item.tax_rate : 23,
     amount: item.amount,
     link: item.link || '',
@@ -535,10 +706,11 @@ const onTaxRateChange = () => {
 
 const saveItemEdit = async (item) => {
   try {
+    const basePriceInPln = editFormData.value.price / exchangeRate.value
     const payload = {
       item_id: item.item_id,
       name: editFormData.value.name,
-      price: parseFloat(editFormData.value.price),
+      price: parseFloat(basePriceInPln.toFixed(4)),
       tax_rate: parseFloat(editFormData.value.taxRate || 0),
       amount: parseInt(editFormData.value.amount),
       link: editFormData.value.link,
@@ -556,21 +728,48 @@ const saveItemEdit = async (item) => {
   }
 }
 
-onMounted(async () => { await fetchStudents(); await fetchListItems(); })
+onMounted(async () => {
+  await fetchStudents()
+  await fetchListItems()
+  if (props.list?.shippingCost) {
+    shippingCostInput.value = props.list.shippingCost
+  }
+})
 </script>
 
 <style scoped>
+.details-page-wrapper { width: 100%; }
 .list-details { color: #ffffff; padding: 1vw 0; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: translateY(0); } }
 
 .back-btn { background: none; border: none; color: #93c5fd; cursor: pointer; font-size: 1vw; margin-bottom: 2vh; font-weight: 700; transition: color 0.2s; }
 .back-btn:hover { color: #ffffff; }
 
-.list-details__header { display: flex; justify-content: space-between; align-items: center; gap: 2vw; margin-bottom: 4vh; }
+.list-details__header { display: flex; justify-content: space-between; align-items: center; gap: 2vw; margin-bottom: 2vh; }
 .list-details__title { font-size: 2vw; color: #bfdbfe; margin: 0 0 0.5vh 0; }
-.list-details__subtitle { color: rgba(226, 232, 240, 0.6); margin: 0; font-size: 1vw; font-weight: 600; }
+.list-details__meta-grid { display: grid; grid-template-columns: repeat(2, auto); gap: 0.4vw 2vw; margin-top: 0.5vh; }
+.list-details__subtitle { color: rgba(226, 232, 240, 0.6); margin: 0; font-size: 1vw; font-weight: 600; display: flex; align-items: center; gap: 0.4vw; }
+
+.shipping-cost-editable-input { width: 5.5vw !important; padding: 0.1vw 0.3vw !important; text-align: center; font-family: monospace; color: #60a5fa !important; font-weight: 700; }
+.currency-append-label { font-size: 0.8vw; color: #64748b; font-weight: 700; margin-left: -0.2vw; }
+.delivery-free-badge { background: rgba(52, 211, 153, 0.15); color: #34d399; font-size: 0.75vw; font-weight: 800; padding: 0.15vw 0.5vw; border-radius: 0.3vw; border: 1px solid rgba(52, 211, 153, 0.25); text-transform: uppercase; letter-spacing: 0.03em; margin-left: 0.2vw; display: inline-block; }
+.strike-through { text-decoration: line-through; opacity: 0.5; }
+
+.procurement-tracker-banner { display: flex; align-items: center; justify-content: space-between; gap: 1vw; padding: 0.8vw 1.2vw; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.6vw; margin-bottom: 3vh; font-size: 0.9vw; color: #94a3b8; transition: all 0.3s ease; }
+.procurement-tracker-banner--active { background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.25); color: #e2e8f0; }
+.procurement-banner-info { display: flex; align-items: center; gap: 0.5vw; }
+.banner-status-icon { font-size: 1.2vw; font-weight: 800; line-height: 1; }
+.procurement-tracker-banner--active .banner-status-icon { color: #fbbf24; }
+.procurement-action-btn { padding: 0.4vw 1vw; background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 0.5vw; font-size: 0.8vw; font-weight: 800; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.procurement-action-btn:hover { background: #d97706; color: white; border-color: #d97706; }
 
 .list-details__actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.8vw; flex-wrap: wrap; }
+
+.currency-select-container { display: flex; align-items: center; gap: 0.4vw; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; padding: 0.2vw 0.6vw; }
+.currency-dropdown { width: 5.5vw; }
+.currency-rate-input-block { display: flex; align-items: center; gap: 0.3vw; margin-left: 0.4vw; border-left: 1px solid rgba(148, 163, 184, 0.2); padding-left: 0.6vw; }
+.rate-label { color: #34d399 !important; }
+.currency-rate-input { width: 4.8vw; padding: 0.15vw 0.3vw; font-family: monospace; font-size: 0.8vw; color: #34d399 !important; font-weight: 700; text-align: center; }
 
 .sort-select-container { display: flex; align-items: center; gap: 0.4vw; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; padding: 0.2vw 0.6vw; }
 .sort-label { font-size: 0.8vw; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
@@ -599,7 +798,6 @@ onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 .closed-badge { padding: 0.7vw 1vw; border-radius: 0.7vw; background: rgba(148, 163, 184, 0.14); color: #cbd5e1; font-size: 0.9vw; font-weight: 800; }
 
 .items-table-container { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); width: 100%; max-width: 100%; box-sizing: border-box; }
-
 .items-table-container::-webkit-scrollbar { height: 7px; background: rgba(30, 41, 59, 0.5); border-radius: 10px; }
 .items-table-container::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; border: 1px solid transparent; background-clip: padding-box; transition: background 0.2s ease; }
 .items-table-container::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.7); }
@@ -617,7 +815,9 @@ onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 .excel-cell--price { text-align: right; font-family: monospace; font-size: 0.9vw; color: #e2e8f0; white-space: nowrap; }
 .excel-cell--muted { color: #64748b; font-size: 0.85vw; }
 .text-amber { color: #fbbf24 !important; }
-.text-blue { color: #60a5fa; }
+.text-blue { color: #60a5fa !important; }
+.text-emerald { color: #34d399 !important; }
+.text-white { color: #ffffff !important; }
 
 .excel-product-cell { display: flex; flex-direction: column; gap: 0.2vw; }
 .product-name { color: #ffffff; white-space: nowrap; }
@@ -636,9 +836,9 @@ onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 .excel-summary-row { background: rgba(30, 41, 59, 0.5) !important; }
 .excel-summary-row td { border-top: 2px solid rgba(148, 163, 184, 0.3); border-bottom: 2px double rgba(148, 163, 184, 0.4) !important; color: #94a3b8; font-weight: 700; font-size: 0.85vw; }
 .excel-cell--price-net { text-align: right; font-family: monospace; font-size: 0.95vw; color: #fbbf24 !important; }
-.excel-cell--price-total { text-align: right; font-family: monospace; font-size: 0.95vw; color: #38bdf8 !important; }
+.excel-cell--price-total { text-align: right; font-family: monospace; font-size: 1vw; color: #38bdf8 !important; }
 
-.excel-inline-input { width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #3b82f6; border-radius: 0.3vw; color: #ffffff; padding: 0.2vw 0.4vw; font-size: 0.85vw; outline: none; }
+.excel-inline-input { box-sizing: border-box; background: #1e293b; border: 1px solid #3b82f6; border-radius: 0.3vw; color: #ffffff; padding: 0.2vw 0.4vw; font-size: 0.85vw; outline: none; }
 .excel-inline-input:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
 .excel-inline-input.text-right { font-family: monospace; width: 6.5vw; }
 .excel-inline-input.text-center { width: 3.5vw; }
@@ -647,13 +847,41 @@ onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 .excel-tax-input-wrapper { display: flex; align-items: center; justify-content: center; gap: 0.1vw; }
 .tax-percent-sign { color: #64748b; font-size: 0.85vw; font-weight: 700; font-family: monospace; }
 
-.text-right { text-align: right; }
-.text-center { text-align: center; }
+.procurement-dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1vw; margin-bottom: 1.5vw; }
+.dashboard-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 0.8vw; padding: 1vw; text-align: left; display: flex; flex-direction: column; gap: 0.3vw; }
+.card-icon { font-size: 1.3vw; margin-bottom: 0.2vw; }
+.card-title { font-weight: 800; font-size: 0.9vw; color: #bfdbfe; text-transform: uppercase; letter-spacing: 0.02em; }
+.card-desc { font-size: 0.8vw; color: rgba(226, 232, 240, 0.65); margin: 0; line-height: 1.4; }
+
+.procurement-form-body { display: flex; flex-direction: column; gap: 1.5vw; text-align: left; }
+.procurement-textarea { font-family: inherit !important; font-size: 0.9vw !important; line-height: 1.4; }
+.form-group { display: flex; flex-direction: column; gap: 0.5vw; }
+.form-label { color: #94a3b8; font-size: 0.85vw; font-weight: 700; text-transform: uppercase; }
+.file-upload-dropzone { background: rgba(30, 41, 59, 0.5); border: 2px dashed rgba(148, 163, 184, 0.3); border-radius: 0.8vw; padding: 1.5vw; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+.file-upload-dropzone:hover { border-color: #3b82f6; }
+.file-upload-label { cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.5vw; }
+.upload-icon { font-size: 2vw; }
+.hidden-file-input { display: none; }
+
+.confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
+.confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.confirm-modal-content--procurement { border-color: rgba(148, 163, 184, 0.15); max-width: 36vw; padding: 2.2vw; }
+@keyframes modalPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.confirm-modal-title { font-size: 1.6vw; font-weight: 800; margin: 0 0 1vw 0; }
+
+.confirm-btn { padding: 0.9vw 2.5vw; border-radius: 0.8vw; font-size: 1.1vw; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s ease; }
+.confirm-btn-cancel { background: rgba(148, 163, 184, 0.15); color: #e2e8f0; }
+.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: #ffffff; }
+.confirm-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
+.confirm-btn-danger:hover { transform: translateY(-0.3vh); filter: brightness(1.1); box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5); }
+.confirm-btn-save-procurement { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); }
+.confirm-btn-save-procurement:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.confirm-btn-save-procurement:not(:disabled):hover { transform: translateY(-0.2vh); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35); }
+
 .font-bold { font-weight: 700; }
 .font-medium { font-weight: 500; }
 .font-italic { font-style: italic; }
 .empty-table { text-align: center; color: rgba(226, 232, 240, 0.5); padding: 3vw; font-style: italic; }
-
 .excel-row--editing { background: rgba(59, 130, 246, 0.08) !important; }
 .excel-row-actions { display: flex; gap: 0.4vw; justify-content: center; }
 .edit-btn { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
@@ -662,19 +890,6 @@ onMounted(async () => { await fetchStudents(); await fetchListItems(); })
 .save-btn:hover { background: rgba(52, 211, 153, 0.3); }
 .cancel-btn { background: #475569; color: #ffffff; border: none; padding: 0.4vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; }
 .cancel-btn:hover { background: #64748b; }
-.delete-btn { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.delete-btn { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.3vw 0.6vw; border-radius: 0.4vw; font-size: 0.75vw; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
-.muted-action { color: rgba(226, 232, 240, 0.03); font-size: 0.8vw; }
-
-.confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
-.confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes modalPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-.confirm-modal-title { color: #ef4444; font-size: 2vw; font-weight: 800; margin: 0 0 1vw 0; }
-.confirm-modal-text { color: #e2e8f0; font-size: 1.1vw; line-height: 1.6; margin-bottom: 2.5vw; }
-.confirm-modal-actions { display: flex; gap: 1.5vw; justify-content: center; }
-.confirm-btn { padding: 0.9vw 2.5vw; border-radius: 0.8vw; font-size: 1.1vw; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s ease; }
-.confirm-btn-cancel { background: rgba(148, 163, 184, 0.15); color: #e2e8f0; }
-.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: #ffffff; }
-.confirm-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
-.confirm-btn-danger:hover { transform: translateY(-0.3vh); filter: brightness(1.1); box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5); }
 </style>
