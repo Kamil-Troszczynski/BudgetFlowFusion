@@ -33,11 +33,20 @@ def get_all_fundings(association_id: Optional[int] = None, session: Session = De
     result = []
     for funding in fundings:
         project_budget = session.get(ProjectBudget, funding.project_budget_id)
+        allocation_rows = session.exec(
+            select(PurchaseRequestFundingAllocation).where(
+                PurchaseRequestFundingAllocation.funding_id == funding.funding_id
+            )
+        ).all()
+        allocated_request_ids = {allocation.purchase_request_id for allocation in allocation_rows}
         purchase_requests = session.exec(
             select(PurchaseRequest).where(PurchaseRequest.funding_id == funding.funding_id)
         ).all()
-        allocated = sum(
-            request.budget_allocated_for_the_order for request in purchase_requests
+        allocated = sum(allocation.allocated_amount for allocation in allocation_rows)
+        allocated += sum(
+            request.budget_allocated_for_the_order
+            for request in purchase_requests
+            if request.purchase_request_id not in allocated_request_ids
         )
         result.append(FundingOut(
             funding_id=funding.funding_id,

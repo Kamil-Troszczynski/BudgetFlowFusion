@@ -50,6 +50,14 @@ def migrate_project_budgets():
         column["name"] for column in inspector.get_columns("public_purchase_plan")
     }
     with engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_request_funding_allocation (
+                purchase_request_id INTEGER NOT NULL REFERENCES purchase_request(purchase_request_id) ON DELETE CASCADE,
+                funding_id INTEGER NOT NULL REFERENCES funding(funding_id),
+                allocated_amount DOUBLE PRECISION NOT NULL,
+                PRIMARY KEY (purchase_request_id, funding_id)
+            )
+        """))
         if "project_budget_id" not in purchase_request_columns:
             connection.execute(text(
                 "ALTER TABLE purchase_request ADD COLUMN project_budget_id INTEGER"
@@ -204,6 +212,25 @@ def migrate_project_budgets():
                     REFERENCES project_budget(project_budget_id);
                 END IF;
             END $$
+        """))
+        connection.execute(text("""
+            INSERT INTO purchase_request_funding_allocation (
+                purchase_request_id,
+                funding_id,
+                allocated_amount
+            )
+            SELECT
+                purchase_request_id,
+                funding_id,
+                budget_allocated_for_the_order
+            FROM purchase_request
+            WHERE funding_id IS NOT NULL
+              AND budget_allocated_for_the_order > 0
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM purchase_request_funding_allocation allocation
+                  WHERE allocation.purchase_request_id = purchase_request.purchase_request_id
+              )
         """))
 
         connection.execute(text("""

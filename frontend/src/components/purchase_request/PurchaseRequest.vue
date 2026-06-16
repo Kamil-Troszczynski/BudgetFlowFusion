@@ -79,11 +79,11 @@
                   </p>
                   <p class="request-card__detail">
                     <span class="request-card__label">Suma koszyka Brutto:</span>
-                    <span class="request-card__value text-blue font-bold">{{ formatMoney(request.sourceList__totalPrice || request.budget) }} PLN</span>
+                    <span class="request-card__value text-blue font-bold">{{ formatMoney(request.sourceList__totalPrice ?? request.budget) }} PLN</span>
                   </p>
                   <p class="request-card__detail">
                     <span class="request-card__label">Sklepy:</span>
-                    <span class="request-card__value text-white">{{ request.sourceList__shopCount || 1 }}</span>
+                    <span class="request-card__value text-white">{{ request.sourceList__shopCount ?? 0 }}</span>
                   </p>
                   <p class="request-card__detail">
                     <span class="request-card__label">Utworzył (Skarbnik):</span>
@@ -129,8 +129,8 @@
                     <td><span class="table-section-badge">{{ request.sectionName || '-' }}</span></td>
                     <td><span class="request-card__badge text-badge-only" :class="request.status">{{ formatStatus(request.status) }}</span></td>
                     <td class="font-mono text-blue font-bold">{{ formatMoney(request.budget) }} PLN</td>
-                    <td class="font-mono text-blue font-bold">{{ formatMoney(request.sourceList__totalPrice || request.budget) }} PLN</td>
-                    <td>{{ request.sourceList__shopCount || 1 }}</td>
+                    <td class="font-mono text-blue font-bold">{{ formatMoney(request.sourceList__totalPrice ?? request.budget) }} PLN</td>
+                    <td>{{ request.sourceList__shopCount ?? 0 }}</td>
                     <td class="font-bold text-white">{{ request.creatorName || 'Nieznany' }}</td>
                     <td>{{ formatDate(request.created_at) }}</td>
                     <td>{{ formatRelativeTime(request.updated_at || request.created_at) }}</td>
@@ -211,113 +211,115 @@
     <div v-if="showAddRequestModal" class="modal-overlay" @click="showAddRequestModal = false">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2 class="modal-title">Nowy wniosek o zamówienie</h2>
+          <h2 class="modal-title">{{ editingRequestId ? 'Edycja wniosku o zamówienie' : 'Nowy wniosek o zamówienie' }}</h2>
           <button class="modal-close" @click="showAddRequestModal = false">✕</button>
         </div>
         <form class="modal-form" @submit.prevent="handleNewRequest">
-          <div class="modal-form__group">
-            <label class="modal-form__label">Nazwa wniosku</label>
-            <input
-              v-model="newRequestData.purchase_request_name"
-              type="text"
-              placeholder="np. Zakup elektroniki"
-              class="modal-form__input"
-              required
-            />
-          </div>
+          <div class="modal-form__scroll-container custom-scrollbar">
+            <div class="modal-form__group">
+              <label class="modal-form__label">Nazwa wniosku</label>
+              <input
+                v-model="newRequestData.purchase_request_name"
+                type="text"
+                placeholder="np. Zakup elektroniki"
+                class="modal-form__input"
+                required
+              />
+            </div>
 
-          <div class="modal-form__group">
-            <label class="modal-form__label">Sekcja koła</label>
-            <select
-              v-model="newRequestData.section_name"
-              class="modal-form__input"
-              required
-            >
-              <option value="" disabled>Wybierz sekcję koła...</option>
-              <option v-for="section in uniqueSections" :key="section" :value="section">
-                {{ section }}
-              </option>
-            </select>
-          </div>
-
-          <div v-if="editingRequestId" class="modal-form__group">
-            <label class="modal-form__label">Finansowanie</label>
-            <div class="funding-allocation-row">
-              <select v-model.number="allocationDraft.funding_id" class="modal-form__input">
-                <option value="" disabled>Wybierz dofinansowanie...</option>
-                <option
-                  v-for="funding in fundings"
-                  :key="funding.funding_id"
-                  :value="funding.funding_id"
-                >
-                  {{ funding.funding_name }} (dostepne: {{ formatMoney(funding.available_after_purchase_requests) }} PLN)
+            <div v-if="!editingRequestId" class="modal-form__group">
+              <label class="modal-form__label">Sekcja koła</label>
+              <select
+                v-model="newRequestData.section_name"
+                class="modal-form__input"
+                required
+              >
+                <option value="" disabled>Wybierz sekcję koła...</option>
+                <option v-for="section in uniqueSections" :key="section" :value="section">
+                  {{ section }}
                 </option>
               </select>
+            </div>
+
+            <div v-if="editingRequestId" class="modal-form__group">
+              <label class="modal-form__label">Finansowanie</label>
+              <div class="funding-allocation-row">
+                <select v-model.number="allocationDraft.funding_id" class="modal-form__input">
+                  <option value="" disabled>Wybierz dofinansowanie...</option>
+                  <option
+                    v-for="funding in fundings"
+                    :key="funding.funding_id"
+                    :value="funding.funding_id"
+                  >
+                    {{ funding.funding_name }} (dostepne: {{ formatMoney(funding.available_after_purchase_requests) }} PLN)
+                  </option>
+                </select>
+                <input
+                  v-model.number="allocationDraft.allocated_amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Kwota"
+                  class="modal-form__input"
+                />
+                <button type="button" class="modal-btn modal-btn-save-add" @click="addFundingAllocation">Dodaj</button>
+              </div>
+              <div v-if="newRequestData.funding_allocations.length > 0" class="funding-allocation-list">
+                <div
+                  v-for="allocation in newRequestData.funding_allocations"
+                  :key="allocation.funding_id"
+                  class="funding-allocation-item"
+                >
+                  <span>{{ fundingName(allocation.funding_id) }}</span>
+                  <strong>{{ formatMoney(allocation.allocated_amount) }} PLN</strong>
+                  <button type="button" class="delete-inline-btn" @click="removeFundingAllocation(allocation.funding_id)">Usun</button>
+                </div>
+                <div class="funding-allocation-total">
+                  <span>Razem</span>
+                  <strong>{{ formatMoney(allocationTotal) }} PLN</strong>
+                </div>
+              </div>
+              <p v-else class="modal-form__hint">Dodaj przynajmniej jedno zrodlo finansowania.</p>
+            </div>
+            <div v-if="editingRequestId" class="modal-form__group">
+              <label class="modal-form__label">Kod CPV</label>
               <input
-                v-model.number="allocationDraft.allocated_amount"
+                v-model.number="newRequestData.used_cpv_id"
                 type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="Kwota"
+                placeholder="np. 42000000"
                 class="modal-form__input"
               />
-              <button type="button" class="modal-btn modal-btn-save-add" @click="addFundingAllocation">Dodaj</button>
             </div>
-            <div v-if="newRequestData.funding_allocations.length > 0" class="funding-allocation-list">
-              <div
-                v-for="allocation in newRequestData.funding_allocations"
-                :key="allocation.funding_id"
-                class="funding-allocation-item"
+            <div v-if="editingRequestId" class="modal-form__group">
+              <label class="modal-form__label">Pozycja planu zamówień publicznych</label>
+              <select
+                v-model="newRequestData.public_purchase_plan_id"
+                class="modal-form__input"
               >
-                <span>{{ fundingName(allocation.funding_id) }}</span>
-                <strong>{{ formatMoney(allocation.allocated_amount) }} PLN</strong>
-                <button type="button" class="delete-inline-btn" @click="removeFundingAllocation(allocation.funding_id)">Usun</button>
-              </div>
-              <div class="funding-allocation-total">
-                <span>Razem</span>
-                <strong>{{ formatMoney(allocationTotal) }} PLN</strong>
-              </div>
+                <option :value="null">Brak pozycji w planie</option>
+                <option
+                  v-for="position in matchingPlanPositions"
+                  :key="position.public_purchase_plan_id"
+                  :value="position.public_purchase_plan_id"
+                >
+                  {{ position.funding_name }} - CPV {{ position.cpv_code }} - pozostalo {{ formatMoney(position.remaining_amount) }} PLN
+                </option>
+              </select>
             </div>
-            <p v-else class="modal-form__hint">Dodaj przynajmniej jedno zrodlo finansowania.</p>
-          </div>
-          <div v-if="editingRequestId" class="modal-form__group">
-            <label class="modal-form__label">Kod CPV</label>
-            <input
-              v-model.number="newRequestData.used_cpv_id"
-              type="number"
-              placeholder="np. 42000000"
-              class="modal-form__input"
-              required
-            />
-          </div>
-          <div v-if="editingRequestId" class="modal-form__group">
-            <label class="modal-form__label">Pozycja planu zamówień publicznych</label>
-            <select
-              v-model="newRequestData.public_purchase_plan_id"
-              class="modal-form__input"
-            >
-              <option :value="null">Brak pozycji w planie</option>
-              <option
-                v-for="position in matchingPlanPositions"
-                :key="position.public_purchase_plan_id"
-                :value="position.public_purchase_plan_id"
-              >
-                {{ position.funding_name }} - CPV {{ position.cpv_code }} - pozostalo {{ formatMoney(position.remaining_amount) }} PLN
-              </option>
-            </select>
-          </div>
-          <div v-if="editingRequestId && requiresPlanException" class="modal-form__group">
-            <label class="modal-form__label">Uzasadnienie odstępstwa od planu</label>
-            <textarea
-              v-model="newRequestData.plan_exception_justification"
-              class="modal-form__input modal-form__textarea"
-              placeholder="Wyjaśnij brak pozycji w planie lub przekroczenie zaplanowanej kwoty"
-              required
-            ></textarea>
+            <div v-if="editingRequestId && requiresPlanException" class="modal-form__group">
+              <label class="modal-form__label">Uzasadnienie odstępstwa od planu</label>
+              <textarea
+                v-model="newRequestData.plan_exception_justification"
+                class="modal-form__input modal-form__textarea"
+                placeholder="Wyjaśnij brak pozycji w planie lub przekroczenie zaplanowanej kwoty"
+              ></textarea>
+            </div>
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
-            <button type="submit" class="modal-btn modal-btn-save" :disabled="editingRequestId && !selectedFunding">Złóż wniosek</button>
+            <button type="submit" :class="editingRequestId ? 'modal-btn modal-btn-finish' : 'modal-btn modal-btn-save'" :disabled="editingRequestId && allocationTotal <= 0">
+              {{ editingRequestId ? 'Zakończ edycję' : 'Złóż wniosek' }}
+            </button>
           </div>
         </form>
       </div>
@@ -424,8 +426,8 @@ const filterAndSortList = (itemsList) => {
   if (sortBy.value === 'date-modified-desc') return filtered.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime())
   if (sortBy.value === 'budget-desc') return filtered.sort((a, b) => Number(b.budget || 0) - Number(a.budget || 0))
   if (sortBy.value === 'budget-asc') return filtered.sort((a, b) => Number(a.budget || 0) - Number(b.budget || 0))
-  if (sortBy.value === 'gross-desc') return filtered.sort((a, b) => Number(b.sourceList__totalPrice || b.budget || 0) - Number(a.sourceList__totalPrice || a.budget || 0))
-  if (sortBy.value === 'gross-asc') return filtered.sort((a, b) => Number(a.sourceList__totalPrice || a.budget || 0) - Number(b.sourceList__totalPrice || b.budget || 0))
+  if (sortBy.value === 'gross-desc') return filtered.sort((a, b) => Number(b.sourceList__totalPrice ?? b.budget ?? 0) - Number(a.sourceList__totalPrice ?? a.budget ?? 0))
+  if (sortBy.value === 'gross-asc') return filtered.sort((a, b) => Number(a.sourceList__totalPrice ?? a.budget ?? 0) - Number(b.sourceList__totalPrice ?? b.budget ?? 0))
   return filtered
 }
 
@@ -601,11 +603,79 @@ const resetRequestForm = () => {
   fundingPlans.value = []
 }
 
+const handleNewRequest = async () => {
+  if (!currentFinanceManagerId.value) {
+    alert('Brak ID skarbnika. Nie mozna zapisac wniosku.')
+    return
+  }
+  if (editingRequestId.value && allocationTotal.value <= 0) {
+    alert('Dodaj przynajmniej jedno dofinansowanie i kwote.')
+    return
+  }
+  try {
+    const payload = editingRequestId.value ? {
+      purchase_request_name: newRequestData.value.purchase_request_name,
+      section_name: newRequestData.value.section_name,
+      budget_allocated_for_the_order: allocationTotal.value,
+      if_service: newRequestData.value.if_service,
+      used_cpv_id: newRequestData.value.used_cpv_id,
+      created_at: new Date().toISOString(),
+      can_add: newRequestData.value.can_add,
+      project_finance_manager_id: currentFinanceManagerId.value,
+      funding_allocations: newRequestData.value.funding_allocations,
+      public_purchase_plan_id: newRequestData.value.public_purchase_plan_id,
+      plan_exception_justification: newRequestData.value.plan_exception_justification
+    } : {
+      purchase_request_name: newRequestData.value.purchase_request_name,
+      section_name: newRequestData.value.section_name,
+      budget_allocated_for_the_order: 0,
+      if_service: false,
+      used_cpv_id: null,
+      created_at: new Date().toISOString(),
+      can_add: true,
+      project_finance_manager_id: currentFinanceManagerId.value
+    }
+    const requestUrl = editingRequestId.value ? `${API_URL}/purchase_requests/${editingRequestId.value}` : `${API_URL}/create_purchase_requests`
+    const response = await fetch(requestUrl, { method: editingRequestId.value ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.detail || 'Nie udalo sie zapisac wniosku')
+    }
+    resetRequestForm()
+    showAddRequestModal.value = false
+    editingRequestId.value = null
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie zapisac wniosku.')
+  }
+}
+
+const deleteRequest = async (id) => {
+  if (!confirm('Czy na pewno chcesz usunąć ten wniosek?')) return
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${id}`, { method: 'DELETE' })
+    if (response.ok) {
+      allRequests.value = allRequests.value.filter(r => r.id !== id)
+      if (activeRequest.value?.id === id) activeRequest.value = null
+    }
+  } catch (error) { console.error(error) }
+}
+
+const formatStatus = (status) => {
+  const map = { pending: 'Oczekujący', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
+  return map[status] || status
+}
+const formatPlanStatus = status => status === 'compliant' ? 'Zgodny z planem' : (status === 'requires_approval' ? 'Wymaga zgody' : status || 'Brak danych')
+const formatDate = (dateStr) => dateStr ? new Intl.DateTimeFormat('pl-PL').format(new Date(dateStr)) : '—'
+const formatMoney = (value) => Number(value || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 const openAddRequestModal = async () => {
-  await fetchFundings()
   resetRequestForm()
   editingRequestId.value = null
   showAddRequestModal.value = true
+  fetchFundings()
 }
 
 const openEditRequestModal = async (request) => {
@@ -634,51 +704,6 @@ const openEditRequestModal = async (request) => {
   await fetchFundingPlansForAllocations()
   showAddRequestModal.value = true
 }
-
-const handleNewRequest = async () => {
-  if (!currentFinanceManagerId.value) return
-  try {
-    const payload = {
-      purchase_request_name: newRequestData.value.purchase_request_name,
-      section_name: newRequestData.value.section_name,
-      budget_allocated_for_the_order: editingRequestId.value ? allocationTotal.value : 0,
-      if_service: newRequestData.value.if_service,
-      used_cpv_id: editingRequestId.value ? newRequestData.value.used_cpv_id : null,
-      created_at: new Date().toISOString(),
-      can_add: newRequestData.value.can_add,
-      project_finance_manager_id: currentFinanceManagerId.value,
-      funding_allocations: newRequestData.value.funding_allocations,
-      public_purchase_plan_id: newRequestData.value.public_purchase_plan_id,
-      plan_exception_justification: newRequestData.value.plan_exception_justification
-    }
-    const requestUrl = editingRequestId.value ? `${API_URL}/purchase_requests/${editingRequestId.value}` : `${API_URL}/create_purchase_requests`
-    await fetch(requestUrl, { method: editingRequestId.value ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    resetRequestForm()
-    showAddRequestModal.value = false
-    editingRequestId.value = null
-    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
-    emit('budget-changed')
-  } catch (error) { console.error(error) }
-}
-
-const deleteRequest = async (id) => {
-  if (!confirm('Czy na pewno chcesz usunąć ten wniosek?')) return
-  try {
-    const response = await fetch(`${API_URL}/purchase_requests/${id}`, { method: 'DELETE' })
-    if (response.ok) {
-      allRequests.value = allRequests.value.filter(r => r.id !== id)
-      if (activeRequest.value?.id === id) activeRequest.value = null
-    }
-  } catch (error) { console.error(error) }
-}
-
-const formatStatus = (status) => {
-  const map = { pending: 'Oczekujący', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
-  return map[status] || status
-}
-const formatPlanStatus = status => status === 'compliant' ? 'Zgodny z planem' : (status === 'requires_approval' ? 'Wymaga zgody' : status || 'Brak danych')
-const formatDate = (dateStr) => dateStr ? new Intl.DateTimeFormat('pl-PL').format(new Date(dateStr)) : '—'
-const formatMoney = (value) => Number(value || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 onMounted(async () => {
   await fetchStudentsMap()
@@ -778,17 +803,18 @@ onMounted(async () => {
 .font-bold { font-weight: 700; }
 .font-mono { font-family: monospace; }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); overflow: hidden; }
 .modal-content { width: 90%; max-width: 35vw; max-height: 85vh; background: #0f172a; border: 0.08vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.2vw; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5vh; flex-shrink: 0; }
 .modal-title { font-size: 1.5vw; color: #fff; font-weight: 800; }
 .modal-close { background: transparent; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.4vw; cursor: pointer; transition: color 0.2s; }
 .modal-close:hover { color: #ffffff; }
 
-.modal-form { display: flex; flex-direction: column; gap: 1.2vw; overflow-y: auto; flex: 1; padding-right: 0.4vw; }
+.modal-form { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+.modal-form__scroll-container { display: flex; flex-direction: column; gap: 1.2vw; overflow-y: auto; flex: 1; padding-right: 0.6vw; min-height: 0; margin-bottom: 1.5vh; }
 .modal-form__group { display: flex; flex-direction: column; gap: 0.5vw; }
 .modal-form__label { color: #94a3b8; font-size: 0.8vw; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.modal-form__input { box-sizing: border-box; padding: 0.8vw 1vw; border-radius: 0.6vw; border: 0.08vw solid rgba(148,163,184,0.2); background: rgba(15,23,42,0.7); color: white; font-size: 0.95vw; outline: none; transition: border-color 0.2s; }
+.modal-form__input { box-sizing: border-box; padding: 0.8vw 1vw; border-radius: 0.6vw; border: 0.08vw solid rgba(148,163,184,0.2); background: rgba(15,23,42,0.7); color: white; font-size: 0.95vw; outline: none; transition: border-color 0.2s; width: 100%; }
 .modal-form__input:focus { border-color: #3b82f6; }
 
 .funding-allocation-row { display: grid; grid-template-columns: 1fr 8vw auto; gap: 0.7vw; align-items: center; }
@@ -797,11 +823,13 @@ onMounted(async () => {
 .funding-allocation-total { grid-template-columns: 1fr auto; background: rgba(59, 130, 246, 0.16); }
 .delete-inline-btn { border: 0; background: transparent; color: #fca5a5; cursor: pointer; font-weight: 700; }
 
-.modal-actions { display: flex; justify-content: flex-end; gap: 1vw; margin-top: 2vh; padding-top: 1.5vh; border-top: 0.08vw solid rgba(148,163,184,0.15); flex-shrink: 0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 1.5vh; border-top: 0.08vw solid rgba(148,163,184,0.15); flex-shrink: 0; margin-top: auto; }
 .modal-btn { padding: 0.8vw 1.6vw; border-radius: 0.6vw; border: none; cursor: pointer; font-weight: 700; font-family: inherit; }
 .modal-btn-cancel { background: rgba(148, 163, 184, 0.12); color: #e2e8f0; }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.25); color: #ffffff; }
 .modal-btn-save-add { padding: 0.8vw 1.2vw; border-radius: 0.6vw; background: #1e293b; border: 1px solid #3b82f6; color: #60a5fa; font-weight: 700; cursor: pointer; }
+.modal-btn-finish { background: #1e293b; border: 1px solid #e2e8f0; color: #e2e8f0; margin-right: auto; }
+.modal-btn-finish:hover { background: rgba(226, 232, 240, 0.1); color: #ffffff; }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
 .modal-btn-save:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 66px 16px rgba(37, 99, 235, 0.35); }
 

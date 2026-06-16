@@ -82,6 +82,14 @@ class PurchaseRequest(SQLModel, table=True):
     project_finance_manager: Optional["ProjectFinanceManager"] = Relationship(back_populates="purchase_requests")
 
 
+class PurchaseRequestFundingAllocation(SQLModel, table=True):
+    __tablename__ = "purchase_request_funding_allocation"
+
+    purchase_request_id: int = Field(foreign_key="purchase_request.purchase_request_id", primary_key=True)
+    funding_id: int = Field(foreign_key="funding.funding_id", primary_key=True)
+    allocated_amount: float
+
+
 
 class PublicPurchasePlanList(SQLModel, table=True):
     __tablename__ = "public_purchase_plan_list"
