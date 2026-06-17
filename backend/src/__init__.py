@@ -50,6 +50,16 @@ def migrate_project_budgets():
     plan_columns = {
         column["name"] for column in inspector.get_columns("public_purchase_plan")
     }
+    item_columns = (
+        {column["name"] for column in inspector.get_columns("item")}
+        if "item" in table_names
+        else set()
+    )
+    shop_columns = (
+        {column["name"] for column in inspector.get_columns("shop")}
+        if "shop" in table_names
+        else set()
+    )
     plan_position_columns = (
         {
             column["name"]
@@ -152,6 +162,25 @@ def migrate_project_budgets():
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan ADD COLUMN cpv_code INTEGER"
             ))
+        if "tax_rate" not in item_columns:
+            connection.execute(text(
+                "ALTER TABLE item ADD COLUMN tax_rate DOUBLE PRECISION DEFAULT 23"
+            ))
+        if "link" not in shop_columns:
+            connection.execute(text("ALTER TABLE shop ADD COLUMN link VARCHAR"))
+        if "opinion" not in shop_columns:
+            connection.execute(text("ALTER TABLE shop ADD COLUMN opinion VARCHAR"))
+        if "status" not in shop_columns:
+            connection.execute(text(
+                "ALTER TABLE shop ADD COLUMN status VARCHAR DEFAULT 'approved'"
+            ))
+        if "created_by_student_id" not in shop_columns:
+            connection.execute(text(
+                "ALTER TABLE shop ADD COLUMN created_by_student_id INTEGER"
+            ))
+        connection.execute(text(
+            "UPDATE shop SET status = 'approved' WHERE status IS NULL"
+        ))
 
         connection.execute(text("""
             UPDATE public_purchase_plan

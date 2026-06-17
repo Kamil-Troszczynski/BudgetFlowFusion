@@ -24,7 +24,14 @@ class ListCreate(BaseModel):
     gslbccf_id: Optional[int] = None
 
 class ListItemCreate(BaseModel):
-    item_id: int
+    item_id: Optional[int] = None
+    name: Optional[str] = None
+    link: Optional[str] = None
+    price: Optional[float] = None
+    currency: str = "PLN"
+    product_subcategory_id: Optional[int] = None
+    notes: Optional[str] = None
+    tax_rate: Optional[float] = None
     amount: int
     student_id: int
 
@@ -309,6 +316,19 @@ def create_purchase_list(new_list_data: ListCreate, session: Session = Depends(g
             status_code=403,
             detail="Zwykly uzytkownik musi wybrac zamowienie",
         )
+    if gslbccf_id:
+        duplicate_list = session.exec(
+            select(ShopPurchaseList).where(
+                ShopPurchaseList.gslbccf_id == gslbccf_id,
+                ShopPurchaseList.shop_id == new_list_data.shop_id,
+            )
+        ).first()
+        if duplicate_list:
+            raise HTTPException(
+                status_code=400,
+                detail="Ten sklep ma juz koszyk w wybranym zamowieniu",
+            )
+
     if funding.funding_price - funding.spent_money <= 0:
         raise HTTPException(status_code=400, detail="Wybrane dofinansowanie nie ma dostępnych środków")
 
@@ -552,6 +572,16 @@ def get_items_for_list(
     for line in line_items:
         item_details = session.get(Item, line.item_id)
         if item_details:
+            subcategory = (
+                session.get(ProductSubcategory, item_details.product_subcategory_id)
+                if item_details.product_subcategory_id
+                else None
+            )
+            category = (
+                session.get(ProductCategory, subcategory.product_category_id)
+                if subcategory and subcategory.product_category_id
+                else None
+            )
             current_student_amount = 0
             if student_id:
                 contribution = session.get(
@@ -582,6 +612,14 @@ def get_items_for_list(
                 "name": item_details.name,
                 "price": item_details.price,
                 "currency": item_details.currency,
+                "link": item_details.link,
+                "product_subcategory_id": item_details.product_subcategory_id,
+                "product_subcategory_name": subcategory.product_subcategory_name if subcategory else None,
+                "product_category_id": category.product_category_id if category else None,
+                "product_category_name": category.product_category_name if category else None,
+                "cpv": category.cpv if category else None,
+                "tax_rate": getattr(item_details, "tax_rate", 23),
+                "notes": "",
                 "amount": line.amount,
                 "total_price": item_details.price * line.amount,
                 "current_student_amount": current_student_amount,
@@ -604,19 +642,49 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
     if item_data.amount <= 0:
         raise HTTPException(status_code=400, detail="Ilość musi być większa od zera")
 
-    item = session.get(Item, item_data.item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Przedmiot nie znaleziony")
-    if item.status != "approved":
-        raise HTTPException(status_code=400, detail="Można dodawać tylko zaakceptowane przedmioty")
-
     contributor = session.get(Student, item_data.student_id)
     if not contributor:
         raise HTTPException(status_code=404, detail="Student nie istnieje")
 
     try:
         now_time = datetime.now()
-        existing_line_item = session.get(ShopPurchaseListItem, (list_id, item_data.item_id))
+        item = session.get(Item, item_data.item_id) if item_data.item_id else None
+        if item_data.item_id and not item:
+            raise HTTPException(status_code=404, detail="Przedmiot nie znaleziony")
+
+        if not item:
+            if not item_data.name or item_data.price is None or not item_data.product_subcategory_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Nazwa, cena i podkategoria sa wymagane",
+                )
+            if item_data.price <= 0:
+                raise HTTPException(status_code=400, detail="Cena musi byc wieksza od zera")
+            subcategory = session.get(ProductSubcategory, item_data.product_subcategory_id)
+            if not subcategory or not subcategory.product_category_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Wybierz podkategorie przypisana do kategorii",
+                )
+            item = Item(
+                name=item_data.name.strip(),
+                link=(item_data.link or "").strip() or None,
+                price=float(item_data.price),
+                currency=item_data.currency or "PLN",
+                tax_rate=float(item_data.tax_rate if item_data.tax_rate is not None else 23),
+                status="approved",
+                created_at=now_time,
+                product_subcategory_id=subcategory.product_subcategory_id,
+                student_id=item_data.student_id,
+                shop_id=list_to_update.shop_id,
+            )
+            session.add(item)
+            session.flush()
+        elif item.status != "approved":
+            item.status = "approved"
+            session.add(item)
+
+        existing_line_item = session.get(ShopPurchaseListItem, (list_id, item.item_id))
         if existing_line_item:
             existing_line_item.amount += item_data.amount
             if hasattr(existing_line_item, 'last_edited_by_student_id'):
@@ -626,7 +694,7 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
         else:
             existing_line_item = ShopPurchaseListItem(
                 shop_purchase_list_id=list_id,
-                item_id=item_data.item_id,
+                item_id=item.item_id,
                 amount=item_data.amount
             )
             if hasattr(existing_line_item, 'last_edited_by_student_id'):
@@ -636,7 +704,7 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
 
         contribution = session.get(
             ShopPurchaseListItemContribution,
-            (list_id, item_data.item_id, item_data.student_id),
+            (list_id, item.item_id, item_data.student_id),
         )
         if contribution:
             contribution.amount += item_data.amount
@@ -645,7 +713,7 @@ def add_item_to_list(list_id: int, item_data: ListItemCreate, session: Session =
         else:
             contribution = ShopPurchaseListItemContribution(
                 shop_purchase_list_id=list_id,
-                item_id=item_data.item_id,
+                item_id=item.item_id,
                 student_id=item_data.student_id,
                 amount=item_data.amount,
                 created_at=now_time,
@@ -775,5 +843,25 @@ def update_item_on_list(
         line_item.last_edited_at = now_time
         
     session.add(line_item)
+    item = session.get(Item, item_id)
+    if item:
+        if update_data.name:
+            item.name = update_data.name.strip()
+        if update_data.price is not None and update_data.price > 0:
+            item.price = float(update_data.price)
+        if update_data.tax_rate is not None:
+            item.tax_rate = float(update_data.tax_rate)
+        if update_data.link is not None:
+            item.link = update_data.link.strip() or None
+        if update_data.product_subcategory_id:
+            subcategory = session.get(ProductSubcategory, update_data.product_subcategory_id)
+            if not subcategory or not subcategory.product_category_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Wybierz podkategorie przypisana do kategorii",
+                )
+            item.product_subcategory_id = subcategory.product_subcategory_id
+        item.status = "approved"
+        session.add(item)
     session.commit()
     return {"status": "success"}

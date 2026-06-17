@@ -14,6 +14,7 @@ class ItemCreate(BaseModel):
     currency: str
     product_subcategory_id: int
     student_id: int
+    tax_rate: Optional[float] = 23
 
 
 class GroupedItemOut(BaseModel):
@@ -24,9 +25,12 @@ class GroupedItemOut(BaseModel):
     link: Optional[str] = None
     status: str
     shop_name: Optional[str] = None
+    subcategory_name: Optional[str] = None
     category_name: Optional[str] = None
     cpv: Optional[str] = None
+    project_names: List[str] = []
     student_id: int
+    created_at: Optional[datetime] = None
 
 
 class ItemGroupOut(BaseModel):
@@ -50,6 +54,40 @@ def _item_group_metadata(item: Item, session: Session):
         else None
     )
     return shop, subcategory, category
+
+
+def _item_project_names(item: Item, session: Session) -> List[str]:
+    list_items = session.exec(
+        select(ShopPurchaseListItem).where(ShopPurchaseListItem.item_id == item.item_id)
+    ).all()
+    project_names = []
+
+    for list_item in list_items:
+        shopping_list = session.get(
+            ShopPurchaseList, list_item.shop_purchase_list_id
+        )
+        funding = (
+            session.get(Funding, shopping_list.funding_id)
+            if shopping_list and shopping_list.funding_id
+            else None
+        )
+        project_budget = (
+            session.get(ProjectBudget, funding.project_budget_id)
+            if funding and funding.project_budget_id
+            else None
+        )
+        project = (
+            session.get(Project, project_budget.project_id)
+            if project_budget and project_budget.project_id
+            else session.get(Project, funding.project_id)
+            if funding and funding.project_id
+            else None
+        )
+
+        if project and project.project_name not in project_names:
+            project_names.append(project.project_name)
+
+    return project_names
 
 
 @app.get("/api/items/grouped", response_model=List[ItemGroupOut])
@@ -98,9 +136,12 @@ def get_grouped_items(
                 link=item.link,
                 status=item.status,
                 shop_name=shop.shop_name if shop else None,
+                subcategory_name=subcategory.product_subcategory_name if subcategory else None,
                 category_name=category.product_category_name if category else None,
                 cpv=category.cpv if category else None,
+                project_names=_item_project_names(item, session),
                 student_id=item.student_id,
+                created_at=item.created_at,
             )
         )
 
@@ -120,10 +161,29 @@ def get_grouped_items(
     return sorted(result, key=lambda group: group.group_label)
 
 
-@app.get("/api/items", response_model=List[Item])
+@app.get("/api/items", response_model=List[GroupedItemOut])
 def get_all_items(session: Session = Depends(get_session)):
     statement = select(Item).where(Item.status == "approved")
-    return session.exec(statement).all()
+    items = session.exec(statement.order_by(Item.created_at.desc())).all()
+    result = []
+    for item in items:
+        shop, subcategory, category = _item_group_metadata(item, session)
+        result.append(GroupedItemOut(
+            item_id=item.item_id,
+            name=item.name,
+            price=item.price,
+            currency=item.currency,
+            link=item.link,
+            status=item.status,
+            shop_name=shop.shop_name if shop else None,
+            subcategory_name=subcategory.product_subcategory_name if subcategory else None,
+            category_name=category.product_category_name if category else None,
+            cpv=category.cpv if category else None,
+            project_names=_item_project_names(item, session),
+            student_id=item.student_id,
+            created_at=item.created_at,
+        ))
+    return result
 
 
 @app.get("/api/items/pending", response_model=List[Item])
@@ -164,14 +224,13 @@ def create_new_item(item_data: ItemCreate, session: Session = Depends(get_sessio
     if not student:
         return {"error": "Student nie istnieje"}
 
-    item_status = "approved" if student.project_finance_manager_id else "pending"
-
     new_item = Item(
         name=item_data.name,
         link=item_data.link,
         price=item_data.price,
         currency=item_data.currency,
-        status=item_status,
+        tax_rate=float(item_data.tax_rate if item_data.tax_rate is not None else 23),
+        status="approved",
         created_at=datetime.now(),
         product_subcategory_id=item_data.product_subcategory_id,
         student_id=item_data.student_id,

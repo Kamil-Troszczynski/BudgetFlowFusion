@@ -1,540 +1,502 @@
 <template>
-  <div class="items-section">
-    <div class="items-header" style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="items-history">
+    <div class="items-history__header">
       <div>
-        <h2 class="items-title">Katalog Przedmiotów</h2>
-        <p class="items-subtitle">Przeglądaj przedmioty i dodawaj nowe do akceptacji</p>
+        <p class="items-history__eyebrow">Historia zakupów</p>
+        <h2>Historia zakupów</h2>
+        <p>Pozycje wpisane w koszykach, gotowe do przeszukiwania po projekcie, sklepie, kategorii i CPV.</p>
       </div>
-      <div style="display: flex; gap: 0.8vw; align-items: center;">
-        <button class="items-request-subcategory-button" @click="showRequestSubcategoryModal = true">+ Zgłoś podkategorię</button>
-        <button class="items-add-button" @click="showAddModal = true">+ Dodaj nowy przedmiot</button>
+      <button class="history-refresh" type="button" @click="fetchHistory">Odśwież</button>
+    </div>
+
+    <div class="history-filters">
+      <label class="history-filter history-filter--search">
+        <span>Szukaj</span>
+        <input
+          v-model="filters.search"
+          type="text"
+          placeholder="Nazwa, sklep, kategoria albo CPV..."
+          class="history-input"
+        />
+      </label>
+      <label class="history-filter">
+        <span>Projekt</span>
+        <select v-model="filters.project" class="history-input">
+          <option value="">Wszystkie projekty</option>
+          <option v-for="project in projectOptions" :key="project" :value="project">{{ project }}</option>
+        </select>
+      </label>
+      <label class="history-filter">
+        <span>Sklep</span>
+        <select v-model="filters.shop" class="history-input">
+          <option value="">Wszystkie sklepy</option>
+          <option v-for="shop in shopOptions" :key="shop" :value="shop">{{ shop }}</option>
+        </select>
+      </label>
+      <label class="history-filter">
+        <span>Kategoria</span>
+        <select v-model="filters.category" class="history-input">
+          <option value="">Wszystkie kategorie</option>
+          <option v-for="category in categoryOptions" :key="category" :value="category">{{ category }}</option>
+        </select>
+      </label>
+      <label class="history-filter">
+        <span>CPV</span>
+        <select v-model="filters.cpv" class="history-input">
+          <option value="">Wszystkie CPV</option>
+          <option v-for="cpv in cpvOptions" :key="cpv" :value="cpv">{{ cpv }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="history-summary">
+      <div>
+        <span>Pozycji</span>
+        <strong>{{ filteredItems.length }}</strong>
       </div>
-    </div>
-
-    <div class="search-bar-wrapper">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Szukaj przedmiotu po nazwie..."
-        class="search-input"
-      />
-    </div>
-
-    <div class="items-toolbar">
-      <span class="items-toolbar__label">Grupowanie</span>
-      <button
-        v-for="option in groupingOptions"
-        :key="option.value"
-        type="button"
-        class="items-toolbar__btn"
-        :class="{ active: activeGroupMode === option.value }"
-        @click="setGroupMode(option.value)"
-      >
-        {{ option.label }}
-      </button>
-    </div>
-
-    <div v-if="activeGroupMode === 'none'" class="items-grid">
-      <div
-        v-for="item in filteredCatalogItems"
-        :key="item.id"
-        class="item-card"
-      >
-        <div class="item-card__header">
-          <h3 class="item-card__title">{{ item.name }}</h3>
-          <span class="item-card__status completed">✓ W katalogu</span>
-        </div>
-        <div class="item-card__content">
-          <p class="item-card__detail">
-            <span class="item-card__label">Cena:</span>
-            <span class="item-card__value">{{ item.price }} {{ item.currency }}</span>
-          </p>
-          <p class="item-card__detail">
-            <span class="item-card__label">Link:</span>
-            <span class="item-card__value">
-              <a :href="item.link" target="_blank" style="color: #60a5fa;">Zobacz w sklepie ↗</a>
-            </span>
-          </p>
-        </div>
+      <div>
+        <span>Łączna wartość</span>
+        <strong>{{ formatMoney(historyTotal) }} PLN</strong>
       </div>
-    </div>
-
-    <div v-else class="grouped-items">
-      <div
-        v-for="group in groupedItems"
-        :key="group.group_key"
-        class="item-group"
-      >
-        <div class="item-group__header">
-          <div>
-            <h3 class="item-group__title">{{ group.group_label }}</h3>
-            <p class="item-group__meta">
-              {{ group.count }} pozycji · {{ formatMoney(group.total_price) }} PLN
-            </p>
-          </div>
-        </div>
-
-        <div class="items-grid">
-          <div
-            v-for="item in group.items"
-            :key="item.item_id"
-            class="item-card"
-          >
-            <div class="item-card__header">
-              <h3 class="item-card__title">{{ item.name }}</h3>
-              <span class="item-card__status completed">{{ item.status }}</span>
-            </div>
-            <div class="item-card__content">
-              <p class="item-card__detail">
-                <span class="item-card__label">Cena:</span>
-                <span class="item-card__value">{{ formatMoney(item.price) }} {{ item.currency }}</span>
-              </p>
-              <p class="item-card__detail">
-                <span class="item-card__label">Sklep:</span>
-                <span class="item-card__value">{{ item.shop_name || 'Brak' }}</span>
-              </p>
-              <p class="item-card__detail">
-                <span class="item-card__label">CPV:</span>
-                <span class="item-card__value">{{ item.cpv || 'Brak' }}</span>
-              </p>
-            </div>
-          </div>
-        </div>
+      <div>
+        <span>Sklepów</span>
+        <strong>{{ shopOptions.length }}</strong>
+      </div>
+      <div>
+        <span>Projektów</span>
+        <strong>{{ projectOptions.length }}</strong>
+      </div>
+      <div>
+        <span>Kategorii</span>
+        <strong>{{ categoryOptions.length }}</strong>
       </div>
     </div>
 
-    <AddItemModal
-      :isOpen="showAddModal"
-      :isLoading="isSubmitting"
-      @close="showAddModal = false"
-      @submit-item="handleNewItemSubmit"
-    />
-
-    <RequestSubcategoryModal
-      :isOpen="showRequestSubcategoryModal"
-      @close="showRequestSubcategoryModal = false"
-    />
+    <div class="history-table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Nazwa</th>
+            <th>Projekt</th>
+            <th>Sklep</th>
+            <th>Kategoria</th>
+            <th>Podkategoria</th>
+            <th>CPV</th>
+            <th>Cena</th>
+            <th>Dodano</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in filteredItems" :key="item.item_id">
+            <td>
+              <div class="history-product">
+                <strong>{{ item.name }}</strong>
+                <span v-if="item.link">{{ compactLink(item.link) }}</span>
+              </div>
+            </td>
+            <td><span class="history-chip history-chip--project">{{ formatProjects(item.project_names) }}</span></td>
+            <td><span class="history-chip history-chip--shop">{{ item.shop_name || '-' }}</span></td>
+            <td>{{ item.category_name || '-' }}</td>
+            <td>{{ item.subcategory_name || '-' }}</td>
+            <td><span class="history-chip history-chip--cpv">{{ item.cpv || '-' }}</span></td>
+            <td class="history-price">{{ formatMoney(item.price) }} {{ item.currency || 'PLN' }}</td>
+            <td>{{ formatDate(item.created_at) }}</td>
+            <td>
+              <a v-if="item.link" :href="item.link" target="_blank" rel="noreferrer" class="history-link">Otwórz</a>
+              <span v-else>-</span>
+            </td>
+          </tr>
+          <tr v-if="!filteredItems.length">
+            <td colspan="9" class="history-empty">Brak pozycji dla wybranych filtrów.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAuth } from '@/composables/useAuth'
-import { useToast } from '@/composables/useToast'
-import AddItemModal from './AddItemModal.vue'
-import RequestSubcategoryModal from './RequestSubcategoryModal.vue'
+import { computed, onMounted, ref } from 'vue'
 
-const showAddModal = ref(false)
-const showRequestSubcategoryModal = ref(false)
-const toast = useToast()
-const catalogItems = ref([])
-const groupedItems = ref([])
-const { user } = useAuth()
-const isSubmitting = ref(false)
-const activeGroupMode = ref('none')
-const searchQuery = ref('')
-
-const filteredCatalogItems = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return catalogItems.value
-  return catalogItems.value.filter(i => i.name.toLowerCase().includes(q))
+const historyItems = ref([])
+const filters = ref({
+  search: '',
+  project: '',
+  shop: '',
+  category: '',
+  cpv: ''
 })
 
-const groupingOptions = [
-  { value: 'none', label: 'Brak' },
-  { value: 'shop', label: 'Sklep' },
-  { value: 'cpv', label: 'CPV' },
-  { value: 'category', label: 'Kategoria' },
-  { value: 'status', label: 'Status' }
-]
+const normalize = value => String(value || '').toLowerCase().trim()
 
-const fetchCatalog = async () => {
-  try {
-    const response = await fetch('http://localhost:8080/api/items')
-    if (!response.ok) throw new Error('Błąd sieci')
-    const data = await response.json()
+const uniqueOptions = values =>
+  [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pl'))
 
-    catalogItems.value = data.map(item => ({
-      ...item,
-      id: item.item_id
-    }))
-  } catch (error) {
-    console.error("Błąd pobierania katalogu:", error)
-  }
-}
+const shopOptions = computed(() => uniqueOptions(historyItems.value.map(item => item.shop_name)))
+const projectOptions = computed(() =>
+  uniqueOptions(historyItems.value.flatMap(item => item.project_names || []))
+)
+const categoryOptions = computed(() => uniqueOptions(historyItems.value.map(item => item.category_name)))
+const cpvOptions = computed(() => uniqueOptions(historyItems.value.map(item => item.cpv)))
 
-const fetchGroupedCatalog = async () => {
-  if (activeGroupMode.value === 'none') return
-
-  try {
-    const response = await fetch(
-      `http://localhost:8080/api/items/grouped?group_by=${activeGroupMode.value}`
-    )
-    if (!response.ok) throw new Error('Błąd sieci')
-
-    groupedItems.value = await response.json()
-  } catch (error) {
-    console.error("Błąd pobierania pogrupowanego katalogu:", error)
-  }
-}
-
-const setGroupMode = async (mode) => {
-  activeGroupMode.value = mode
-  if (mode !== 'none') {
-    await fetchGroupedCatalog()
-  }
-}
-
-const formatMoney = (value) => {
-  return Number(value || 0).toLocaleString('pl-PL', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+const filteredItems = computed(() => {
+  const query = normalize(filters.value.search)
+  return historyItems.value.filter(item => {
+    const text = normalize([
+      item.name,
+      ...(item.project_names || []),
+      item.shop_name,
+      item.category_name,
+      item.subcategory_name,
+      item.cpv
+    ].filter(Boolean).join(' '))
+    return (!query || text.includes(query))
+      && (!filters.value.project || (item.project_names || []).includes(filters.value.project))
+      && (!filters.value.shop || item.shop_name === filters.value.shop)
+      && (!filters.value.category || item.category_name === filters.value.category)
+      && (!filters.value.cpv || item.cpv === filters.value.cpv)
   })
-}
-
-onMounted(() => {
-  fetchCatalog()
 })
 
-const handleNewItemSubmit = async (itemData) => {
-  isSubmitting.value = true
+const historyTotal = computed(() =>
+  filteredItems.value.reduce((sum, item) => sum + Number(item.price || 0), 0)
+)
 
+const formatMoney = value => Number(value || 0).toLocaleString('pl-PL', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+})
+
+const formatDate = value => {
+  if (!value) return '-'
+  return new Intl.DateTimeFormat('pl-PL').format(new Date(value))
+}
+
+const compactLink = value => {
   try {
-    const response = await fetch('http://localhost:8080/api/items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: itemData.name,
-        link: itemData.link,
-        price: itemData.price,
-        currency: itemData.currency,
-        product_subcategory_id: itemData.subcategoryId,
-        student_id: user.value.id
-      })
-    })
-
-    if (!response.ok) throw new Error('Nie udało się wysłać przedmiotu do akceptacji')
-
-    showAddModal.value = false;
-
-    if (user.value.role === 'treasurer') {
-      toast.success('Przedmiot został automatycznie dodany do katalogu!')
-      fetchCatalog()
-      fetchGroupedCatalog()
-    } else {
-      toast.success('Przedmiot został wysłany do akceptacji!')
-    }
-
-  } catch (error) {
-    console.error("Błąd podczas dodawania przedmiotu:", error)
-    toast.error("Wystąpił błąd podczas zapisywania w bazie.")
-  } finally {
-    isSubmitting.value = false
+    return new URL(value).hostname.replace(/^www\./, '')
+  } catch {
+    return value
   }
 }
+
+const formatProjects = projects => {
+  if (!projects || !projects.length) return '-'
+  return projects.join(', ')
+}
+
+const fetchHistory = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/items', { cache: 'no-store' })
+    if (!response.ok) throw new Error('Nie udalo sie pobrac historii')
+    historyItems.value = await response.json()
+  } catch (error) {
+    console.error(error)
+    historyItems.value = []
+  }
+}
+
+onMounted(fetchHistory)
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
-
-.items-section {
+.items-history {
+  display: grid;
+  gap: 1.4vw;
   width: 100%;
-  padding: 3vh 0;
+  padding: 2vh 0;
+  color: #e2e8f0;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
-.items-header {
-  margin-bottom: 3vh;
-}
-
-.items-title {
-  font-size: 2vw;
-  font-weight: 800;
-  color: #bfdbfe;
-  margin: 0 0 0.8vh 0;
-}
-
-.items-subtitle {
-  font-size: 1vw;
-  color: rgba(226, 232, 240, 0.6);
-  margin: 0;
-}
-
-.search-bar-wrapper {
-  margin-bottom: 1.5vw;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.9vw 1.2vw;
-  background: rgba(15, 23, 42, 0.6);
-  border: 0.08vw solid rgba(148, 163, 184, 0.2);
-  border-radius: 0.7vw;
-  color: #ffffff;
-  font-size: 0.95vw;
-  font-family: 'Nunito', system-ui, sans-serif;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-}
-.search-input:focus {
-  outline: none;
-  border-color: rgba(96, 165, 250, 0.6);
-}
-.search-input::placeholder { color: rgba(226, 232, 240, 0.4); }
-
-.items-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.7vw;
-  margin-bottom: 2vw;
-  padding: 0.8vw;
-  border: 0.08vw solid rgba(148, 163, 184, 0.15);
-  border-radius: 0.8vw;
-  background: rgba(15, 23, 42, 0.5);
-}
-
-.items-toolbar__label {
-  color: rgba(226, 232, 240, 0.65);
-  font-size: 0.9vw;
-  font-weight: 800;
-}
-
-.items-toolbar__btn {
-  padding: 0.55vw 0.9vw;
-  border: 0.08vw solid rgba(148, 163, 184, 0.18);
-  border-radius: 0.55vw;
-  background: rgba(30, 41, 59, 0.55);
-  color: #cbd5e1;
-  font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 0.88vw;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.items-toolbar__btn:hover,
-.items-toolbar__btn.active {
-  border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-}
-
-.items-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6vh;
-  background: rgba(15, 23, 42, 0.4);
-  border: 0.08vw dashed rgba(148, 163, 184, 0.3);
-  border-radius: 1vw;
-  text-align: center;
-}
-
-.items-empty-icon {
-  font-size: 4vw;
-  margin: 0 0 1.5vh 0;
-}
-
-.items-empty-text {
-  font-size: 1.2vw;
-  font-weight: 600;
-  color: rgba(226, 232, 240, 0.8);
-  margin: 0 0 0.5vh 0;
-}
-
-.items-empty-subtext {
-  font-size: 0.95vw;
-  color: rgba(226, 232, 240, 0.5);
-  margin: 0;
-}
-
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(24vw, 1fr));
-  gap: 2vw;
-}
-
-.grouped-items {
-  display: grid;
-  gap: 2vw;
-}
-
-.item-group {
-  display: grid;
-  gap: 1.2vw;
-  padding: 1.5vw;
-  border: 0.08vw solid rgba(148, 163, 184, 0.15);
-  border-radius: 1vw;
-  background: rgba(15, 23, 42, 0.38);
-}
-
-.item-group__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 1vw;
-  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.12);
-}
-
-.item-group__title {
-  margin: 0;
-  color: #bfdbfe;
-  font-size: 1.25vw;
-  font-weight: 800;
-}
-
-.item-group__meta {
-  margin: 0.4vh 0 0 0;
-  color: rgba(226, 232, 240, 0.58);
-  font-size: 0.9vw;
-  font-weight: 700;
-}
-
-.item-card {
-  display: flex;
-  flex-direction: column;
-  padding: 2vw;
-  background: rgba(15, 23, 42, 0.6);
-  border: 0.08vw solid rgba(148, 163, 184, 0.15);
-  border-radius: 1vw;
-  transition: all 0.3s ease;
-}
-
-.item-card:hover {
-  background: rgba(15, 23, 42, 0.8);
-  border-color: rgba(59, 130, 246, 0.3);
-  transform: translateY(-0.4vh);
-}
-
-.item-card__header {
+.items-history__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5vw;
+  gap: 2vw;
+  padding-bottom: 1.2vw;
+  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.16);
+}
+
+.items-history__header h2 {
+  margin: 0 0 0.5vw;
+  color: #bfdbfe;
+  font-size: 2vw;
+  font-weight: 800;
+}
+
+.items-history__header p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.64);
+  font-size: 1vw;
+  line-height: 1.5;
+}
+
+.items-history__eyebrow {
+  margin: 0 0 0.35vw 0 !important;
+  color: #93c5fd !important;
+  font-size: 0.78vw !important;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.history-refresh {
+  border: 0.08vw solid rgba(96, 165, 250, 0.35);
+  border-radius: 0.6vw;
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+  padding: 0.75vw 1.2vw;
+  font-weight: 800;
+  font-size: 0.9vw;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.history-refresh:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(96, 165, 250, 0.55);
+}
+
+.history-filters {
+  display: grid;
+  grid-template-columns: minmax(18vw, 1.6fr) repeat(4, minmax(10vw, 1fr));
+  gap: 0.9vw;
+  padding: 1vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.9vw;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.history-filter {
+  display: grid;
+  gap: 0.45vw;
+}
+
+.history-filter span {
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.8vw;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.history-input {
+  width: 100%;
+  padding: 0.8vw 0.9vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.65vw;
+  background: rgba(15, 23, 42, 0.68);
+  color: #ffffff;
+  font-size: 0.92vw;
+  font-family: inherit;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.history-input:focus {
+  outline: none;
+  border-color: rgba(96, 165, 250, 0.62);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.history-input option {
+  background: #0f172a;
+}
+
+.history-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1vw;
 }
 
-.item-card__title {
-  font-size: 1.2vw;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-  flex: 1;
+.history-summary > div {
+  display: grid;
+  gap: 0.45vw;
+  padding: 1vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.8vw;
+  background: rgba(15, 23, 42, 0.56);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.item-card__status {
-  padding: 0.4vw 0.8vw;
-  border-radius: 0.4vw;
-  font-size: 0.85vw;
-  font-weight: 600;
-  background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+.history-summary > div:hover {
+  border-color: rgba(59, 130, 246, 0.32);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.history-summary span {
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 0.82vw;
+  font-weight: 700;
+}
+
+.history-summary strong {
+  color: #ffffff;
+  font-size: 1.25vw;
+}
+
+.history-table-wrap {
+  overflow-x: auto;
+  border: 0.08vw solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.9vw;
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.18);
+}
+
+.history-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.9vw 1vw;
+  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.1);
+  text-align: left;
+  font-size: 0.88vw;
+  vertical-align: middle;
+}
+
+.history-table th {
+  background: rgba(30, 41, 59, 0.76);
+  color: #93c5fd;
+  font-size: 0.72vw;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
-.item-card__status.completed {
-  background: rgba(34, 197, 94, 0.15);
-  color: #86efac;
+.history-table tr:hover {
+  background: rgba(59, 130, 246, 0.035);
 }
 
-.item-card__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8vw;
-  margin-bottom: 1.5vw;
-}
-
-.item-card__detail {
-  display: flex;
+.history-link {
+  display: inline-flex;
   align-items: center;
-  gap: 0.8vw;
-  font-size: 0.95vw;
-  margin: 0;
+  justify-content: center;
+  padding: 0.35vw 0.65vw;
+  border: 0.08vw solid rgba(96, 165, 250, 0.25);
+  border-radius: 0.45vw;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  font-weight: 800;
+  text-decoration: none;
 }
 
-.item-card__label {
-  color: rgba(226, 232, 240, 0.6);
-  font-weight: 600;
-  min-width: 5vw;
+.history-product {
+  display: grid;
+  gap: 0.25vw;
 }
 
-.item-card__value {
+.history-product strong {
   color: #ffffff;
-  font-weight: 500;
+  font-weight: 800;
 }
 
-.item-card__actions {
-  display: flex;
-  gap: 0.8vw;
+.history-product span {
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 0.78vw;
 }
 
-.item-card__button {
-  flex: 1;
-  padding: 0.8vw;
-  border: none;
-  border-radius: 0.6vw;
-  font-size: 0.9vw;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Nunito', system-ui, sans-serif;
+.history-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 14vw;
+  padding: 0.32vw 0.6vw;
+  border-radius: 999px;
+  font-size: 0.78vw;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.item-card__button.edit {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+.history-chip--shop {
+  border: 0.08vw solid rgba(59, 130, 246, 0.22);
+  background: rgba(59, 130, 246, 0.12);
+  color: #bfdbfe;
 }
 
-.item-card__button.edit:hover {
-  background: rgba(59, 130, 246, 0.35);
+.history-chip--project {
+  border: 0.08vw solid rgba(34, 197, 94, 0.24);
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
 }
 
-.item-card__button.delete {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+.history-chip--cpv {
+  border: 0.08vw solid rgba(245, 158, 11, 0.24);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
 }
 
-.item-card__button.delete:hover {
-  background: rgba(239, 68, 68, 0.35);
+.history-price {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #86efac;
+  font-weight: 800;
 }
 
-.items-request-subcategory-button {
-  padding: 0.8vw 1.5vw;
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 0.8vw;
-  font-size: 1vw;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Nunito', system-ui, sans-serif;
+.history-empty {
+  color: rgba(226, 232, 240, 0.64);
+  text-align: center;
+  padding: 2vw !important;
 }
 
-.items-request-subcategory-button:hover {
-  background: rgba(59, 130, 246, 0.28);
-  border-color: rgba(59, 130, 246, 0.5);
-}
+@media (max-width: 900px) {
+  .items-history__header,
+  .history-filters,
+  .history-summary {
+    grid-template-columns: 1fr;
+  }
 
-.items-add-button {
-  padding: 0.8vw 1.5vw;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
-  border: none;
-  border-radius: 0.8vw;
-  font-size: 1vw;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Nunito', system-ui, sans-serif;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-}
+  .items-history__header {
+    display: grid;
+  }
 
-.items-add-button:hover {
-  transform: translateY(-0.2vh);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-}
+  .items-history__header h2 {
+    font-size: 24px;
+  }
 
+  .items-history__header p,
+  .history-input,
+  .history-table th,
+  .history-table td {
+    font-size: 14px;
+  }
+
+  .items-history__eyebrow,
+  .history-filter span {
+    font-size: 12px !important;
+  }
+
+  .history-summary span,
+  .history-product span,
+  .history-chip {
+    font-size: 12px;
+  }
+
+  .history-summary strong {
+    font-size: 18px;
+  }
+
+  .history-filters,
+  .history-summary > div {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 12px 14px;
+  }
+
+  .history-refresh {
+    width: fit-content;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+}
 </style>

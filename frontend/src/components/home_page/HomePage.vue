@@ -156,6 +156,7 @@
                   <div>
                     <p class="budget-overview__eyebrow">Projekt</p>
                     <h3>{{ activeBudgetProject.project_name || activeBudgetProject.project_budget_name }}</h3>
+                    <span>{{ activeBudgetProject.project_budget_name }}</span>
                   </div>
                   <div class="budget-project-detail__meter">
                     <div class="budget-progress__bar">
@@ -229,6 +230,10 @@
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex]?.includes('Listy') && navLinks[activeNavIndex]?.includes('zakupów')">
             <AddedShopPurchaseLists :initial-purchase-request-id="selectedShoppingRequestId" />
+          </section>
+
+          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Sklepy'">
+            <Shops />
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Plany publiczne'">
@@ -393,6 +398,7 @@ import Settlement from '@/components/settlement/Settlement.vue'
 import PublicPurchasePlans from '@/components/public_purchase_plans/PublicPurchasePlans.vue'
 import { useToast } from '@/composables/useToast'
 import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
+import Shops from '@/components/shops/Shops.vue'
 
 const router = useRouter()
 const { user, logout } = useAuth()
@@ -425,11 +431,23 @@ const editFormData = ref({
   role: ''
 })
 
-const navLinks = computed(() => {
+const baseNavLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
   return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Podsumowanie budżetu', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia', 'Akceptacja CPV']
+})
+
+const navLinks = computed(() => {
+  const links = baseNavLinks.value
+  if (links.includes('Sklepy')) return links
+  const insertIndex = links.findIndex(link => link.includes('Listy'))
+  if (insertIndex === -1) return [...links, 'Sklepy']
+  return [
+    ...links.slice(0, insertIndex + 1),
+    'Sklepy',
+    ...links.slice(insertIndex + 1)
+  ]
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
@@ -466,14 +484,6 @@ const handleScroll = () => {
   }
 }
 
-const handleKeydown = (e) => {
-  if (e.key === 'ArrowRight' && activeNavIndex.value < navLinks.value.length - 1) {
-    navigateToSection(activeNavIndex.value + 1)
-  } else if (e.key === 'ArrowLeft' && activeNavIndex.value > 0) {
-    navigateToSection(activeNavIndex.value - 1)
-  }
-}
-
 const handleClickOutside = (e) => {
   if (userMenuRef.value && !userMenuRef.value.contains(e.target)) {
     showUserMenu.value = false
@@ -494,7 +504,6 @@ const resetEditFormData = () => {
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeydown)
   document.addEventListener('click', handleClickOutside)
   resetEditFormData()
   fetchBudgetSummary()
@@ -507,7 +516,6 @@ watch(showEditProfileModal, (newValue) => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('click', handleClickOutside)
 })
 

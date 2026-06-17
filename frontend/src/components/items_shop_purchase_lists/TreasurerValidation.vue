@@ -3,7 +3,7 @@
     <div class="validation-header">
       <div>
         <h2 class="validation-title">Panel Skarbnika</h2>
-        <p class="validation-subtitle">Weryfikacja przedmiotów i zarządzanie kategoriami CPV</p>
+        <p class="validation-subtitle">Zarządzanie kategoriami CPV i oczekującymi podkategoriami</p>
       </div>
       <div class="stats-badges">
         <button class="action-btn accept" @click="showCategoryModal = true" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3);">
@@ -14,11 +14,11 @@
 
     <div class="tab-bar">
       <button
+        v-if="false"
         :class="['tab-btn', { active: activeTab === 'items' }]"
         @click="activeTab = 'items'"
       >
-        Akceptacja przedmiotów
-        <span class="tab-badge" v-if="pendingItems.length > 0">{{ pendingItems.length }}</span>
+        <span></span>
       </button>
       <button
         :class="['tab-btn', { active: activeTab === 'subcategories' }]"
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Items tab -->
-    <div v-if="activeTab === 'items'">
+    <div v-if="false && activeTab === 'items'">
       <div class="search-bar-wrapper">
         <input
           v-model="itemSearch"
@@ -167,7 +167,7 @@ import { useToast } from '@/composables/useToast'
 const toast = useToast()
 const { user } = useAuth()
 
-const activeTab = ref('items')
+const activeTab = ref('subcategories')
 const pendingItems = ref([])
 const pendingSubcategories = ref([])
 const dbCategories = ref([])
@@ -249,7 +249,7 @@ const fetchPendingSubcategories = async () => {
 
 onMounted(async () => {
   await fetchCategoriesFromDB()
-  await Promise.all([fetchPendingItems(), fetchPendingSubcategories()])
+  await Promise.all([fetchPendingSubcategories()])
 })
 
 const handleAccept = async (itemId) => {
@@ -291,7 +291,10 @@ const assignCategory = async (subcategoryId) => {
     const response = await fetch(`http://localhost:8080/api/subcategories/${subcategoryId}/assign-category`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_category_id: categoryId })
+      body: JSON.stringify({
+        product_category_id: categoryId,
+        student_id: user.value?.id
+      })
     })
 
     if (!response.ok) throw new Error('Błąd serwera')

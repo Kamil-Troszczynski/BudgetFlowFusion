@@ -253,6 +253,10 @@ class Shop(SQLModel, table=True):
 
     shop_id: Optional[int] = Field(default=None, primary_key=True)
     shop_name: str
+    link: Optional[str] = Field(default=None)
+    opinion: Optional[str] = Field(default=None)
+    status: str = Field(default="approved")
+    created_by_student_id: Optional[int] = Field(default=None)
     address: str
     delivery_time: datetime
     is_recommended: bool
@@ -271,6 +275,7 @@ class Item(SQLModel, table=True):
     currency: Currency = Field(sa_column=Column(SQLEnum(Currency), nullable=False))
     link: str | None = Field(default=None)
     created_at: datetime
+    tax_rate: float = Field(default=23.0)
 
     status: str = Field(default="approved")
 

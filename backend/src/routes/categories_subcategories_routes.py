@@ -9,15 +9,27 @@ from typing import Optional
 class CategoryCreate(BaseModel):
     name: str
     cpv: str
+    student_id: int
 
 
 class SubcategoryCreate(BaseModel):
     name: str
     product_category_id: Optional[int] = None
+    student_id: Optional[int] = None
 
 
 class AssignCategoryBody(BaseModel):
     product_category_id: int
+    student_id: int
+
+
+def _require_treasurer(student_id: Optional[int], session: Session) -> Student:
+    if not student_id:
+        raise HTTPException(status_code=403, detail="Tylko skarbnik moze zarzadzac kategoriami")
+    student = session.get(Student, student_id)
+    if not student or not student.project_finance_manager_id:
+        raise HTTPException(status_code=403, detail="Tylko skarbnik moze zarzadzac kategoriami")
+    return student
 
 
 @app.get("/api/categories")
@@ -27,6 +39,7 @@ def get_categories(session: Session = Depends(get_session)):
 
 @app.post("/api/categories")
 def create_category(cat_data: CategoryCreate, session: Session = Depends(get_session)):
+    _require_treasurer(cat_data.student_id, session)
     new_cat = ProductCategory(
         product_category_name=cat_data.name,
         description="",
@@ -52,6 +65,8 @@ def get_subcategories(session: Session = Depends(get_session)):
 
 @app.post("/api/subcategories")
 def create_subcategory(subcat_data: SubcategoryCreate, session: Session = Depends(get_session)):
+    if subcat_data.product_category_id:
+        _require_treasurer(subcat_data.student_id, session)
     new_subcat = ProductSubcategory(
         product_subcategory_name=subcat_data.name,
         description="",
@@ -65,6 +80,7 @@ def create_subcategory(subcat_data: SubcategoryCreate, session: Session = Depend
 
 @app.patch("/api/subcategories/{subcategory_id}/assign-category")
 def assign_category(subcategory_id: int, body: AssignCategoryBody, session: Session = Depends(get_session)):
+    _require_treasurer(body.student_id, session)
     subcat = session.get(ProductSubcategory, subcategory_id)
     if not subcat:
         raise HTTPException(status_code=404, detail="Podkategoria nie istnieje")

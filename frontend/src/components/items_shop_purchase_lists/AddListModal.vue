@@ -53,6 +53,12 @@
 
         <div class="list-form-group">
           <label class="list-form-label">Nazwa listy / Cel zamówienia</label>
+          <div v-if="selectedShopInfo?.opinion && !duplicateListWarning" class="shop-meta-preview">
+            <div class="meta-preview-item">
+              <span class="meta-preview-label">Opinia tekstowa:</span>
+              <span class="meta-preview-value text-amber">{{ selectedShopInfo.opinion }}</span>
+            </div>
+          </div>
           <textarea
             v-model="form.name"
             placeholder="np. Materiały i elektronika do budowy nowego łazika na zawody..."
@@ -84,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
@@ -119,7 +125,18 @@ const form = ref({
 const fetchExistingLists = async () => {
   try {
     const timestamp = new Date().getTime()
-    const response = await fetch(`http://localhost:8080/api/lists?open_only=true&t=${timestamp}`)
+    const params = new URLSearchParams({
+      open_only: 'true',
+      t: String(timestamp)
+    })
+    if (props.publicPurchasePlan?.purchase_request_id) {
+      params.set('purchase_request_id', props.publicPurchasePlan.purchase_request_id)
+    } else if (props.publicPurchasePlan?.public_purchase_plan_id) {
+      params.set('public_purchase_plan_id', props.publicPurchasePlan.public_purchase_plan_id)
+    } else if (props.publicPurchasePlan?.gslbccf_id) {
+      params.set('gslbccf_id', props.publicPurchasePlan.gslbccf_id)
+    }
+    const response = await fetch(`http://localhost:8080/api/lists?${params.toString()}`)
     if (response.ok) {
       existingLists.value = await response.json()
     }
@@ -136,6 +153,8 @@ const fetchShops = async () => {
     shops.value = data.map(shop => ({
       id: shop.shop_id,
       name: shop.shop_name,
+      link: shop.link || '',
+      opinion: shop.opinion || '',
       deliveryTime: shop.delivery_time ? String(shop.delivery_time) : '',
       freeDeliveryThreshold: shop.free_delivery_threshold || shop.freeDeliveryThreshold,
       rating: shop.rating
@@ -183,6 +202,25 @@ onMounted(() => {
     fetchFundings()
   }
 })
+
+watch(
+  () => props.publicPurchasePlan,
+  async () => {
+    existingLists.value = []
+    duplicateListWarning.value = false
+    await fetchExistingLists()
+    handleShopChange()
+  }
+)
+
+watch(
+  () => props.isOpen,
+  async isOpen => {
+    if (!isOpen) return
+    await fetchExistingLists()
+    handleShopChange()
+  }
+)
 
 const closeModal = () => {
   emit('close')

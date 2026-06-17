@@ -72,6 +72,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -81,6 +82,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'refresh-categories'])
 
 const toast = useToast()
+const { user } = useAuth()
 const formType = ref('category')
 const categorySearch = ref('')
 
@@ -114,12 +116,13 @@ const handleSubmit = async () => {
 
     if (formType.value === 'category') {
       endpoint = 'http://localhost:8080/api/categories'
-      payload = { name: catForm.value.name, cpv: catForm.value.cpv }
+      payload = { name: catForm.value.name, cpv: catForm.value.cpv, student_id: user.value?.id }
     } else {
       endpoint = 'http://localhost:8080/api/subcategories'
       payload = {
         name: subcatForm.value.name,
-        product_category_id: subcatForm.value.categoryId
+        product_category_id: subcatForm.value.categoryId,
+        student_id: user.value?.id
       }
     }
 

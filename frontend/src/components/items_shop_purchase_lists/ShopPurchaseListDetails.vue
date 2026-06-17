@@ -182,7 +182,14 @@
 
               <td v-if="visibleColumns.net" class="excel-cell--price excel-cell--muted">
                 <template v-if="editingItemId === item.id">
-                  {{ Number(calculateNet(editFormData.price, editFormData.taxRate)).toFixed(2) }} {{ currentCurrency }}
+                  <input
+                    v-model.number="editFormData.netPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="excel-inline-input text-right text-amber"
+                    @input="onNetInput"
+                  />
                 </template>
                 <template v-else>
                   {{ Number(calculateNet(item.price, item.tax_rate) * exchangeRate).toFixed(2) }} {{ currentCurrency }}
@@ -663,20 +670,39 @@ const fetchListItems = async () => {
 
 const addItemToList = async (arg1, arg2) => {
   try {
-    let targetItemId = arg1 && typeof arg1 === 'object' ? (arg1.item_id || arg1.id) : arg1
-    let targetAmount = arg1 && typeof arg1 === 'object' ? (arg1.amount || arg1.quantity || 1) : (arg2 || 1)
-    if (!targetItemId) return
-    const payload = { item_id: parseInt(targetItemId), amount: parseInt(targetAmount), student_id: currentStudentId.value, notes: '' }
+    const isInlineItem = arg1 && typeof arg1 === 'object' && !arg1.item_id && !arg1.id
+    const targetItemId = arg1 && typeof arg1 === 'object' ? (arg1.item_id || arg1.id) : arg1
+    const targetAmount = arg1 && typeof arg1 === 'object' ? (arg1.amount || arg1.quantity || 1) : (arg2 || 1)
+    if (!isInlineItem && !targetItemId) return
+    const payload = isInlineItem
+      ? {
+          name: arg1.name,
+          link: arg1.link || null,
+          price: Number(arg1.price),
+          currency: arg1.currency || 'PLN',
+          product_subcategory_id: Number(arg1.product_subcategory_id),
+          amount: parseInt(targetAmount),
+          student_id: currentStudentId.value,
+          notes: arg1.notes || ''
+        }
+      : {
+          item_id: parseInt(targetItemId),
+          amount: parseInt(targetAmount),
+          student_id: currentStudentId.value,
+          notes: ''
+        }
     const response = await fetch(`http://localhost:8080/api/lists/${props.list.id}/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    if (!response.ok) return
+    if (!response.ok) throw new Error('Nie udalo sie dodac pozycji')
     await fetchListItems()
+    showModal.value = false
     toast.success('Dodano do koszyka!')
   } catch (error) {
     console.error(error)
+    toast.error(error.message || 'Nie udalo sie dodac pozycji.')
   }
 }
 
@@ -698,6 +724,7 @@ const currentTotal = computed(() => listItems.value.reduce((sum, item) => sum + 
 
 const editingItemId = ref(null)
 const editFormData = ref({ name: '', price: 0, netPrice: 0, taxRate: 23, amount: 0, link: '', notes: '' })
+const editLastEditedPriceField = ref('net')
 
 const startEdit = (item) => {
   editingItemId.value = item.id
@@ -717,12 +744,14 @@ const startEdit = (item) => {
 const cancelEdit = () => { editingItemId.value = null }
 
 const onNetInput = () => {
+  editLastEditedPriceField.value = 'net'
   const factor = 1 + (editFormData.value.taxRate / 100)
   const calculatedGross = editFormData.value.netPrice * factor
   editFormData.value.price = parseFloat(calculatedGross.toFixed(2))
 }
 
 const onGrossInput = () => {
+  editLastEditedPriceField.value = 'gross'
   const factor = 1 + (editFormData.value.taxRate / 100)
   const calculatedNetVal = editFormData.value.price / factor
   editFormData.value.netPrice = parseFloat(calculatedNetVal.toFixed(2))
@@ -730,8 +759,13 @@ const onGrossInput = () => {
 
 const onTaxRateChange = () => {
   const factor = 1 + (editFormData.value.taxRate / 100)
-  const calculatedGross = editFormData.value.netPrice * factor
-  editFormData.value.price = parseFloat(calculatedGross.toFixed(2))
+  if (editLastEditedPriceField.value === 'gross') {
+    const calculatedNetVal = editFormData.value.price / factor
+    editFormData.value.netPrice = parseFloat(calculatedNetVal.toFixed(2))
+  } else {
+    const calculatedGross = editFormData.value.netPrice * factor
+    editFormData.value.price = parseFloat(calculatedGross.toFixed(2))
+  }
 }
 
 const saveItemEdit = async (item) => {
@@ -744,6 +778,7 @@ const saveItemEdit = async (item) => {
       tax_rate: parseFloat(editFormData.value.taxRate || 0),
       amount: parseInt(editFormData.value.amount),
       link: editFormData.value.link,
+      product_subcategory_id: item.product_subcategory_id,
       student_id: currentStudentId.value,
       notes: editFormData.value.notes
     }
