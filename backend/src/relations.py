@@ -90,6 +90,15 @@ class PurchaseRequestFundingAllocation(SQLModel, table=True):
     allocated_amount: float
 
 
+class PurchaseRequestPlanPosition(SQLModel, table=True):
+    __tablename__ = "purchase_request_plan_position"
+
+    purchase_request_id: int = Field(foreign_key="purchase_request.purchase_request_id", primary_key=True)
+    shop_purchase_list_id: int = Field(foreign_key="shop_purchase_list.shop_purchase_list_id", primary_key=True)
+    public_purchase_plan_id: int = Field(foreign_key="public_purchase_plan.public_purchase_plan_id", primary_key=True)
+    allocated_amount: float
+
+
 
 class PublicPurchasePlanList(SQLModel, table=True):
     __tablename__ = "public_purchase_plan_list"

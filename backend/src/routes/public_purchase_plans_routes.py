@@ -22,6 +22,7 @@ class FundingOut(BaseModel):
 class PublicPurchasePlanOut(BaseModel):
     public_purchase_plan_id: int
     public_purchase_plan_name: str
+    description: Optional[str] = None
     cpv_code: int
     cost: float
     used_amount: float = 0.0
@@ -29,6 +30,8 @@ class PublicPurchasePlanOut(BaseModel):
     funding_id: int
     public_purchase_plan_list_id: int
     gslbccf_id: Optional[int] = None
+    product_category_id: Optional[int] = None
+    product_category_name: Optional[str] = None
 
 
 class PublicPurchasePlanListOut(BaseModel):
@@ -100,11 +103,104 @@ class PublicPurchasePlanCreate(BaseModel):
     public_purchase_plan_list_id: int
     cpv_code: int
     cost: float
+    description: Optional[str] = None
+    product_category_id: Optional[int] = None
 
 
 class PublicPurchasePlanUpdate(BaseModel):
     cpv_code: int
     cost: float
+    description: Optional[str] = None
+    product_category_id: Optional[int] = None
+
+
+def _used_amount_for_plan(
+    public_purchase_plan_id: int,
+    session: Session,
+) -> float:
+    plan_rows = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.public_purchase_plan_id
+            == public_purchase_plan_id
+        )
+    ).all()
+    linked_request_ids = {row.purchase_request_id for row in plan_rows}
+    used_amount = sum(row.allocated_amount for row in plan_rows)
+    legacy_requests = session.exec(
+        select(PurchaseRequest).where(
+            PurchaseRequest.public_purchase_plan_id == public_purchase_plan_id
+        )
+    ).all()
+    used_amount += sum(
+        request.budget_allocated_for_the_order
+        for request in legacy_requests
+        if request.purchase_request_id not in linked_request_ids
+    )
+    return used_amount
+
+
+def _category_for_plan(
+    public_purchase_plan_id: int,
+    session: Session,
+) -> Optional[ProductCategory]:
+    return session.exec(
+        select(ProductCategory).where(
+            ProductCategory.public_purchase_plan_id == public_purchase_plan_id
+        )
+    ).first()
+
+
+def _assign_category_to_plan(
+    public_purchase_plan_id: int,
+    product_category_id: Optional[int],
+    cpv_code: int,
+    session: Session,
+):
+    current_categories = session.exec(
+        select(ProductCategory).where(
+            ProductCategory.public_purchase_plan_id == public_purchase_plan_id
+        )
+    ).all()
+    for category in current_categories:
+        category.public_purchase_plan_id = None
+        session.add(category)
+
+    if not product_category_id:
+        return
+
+    category = session.get(ProductCategory, product_category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="Kategoria produktu nie znaleziona")
+    category.public_purchase_plan_id = public_purchase_plan_id
+    category.cpv = str(cpv_code)
+    session.add(category)
+
+
+def _plan_out(
+    plan: PublicPurchasePlan,
+    session: Session,
+    used_amount: Optional[float] = None,
+) -> PublicPurchasePlanOut:
+    category = _category_for_plan(plan.public_purchase_plan_id, session)
+    used = (
+        _used_amount_for_plan(plan.public_purchase_plan_id, session)
+        if used_amount is None
+        else used_amount
+    )
+    return PublicPurchasePlanOut(
+        public_purchase_plan_id=plan.public_purchase_plan_id,
+        public_purchase_plan_name=plan.public_purchase_plan_name,
+        description=plan.public_purchase_plan_name,
+        cpv_code=plan.cpv_code,
+        cost=plan.cost,
+        used_amount=used,
+        remaining_amount=plan.cost - used,
+        funding_id=plan.funding_id,
+        public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
+        gslbccf_id=plan.gslbccf_id,
+        product_category_id=category.product_category_id if category else None,
+        product_category_name=category.product_category_name if category else None,
+    )
 
 
 def _funding_out(funding: Funding, session: Session) -> FundingOut:
@@ -145,25 +241,8 @@ def _plan_list_out(plan_list: PublicPurchasePlanList, session: Session) -> Publi
     ).all()
     public_plans = []
     for plan in plans:
-        requests = session.exec(
-            select(PurchaseRequest).where(
-                PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id
-            )
-        ).all()
-        used_amount = sum(
-            request.budget_allocated_for_the_order for request in requests
-        )
-        public_plans.append(PublicPurchasePlanOut(
-            public_purchase_plan_id=plan.public_purchase_plan_id,
-            public_purchase_plan_name=plan.public_purchase_plan_name,
-            cpv_code=plan.cpv_code,
-            cost=plan.cost,
-            used_amount=used_amount,
-            remaining_amount=plan.cost - used_amount,
-            funding_id=plan_list.funding_id,
-            public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
-            gslbccf_id=plan.gslbccf_id,
-        ))
+        used_amount = _used_amount_for_plan(plan.public_purchase_plan_id, session)
+        public_plans.append(_plan_out(plan, session, used_amount))
 
     return PublicPurchasePlanListOut(
         public_purchase_plan_list_id=plan_list.public_purchase_plan_list_id,
@@ -472,7 +551,9 @@ def create_public_purchase_plan(
     session.refresh(grouped_shops_list)
 
     new_plan = PublicPurchasePlan(
-        public_purchase_plan_name=f"CPV {new_plan_data.cpv_code}",
+        public_purchase_plan_name=(
+            new_plan_data.description or f"CPV {new_plan_data.cpv_code}"
+        ),
         cpv_code=new_plan_data.cpv_code,
         cost=new_plan_data.cost,
         funding_id=plan_list.funding_id,
@@ -480,20 +561,17 @@ def create_public_purchase_plan(
         public_purchase_plan_list_id=new_plan_data.public_purchase_plan_list_id,
     )
     session.add(new_plan)
+    session.flush()
+    _assign_category_to_plan(
+        new_plan.public_purchase_plan_id,
+        new_plan_data.product_category_id,
+        new_plan.cpv_code,
+        session,
+    )
     session.commit()
     session.refresh(new_plan)
 
-    return PublicPurchasePlanOut(
-        public_purchase_plan_id=new_plan.public_purchase_plan_id,
-        public_purchase_plan_name=new_plan.public_purchase_plan_name,
-        cpv_code=new_plan.cpv_code,
-        cost=new_plan.cost,
-        used_amount=0.0,
-        remaining_amount=new_plan.cost,
-        funding_id=new_plan.funding_id,
-        public_purchase_plan_list_id=new_plan.public_purchase_plan_list_id,
-        gslbccf_id=new_plan.gslbccf_id,
-    )
+    return _plan_out(new_plan, session, 0.0)
 
 
 @app.patch("/api/public_purchase_plans/{public_purchase_plan_id}", response_model=PublicPurchasePlanOut)
@@ -526,7 +604,15 @@ def update_public_purchase_plan(
 
     plan.cpv_code = update_data.cpv_code
     plan.cost = update_data.cost
-    plan.public_purchase_plan_name = f"CPV {update_data.cpv_code}"
+    plan.public_purchase_plan_name = (
+        update_data.description or f"CPV {update_data.cpv_code}"
+    )
+    _assign_category_to_plan(
+        plan.public_purchase_plan_id,
+        update_data.product_category_id,
+        plan.cpv_code,
+        session,
+    )
 
     if plan.gslbccf_id:
         grouped_shops_list = session.get(
@@ -541,25 +627,8 @@ def update_public_purchase_plan(
     session.commit()
     session.refresh(plan)
 
-    plan_requests = session.exec(
-        select(PurchaseRequest).where(
-            PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id
-        )
-    ).all()
-    used_amount = sum(
-        request.budget_allocated_for_the_order for request in plan_requests
-    )
-    return PublicPurchasePlanOut(
-        public_purchase_plan_id=plan.public_purchase_plan_id,
-        public_purchase_plan_name=plan.public_purchase_plan_name,
-        cpv_code=plan.cpv_code,
-        cost=plan.cost,
-        used_amount=used_amount,
-        remaining_amount=plan.cost - used_amount,
-        funding_id=plan.funding_id,
-        public_purchase_plan_list_id=plan.public_purchase_plan_list_id,
-        gslbccf_id=plan.gslbccf_id,
-    )
+    used_amount = _used_amount_for_plan(plan.public_purchase_plan_id, session)
+    return _plan_out(plan, session, used_amount)
 
 
 @app.delete("/api/public_purchase_plans/{public_purchase_plan_id}")
@@ -582,16 +651,30 @@ def delete_public_purchase_plan(
             status_code=400,
             detail="Nie mozna usunac zamowienia, do ktorego dodano sklepy",
         )
+    linked_position = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.public_purchase_plan_id
+            == public_purchase_plan_id
+        )
+    ).first()
     linked_request = session.exec(
         select(PurchaseRequest).where(
             PurchaseRequest.public_purchase_plan_id == public_purchase_plan_id
         )
     ).first()
-    if linked_request:
+    if linked_position or linked_request:
         raise HTTPException(
             status_code=400,
             detail="Nie można usunąć pozycji planu użytej we wniosku",
         )
+
+    for category in session.exec(
+        select(ProductCategory).where(
+            ProductCategory.public_purchase_plan_id == public_purchase_plan_id
+        )
+    ).all():
+        category.public_purchase_plan_id = None
+        session.add(category)
 
     session.delete(plan)
     session.commit()

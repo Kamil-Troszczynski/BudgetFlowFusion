@@ -120,8 +120,105 @@
             <AddedItems />
           </section>
 
-          <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex] === 'Wnioski o zamówienie publiczne'">
+          <section class="dashboard__section" v-if="!showPulpit && (navLinks[activeNavIndex]?.includes('Wnioski') || navLinks[activeNavIndex] === 'Podsumowanie budżetu')">
+            <div v-if="navLinks[activeNavIndex] === 'Podsumowanie budżetu'" class="budget-overview">
+              <div class="budget-overview__header">
+                <div>
+                  <p class="budget-overview__eyebrow">Środki koła</p>
+                  <h2>Podsumowanie budżetu</h2>
+                </div>
+                <button class="dashboard__card-link" type="button" @click="fetchBudgetSummary">Odśwież</button>
+              </div>
+
+              <div class="budget-overview__stats">
+                <div v-for="stat in budgetStats" :key="stat.label" class="budget-overview__stat">
+                  <span>{{ stat.label }}</span>
+                  <strong :class="stat.class">{{ stat.value }}</strong>
+                </div>
+              </div>
+
+              <div v-if="budgetProjects.length" class="budget-project-tabs">
+                <button
+                  v-for="project in budgetProjects"
+                  :key="project.project_budget_id"
+                  type="button"
+                  class="budget-project-tab"
+                  :class="{ active: Number(activeBudgetProjectId) === Number(project.project_budget_id) }"
+                  @click="activeBudgetProjectId = project.project_budget_id"
+                >
+                  <span>{{ project.project_name || project.project_budget_name }}</span>
+                  <strong>{{ formatBudgetMoney(project.available_after_purchase_requests) }}</strong>
+                </button>
+              </div>
+
+              <div v-if="activeBudgetProject" class="budget-project-detail">
+                <div class="budget-project-detail__top">
+                  <div>
+                    <p class="budget-overview__eyebrow">Projekt</p>
+                    <h3>{{ activeBudgetProject.project_name || activeBudgetProject.project_budget_name }}</h3>
+                    <span>{{ activeBudgetProject.project_budget_name }}</span>
+                  </div>
+                  <div class="budget-project-detail__meter">
+                    <div class="budget-progress__bar">
+                      <div class="budget-progress__fill" :style="{ width: `${projectUsagePercent(activeBudgetProject)}%` }"></div>
+                    </div>
+                    <p>{{ projectUsagePercent(activeBudgetProject).toFixed(1) }}% wykorzystane</p>
+                  </div>
+                </div>
+
+                <div class="budget-project-metrics">
+                  <div><span>Budżet projektu</span><strong>{{ formatBudgetMoney(activeBudgetProject.total_budget) }}</strong></div>
+                  <div><span>Wydane</span><strong>{{ formatBudgetMoney(activeBudgetProject.spent_money) }}</strong></div>
+                  <div><span>Zarezerwowane we wnioskach</span><strong>{{ formatBudgetMoney(activeBudgetProject.purchase_requests_total_allocated) }}</strong></div>
+                  <div><span>Pozostało po rezerwacjach</span><strong class="success">{{ formatBudgetMoney(activeBudgetProject.available_after_purchase_requests) }}</strong></div>
+                </div>
+
+                <div class="budget-fundings">
+                  <div class="budget-fundings__header">
+                    <h3>Dofinansowania projektu</h3>
+                    <span>{{ activeProjectFundings.length }} pozycji</span>
+                  </div>
+                  <div class="budget-table-wrap">
+                    <table class="budget-table">
+                      <thead>
+                        <tr>
+                          <th>Nazwa</th>
+                          <th>Budżet</th>
+                          <th>Wydane</th>
+                          <th>Zarezerwowane</th>
+                          <th>Pozostało</th>
+                          <th>Wykorzystanie</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="funding in activeProjectFundings" :key="funding.funding_id">
+                          <td>{{ funding.funding_name }}</td>
+                          <td>{{ formatBudgetMoney(funding.funding_price) }}</td>
+                          <td>{{ formatBudgetMoney(funding.spent_money) }}</td>
+                          <td>{{ formatBudgetMoney(funding.purchase_requests_total_allocated) }}</td>
+                          <td class="success">{{ formatBudgetMoney(funding.available_after_purchase_requests) }}</td>
+                          <td>
+                            <div class="budget-table-usage">
+                              <div class="budget-progress__bar">
+                                <div class="budget-progress__fill" :style="{ width: `${fundingUsagePercent(funding)}%` }"></div>
+                              </div>
+                              <span>{{ fundingUsagePercent(funding).toFixed(1) }}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr v-if="!activeProjectFundings.length">
+                          <td colspan="6" class="budget-table-empty">Brak dofinansowań w tym projekcie.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="budget-table-empty">Brak projektów budżetowych do wyświetlenia.</div>
+            </div>
             <PurchaseRequest
+              v-if="navLinks[activeNavIndex]?.includes('Wnioski')"
               @budget-changed="fetchBudgetSummary"
               @open-shopping="openShoppingForRequest"
             />
@@ -316,6 +413,9 @@ const budgetSummary = ref({
   purchase_requests_total_allocated: 0,
   available_after_purchase_requests: 0
 })
+const projectBudgets = ref([])
+const budgetFundings = ref([])
+const activeBudgetProjectId = ref(null)
 
 const editFormData = ref({
   firstName: '',
@@ -330,7 +430,7 @@ const navLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia', 'Akceptacja CPV']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Podsumowanie budżetu', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia', 'Akceptacja CPV']
 })
 
 const showPulpit = computed(() => activeNavIndex.value === 0)
@@ -460,16 +560,76 @@ const budgetUsagePercent = computed(() => {
   return Math.min(100, Math.max(0, (usedAndReserved.value / total) * 100))
 })
 
+const budgetProjects = computed(() =>
+  projectBudgets.value.map(project => ({
+    ...project,
+    fundings: budgetFundings.value.filter(
+      funding => Number(funding.project_budget_id) === Number(project.project_budget_id)
+    )
+  }))
+)
+
+const activeBudgetProject = computed(() =>
+  budgetProjects.value.find(
+    project => Number(project.project_budget_id) === Number(activeBudgetProjectId.value)
+  ) || budgetProjects.value[0] || null
+)
+
+const activeProjectFundings = computed(() =>
+  activeBudgetProject.value?.fundings || []
+)
+
+const amountUsagePercent = (total, spent, reserved) => {
+  const budget = Number(total || 0)
+  if (budget <= 0) return 0
+  return Math.min(100, Math.max(0, ((Number(spent || 0) + Number(reserved || 0)) / budget) * 100))
+}
+
+const projectUsagePercent = project =>
+  amountUsagePercent(
+    project?.total_budget,
+    project?.spent_money,
+    project?.purchase_requests_total_allocated
+  )
+
+const fundingUsagePercent = funding =>
+  amountUsagePercent(
+    funding?.funding_price,
+    funding?.spent_money,
+    funding?.purchase_requests_total_allocated
+  )
+
 const fetchBudgetSummary = async () => {
   if (user.value?.role !== 'treasurer' || !user.value?.association_id) return
 
   try {
-    const response = await fetch(
-      `http://localhost:8080/api/dashboard/budget_summary?association_id=${user.value.association_id}`,
-      { cache: 'no-store' }
-    )
-    if (!response.ok) throw new Error('Nie udało się pobrać podsumowania budżetu')
-    budgetSummary.value = await response.json()
+    const [summaryResponse, projectsResponse, fundingsResponse] = await Promise.all([
+      fetch(
+        `http://localhost:8080/api/dashboard/budget_summary?association_id=${user.value.association_id}`,
+        { cache: 'no-store' }
+      ),
+      fetch(
+        `http://localhost:8080/api/project_budgets?association_id=${user.value.association_id}`,
+        { cache: 'no-store' }
+      ),
+      fetch(
+        `http://localhost:8080/api/fundings?association_id=${user.value.association_id}`,
+        { cache: 'no-store' }
+      )
+    ])
+    if (!summaryResponse.ok || !projectsResponse.ok || !fundingsResponse.ok) {
+      throw new Error('Nie udalo sie pobrac podsumowania budzetu')
+    }
+    budgetSummary.value = await summaryResponse.json()
+    projectBudgets.value = await projectsResponse.json()
+    budgetFundings.value = await fundingsResponse.json()
+    if (
+      !projectBudgets.value.some(
+        project => Number(project.project_budget_id) === Number(activeBudgetProjectId.value)
+      )
+    ) {
+      activeBudgetProjectId.value = projectBudgets.value[0]?.project_budget_id || null
+    }
   } catch (error) {
     console.error('Błąd pobierania podsumowania budżetu:', error)
     toast.error('Nie udało się odświeżyć budżetu na pulpicie.')
@@ -986,6 +1146,189 @@ const handleLogout = () => {
 .budget-progress__text {
   font-size: 0.9vw;
   color: rgba(226, 232, 240, 0.6);
+}
+
+.budget-overview {
+  display: grid;
+  gap: 1.4vw;
+  color: #e2e8f0;
+}
+
+.budget-overview__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5vw;
+  padding: 1.4vw 0 1.2vw;
+  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.16);
+}
+
+.budget-overview__header h2,
+.budget-project-detail__top h3,
+.budget-fundings__header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.45vw;
+  font-weight: 800;
+}
+
+.budget-overview__eyebrow {
+  margin: 0 0 0.35vw 0;
+  color: #93c5fd;
+  font-size: 0.78vw;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.budget-overview__stats,
+.budget-project-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1vw;
+}
+
+.budget-overview__stat,
+.budget-project-metrics > div {
+  display: grid;
+  gap: 0.45vw;
+  padding: 1vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.8vw;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.budget-overview__stat span,
+.budget-project-metrics span {
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 0.85vw;
+}
+
+.budget-overview__stat strong,
+.budget-project-metrics strong {
+  color: #bfdbfe;
+  font-size: 1.12vw;
+}
+
+.budget-overview .warning {
+  color: #fbbf24;
+}
+
+.budget-overview .success {
+  color: #86efac;
+}
+
+.budget-project-tabs {
+  display: flex;
+  gap: 0.7vw;
+  overflow-x: auto;
+  padding-bottom: 0.3vw;
+}
+
+.budget-project-tab {
+  flex: 0 0 16vw;
+  display: grid;
+  gap: 0.4vw;
+  text-align: left;
+  padding: 0.9vw 1vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.18);
+  border-radius: 0.7vw;
+  background: rgba(15, 23, 42, 0.56);
+  color: #e2e8f0;
+  cursor: pointer;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.budget-project-tab.active {
+  border-color: rgba(96, 165, 250, 0.65);
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.budget-project-tab span {
+  font-size: 0.9vw;
+  font-weight: 800;
+}
+
+.budget-project-tab strong {
+  color: #86efac;
+  font-size: 0.88vw;
+}
+
+.budget-project-detail {
+  display: grid;
+  gap: 1.2vw;
+}
+
+.budget-project-detail__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22vw;
+  gap: 2vw;
+  align-items: end;
+  padding: 1.2vw;
+  border: 0.08vw solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.9vw;
+  background: rgba(15, 23, 42, 0.54);
+}
+
+.budget-project-detail__top span,
+.budget-project-detail__meter p,
+.budget-fundings__header span {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 0.88vw;
+}
+
+.budget-fundings {
+  display: grid;
+  gap: 0.8vw;
+}
+
+.budget-fundings__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.budget-table-wrap {
+  overflow-x: auto;
+  border: 0.08vw solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.8vw;
+}
+
+.budget-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.budget-table th,
+.budget-table td {
+  padding: 0.85vw 1vw;
+  border-bottom: 0.08vw solid rgba(148, 163, 184, 0.12);
+  text-align: left;
+  font-size: 0.9vw;
+}
+
+.budget-table th {
+  color: #93c5fd;
+  font-size: 0.78vw;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.budget-table-usage {
+  display: grid;
+  grid-template-columns: minmax(8vw, 1fr) 4vw;
+  gap: 0.7vw;
+  align-items: center;
+}
+
+.budget-table-empty {
+  padding: 1.2vw;
+  color: rgba(226, 232, 240, 0.65);
+  text-align: center;
 }
 
 .transaction-item {

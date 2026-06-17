@@ -232,6 +232,13 @@ def get_all_lists(
         purchase_request = _purchase_request_for_group(l.gslbccf_id, session)
         list_dict = l.model_dump()
         list_dict.update({
+            "shop_name": session.get(Shop, l.shop_id).shop_name if session.get(Shop, l.shop_id) else None,
+            "funding_name": session.get(Funding, l.funding_id).funding_name if session.get(Funding, l.funding_id) else None,
+            "total_price": summary["total_price"] or l.cost or 0.0,
+            "total_net": (summary["total_price"] or l.cost or 0.0) / 1.23,
+            "item_count": summary["item_count"],
+            "item_total": summary["item_total"],
+            "suggested_cpv_id": summary["suggested_cpv_id"],
             "last_contribution_time": summary["last_contribution_time"],
             "last_contributor": summary["last_contributor_id"],
             "contributed_students": summary["contributed_students_id"],
@@ -364,6 +371,47 @@ def close_purchase_list(list_id: int, close_data: ListClose, session: Session = 
     return list_to_close
 
 
+@app.patch("/api/lists/{list_id}/reopen", response_model=ShopPurchaseList)
+def reopen_purchase_list(list_id: int, reopen_data: ListClose, session: Session = Depends(get_session)):
+    list_to_reopen = session.get(ShopPurchaseList, list_id)
+    if not list_to_reopen:
+        raise HTTPException(status_code=404, detail="Lista nie znaleziona")
+
+    if list_to_reopen.settlement_id is None:
+        raise HTTPException(status_code=400, detail="Lista jest juz otwarta")
+
+    student = session.get(Student, reopen_data.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student nie istnieje")
+    if not student.project_finance_manager_id:
+        raise HTTPException(status_code=403, detail="Tylko skarbnik moze ponownie otwierac listy zamowien")
+
+    settlement_id = list_to_reopen.settlement_id
+    settlement = session.get(Settlement, settlement_id)
+    lists_with_settlement = session.exec(
+        select(ShopPurchaseList).where(ShopPurchaseList.settlement_id == settlement_id)
+    ).all()
+    invoices = session.exec(
+        select(Invoice).where(Invoice.settlement_id == settlement_id)
+    ).all()
+
+    list_to_reopen.settlement_id = None
+    session.add(list_to_reopen)
+    session.flush()
+
+    if (
+        settlement
+        and len(lists_with_settlement) <= 1
+        and not invoices
+        and settlement.purchase_request_id is None
+    ):
+        session.delete(settlement)
+
+    session.commit()
+    session.refresh(list_to_reopen)
+    return list_to_reopen
+
+
 @app.get("/api/lists/closed_for_purchase_requests", response_model=List[ClosedPurchaseListForRequestOut])
 def get_closed_lists_for_purchase_requests(
     project_finance_manager_id: int,
@@ -461,6 +509,27 @@ def delete_entire_list(list_id: int, session: Session = Depends(get_session)):
     items_on_list = session.exec(
         select(ShopPurchaseListItem).where(ShopPurchaseListItem.shop_purchase_list_id == list_id)
     ).all()
+    item_contributions = session.exec(
+        select(ShopPurchaseListItemContribution).where(
+            ShopPurchaseListItemContribution.shop_purchase_list_id == list_id
+        )
+    ).all()
+    plan_positions = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.shop_purchase_list_id == list_id
+        )
+    ).all()
+    linked_categories = session.exec(
+        select(ProductCategory).where(ProductCategory.shop_purchase_list_id == list_id)
+    ).all()
+
+    for plan_position in plan_positions:
+        session.delete(plan_position)
+    for contribution in item_contributions:
+        session.delete(contribution)
+    for category in linked_categories:
+        category.shop_purchase_list_id = None
+        session.add(category)
 
     for item in items_on_list:
         session.delete(item)

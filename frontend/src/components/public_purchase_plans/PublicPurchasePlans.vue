@@ -69,7 +69,9 @@
               <thead>
                 <tr>
                   <th>Kod CPV</th>
-                  <th>Planowana kwota</th>
+                  <th>Opis</th>
+                  <th>Kategoria</th>
+                  <th>Planowana kwota netto</th>
                   <th>Wykorzystano</th>
                   <th>Pozostało</th>
                   <th></th>
@@ -78,12 +80,22 @@
               <tbody>
                 <tr v-for="position in selectedPlan.public_purchase_plans" :key="position.public_purchase_plan_id">
                   <td><strong>{{ position.cpv_code }}</strong></td>
+                  <td>{{ position.description || position.public_purchase_plan_name || '-' }}</td>
+                  <td>{{ position.product_category_name || '-' }}</td>
                   <td>{{ formatMoney(position.cost) }} PLN</td>
                   <td>{{ formatMoney(position.used_amount) }} PLN</td>
                   <td :class="{ negative: position.remaining_amount < 0 }">
                     {{ formatMoney(position.remaining_amount) }} PLN
                   </td>
                   <td>
+                    <button
+                      type="button"
+                      class="delete edit"
+                      title="Edytuj pozycje"
+                      @click="openPositionModal(position)"
+                    >
+                      Edytuj
+                    </button>
                     <button
                       type="button"
                       class="delete"
@@ -104,21 +116,38 @@
     <div v-if="showPositionModal" class="modal-overlay" @click="closePositionModal">
       <div class="modal" @click.stop>
         <header>
-          <h3>Nowa pozycja planu</h3>
+          <h3>{{ editingPositionId ? 'Edycja pozycji planu' : 'Nowa pozycja planu' }}</h3>
           <button type="button" title="Zamknij" @click="closePositionModal">×</button>
         </header>
-        <form @submit.prevent="createPosition">
+        <form @submit.prevent="savePosition">
           <label>
             <span>Kod CPV</span>
             <input v-model.number="newPosition.cpv_code" type="number" min="1" placeholder="np. 42000000" required />
           </label>
           <label>
-            <span>Planowana kwota</span>
+            <span>Krotki opis</span>
+            <textarea v-model="newPosition.description" rows="3" placeholder="np. sprzet elektroniczny, narzedzia, materialy"></textarea>
+          </label>
+          <label>
+            <span>Kategoria produktu</span>
+            <select v-model.number="newPosition.product_category_id">
+              <option :value="null">Bez kategorii</option>
+              <option
+                v-for="category in categories"
+                :key="category.product_category_id"
+                :value="category.product_category_id"
+              >
+                {{ category.product_category_name }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>Planowana kwota netto</span>
             <input v-model.number="newPosition.cost" type="number" min="0.01" step="0.01" required />
           </label>
           <footer>
             <button class="button button--secondary" type="button" @click="closePositionModal">Anuluj</button>
-            <button class="button" type="submit">Dodaj</button>
+            <button class="button" type="submit">{{ editingPositionId ? 'Zapisz' : 'Dodaj' }}</button>
           </footer>
         </form>
       </div>
@@ -137,12 +166,19 @@ const toast = useToast()
 
 const fundings = ref([])
 const planLists = ref([])
+const categories = ref([])
 const activeFundingId = ref(null)
 const loading = ref(false)
 const error = ref('')
 const planYear = ref(new Date().getFullYear())
 const showPositionModal = ref(false)
-const newPosition = ref({ cpv_code: null, cost: null })
+const editingPositionId = ref(null)
+const newPosition = ref({
+  cpv_code: null,
+  cost: null,
+  description: '',
+  product_category_id: null
+})
 
 const selectedFunding = computed(() =>
   fundings.value.find(funding => funding.funding_id === activeFundingId.value) || fundings.value[0]
@@ -161,13 +197,15 @@ const loadData = async () => {
   loading.value = true
   error.value = ''
   try {
-    const [fundingsResponse, plansResponse] = await Promise.all([
+    const [fundingsResponse, plansResponse, categoriesResponse] = await Promise.all([
       fetch(`${API_URL}/fundings?association_id=${user.value.association_id}`),
-      fetch(`${API_URL}/public_purchase_plan_lists?association_id=${user.value.association_id}`)
+      fetch(`${API_URL}/public_purchase_plan_lists?association_id=${user.value.association_id}`),
+      fetch(`${API_URL}/categories`)
     ])
     if (!fundingsResponse.ok || !plansResponse.ok) throw new Error('Nie udało się pobrać planów.')
     fundings.value = await fundingsResponse.json()
     planLists.value = await plansResponse.json()
+    categories.value = categoriesResponse.ok ? await categoriesResponse.json() : []
     if (!fundings.value.some(funding => funding.funding_id === activeFundingId.value)) {
       activeFundingId.value = fundings.value[0]?.funding_id || null
     }
@@ -196,27 +234,46 @@ const createPlanList = async () => {
   await loadData()
 }
 
-const openPositionModal = () => {
-  newPosition.value = { cpv_code: null, cost: null }
+const openPositionModal = (position = null) => {
+  editingPositionId.value = position?.public_purchase_plan_id || null
+  newPosition.value = position
+    ? {
+        cpv_code: position.cpv_code,
+        cost: position.cost,
+        description: position.description || '',
+        product_category_id: position.product_category_id || null
+      }
+    : {
+        cpv_code: null,
+        cost: null,
+        description: '',
+        product_category_id: null
+      }
   showPositionModal.value = true
 }
-const closePositionModal = () => { showPositionModal.value = false }
+const closePositionModal = () => {
+  showPositionModal.value = false
+  editingPositionId.value = null
+}
 
-const createPosition = async () => {
+const savePosition = async () => {
   if (!selectedPlan.value) return
-  const response = await fetch(`${API_URL}/public_purchase_plans`, {
-    method: 'POST',
+  const isEditing = Boolean(editingPositionId.value)
+  const response = await fetch(`${API_URL}/public_purchase_plans${isEditing ? `/${editingPositionId.value}` : ''}`, {
+    method: isEditing ? 'PATCH' : 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       public_purchase_plan_list_id: selectedPlan.value.public_purchase_plan_list_id,
       cpv_code: Number(newPosition.value.cpv_code),
-      cost: Number(newPosition.value.cost)
+      cost: Number(newPosition.value.cost),
+      description: (newPosition.value.description || '').trim(),
+      product_category_id: newPosition.value.product_category_id || null
     })
   })
   const data = await response.json()
   if (!response.ok) return toast.error(data.detail || 'Nie udało się dodać pozycji.')
   closePositionModal()
-  toast.success('Pozycja CPV została dodana.')
+  toast.success(isEditing ? 'Pozycja CPV zostala zaktualizowana.' : 'Pozycja CPV zostala dodana.')
   await loadData()
 }
 

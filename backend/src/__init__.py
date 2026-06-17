@@ -33,7 +33,8 @@ def migrate_project_budgets():
         return
 
     inspector = inspect(engine)
-    if "purchase_request" not in inspector.get_table_names():
+    table_names = inspector.get_table_names()
+    if "purchase_request" not in table_names:
         return
 
     purchase_request_columns = {
@@ -49,6 +50,14 @@ def migrate_project_budgets():
     plan_columns = {
         column["name"] for column in inspector.get_columns("public_purchase_plan")
     }
+    plan_position_columns = (
+        {
+            column["name"]
+            for column in inspector.get_columns("purchase_request_plan_position")
+        }
+        if "purchase_request_plan_position" in table_names
+        else set()
+    )
     with engine.begin() as connection:
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS purchase_request_funding_allocation (
@@ -58,6 +67,58 @@ def migrate_project_budgets():
                 PRIMARY KEY (purchase_request_id, funding_id)
             )
         """))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_request_plan_position (
+                purchase_request_id INTEGER NOT NULL REFERENCES purchase_request(purchase_request_id) ON DELETE CASCADE,
+                shop_purchase_list_id INTEGER NOT NULL REFERENCES shop_purchase_list(shop_purchase_list_id),
+                public_purchase_plan_id INTEGER NOT NULL REFERENCES public_purchase_plan(public_purchase_plan_id),
+                allocated_amount DOUBLE PRECISION NOT NULL,
+                PRIMARY KEY (purchase_request_id, shop_purchase_list_id, public_purchase_plan_id)
+            )
+        """))
+        if (
+            "purchase_request_plan_position" in table_names
+            and "shop_purchase_list_id" not in plan_position_columns
+        ):
+            connection.execute(text("""
+                ALTER TABLE purchase_request_plan_position
+                ADD COLUMN shop_purchase_list_id INTEGER
+                REFERENCES shop_purchase_list(shop_purchase_list_id)
+            """))
+            connection.execute(text("""
+                UPDATE purchase_request_plan_position AS position
+                SET shop_purchase_list_id = first_list.shop_purchase_list_id
+                FROM purchase_request
+                JOIN LATERAL (
+                    SELECT shop_purchase_list.shop_purchase_list_id
+                    FROM shop_purchase_list
+                    WHERE shop_purchase_list.gslbccf_id = purchase_request.gslbccf_id
+                    ORDER BY shop_purchase_list.shop_purchase_list_id
+                    LIMIT 1
+                ) AS first_list ON TRUE
+                WHERE purchase_request.purchase_request_id = position.purchase_request_id
+                  AND position.shop_purchase_list_id IS NULL
+            """))
+            connection.execute(text("""
+                DELETE FROM purchase_request_plan_position
+                WHERE shop_purchase_list_id IS NULL
+            """))
+            connection.execute(text("""
+                ALTER TABLE purchase_request_plan_position
+                ALTER COLUMN shop_purchase_list_id SET NOT NULL
+            """))
+            connection.execute(text("""
+                ALTER TABLE purchase_request_plan_position
+                DROP CONSTRAINT IF EXISTS purchase_request_plan_position_pkey
+            """))
+            connection.execute(text("""
+                ALTER TABLE purchase_request_plan_position
+                ADD PRIMARY KEY (
+                    purchase_request_id,
+                    shop_purchase_list_id,
+                    public_purchase_plan_id
+                )
+            """))
         if "project_budget_id" not in purchase_request_columns:
             connection.execute(text(
                 "ALTER TABLE purchase_request ADD COLUMN project_budget_id INTEGER"
@@ -230,6 +291,31 @@ def migrate_project_budgets():
                   SELECT 1
                   FROM purchase_request_funding_allocation allocation
                   WHERE allocation.purchase_request_id = purchase_request.purchase_request_id
+              )
+        """))
+        connection.execute(text("""
+            INSERT INTO purchase_request_plan_position (
+                purchase_request_id,
+                shop_purchase_list_id,
+                public_purchase_plan_id,
+                allocated_amount
+            )
+            SELECT
+                purchase_request.purchase_request_id,
+                shop_purchase_list.shop_purchase_list_id,
+                purchase_request.public_purchase_plan_id,
+                purchase_request.budget_allocated_for_the_order / 1.23
+            FROM purchase_request
+            JOIN shop_purchase_list
+              ON shop_purchase_list.gslbccf_id = purchase_request.gslbccf_id
+            WHERE purchase_request.public_purchase_plan_id IS NOT NULL
+              AND purchase_request.budget_allocated_for_the_order > 0
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM purchase_request_plan_position position
+                  WHERE position.purchase_request_id = purchase_request.purchase_request_id
+                    AND position.shop_purchase_list_id = shop_purchase_list.shop_purchase_list_id
+                    AND position.public_purchase_plan_id = purchase_request.public_purchase_plan_id
               )
         """))
 

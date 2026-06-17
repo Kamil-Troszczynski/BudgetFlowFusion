@@ -99,8 +99,8 @@
                   </p>
                 </div>
                 <div class="request-card__actions">
-                  <button class="request-card__button view" @click="emit('open-shopping', request)">Lista</button>
-                  <button v-if="isOwner(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj</button>
+                  <button class="request-card__button view" @click="emit('open-shopping', request)">Otwórz koszyk</button>
+                  <button v-if="isOwner(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
                   <button class="request-card__button view" @click="activeRequest = request">Podsumowanie</button>
                   <button v-if="isOwner(request)" class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
                 </div>
@@ -198,7 +198,9 @@
           </div>
           <div class="request-info">
             <p>Kod CPV</p>
-            <strong class="font-mono">{{ activeRequest.used_cpv_id ?? 'Brak' }}</strong>
+            <strong class="font-mono">
+              {{ activeRequest.planPositions?.length ? activeRequest.planPositions.map(requestPlanPositionLabel).join(', ') : (activeRequest.used_cpv_id || 'Brak') }}
+            </strong>
           </div>
           <div class="request-info">
             <p>Zgodność z planem ZP</p>
@@ -241,7 +243,7 @@
               </select>
             </div>
 
-            <div v-if="editingRequestId" class="modal-form__group">
+            <div v-if="false" class="modal-form__group">
               <label class="modal-form__label">Finansowanie</label>
               <div class="funding-allocation-row">
                 <select v-model.number="allocationDraft.funding_id" class="modal-form__input">
@@ -273,6 +275,38 @@
                   <span>{{ fundingName(allocation.funding_id) }}</span>
                   <strong>{{ formatMoney(allocation.allocated_amount) }} PLN</strong>
                   <button type="button" class="delete-inline-btn" @click="removeFundingAllocation(allocation.funding_id)">Usun</button>
+                  <div class="plan-position-picker">
+                    <select v-model.number="allocation.plan_position_draft_id" class="modal-form__input">
+                      <option value="" disabled>Wybierz CPV z planu...</option>
+                      <option
+                        v-for="position in planOptionsForFunding(allocation.funding_id)"
+                        :key="position.public_purchase_plan_id"
+                        :value="position.public_purchase_plan_id"
+                      >
+                        {{ cpvOptionLabel(position) }} - pozostalo {{ formatMoney(position.remaining_amount) }} PLN
+                      </option>
+                    </select>
+                    <input
+                      v-model.number="allocation.plan_position_draft_amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="Kwota CPV"
+                      class="modal-form__input"
+                    />
+                    <button type="button" class="modal-btn modal-btn-save-add" @click="addPlanPositionForFunding(allocation)">Dodaj CPV</button>
+                  </div>
+                  <div v-if="planPositionsForFunding(allocation.funding_id).length" class="plan-position-list">
+                    <div
+                      v-for="position in planPositionsForFunding(allocation.funding_id)"
+                      :key="position.public_purchase_plan_id"
+                      class="plan-position-item"
+                    >
+                      <span>{{ planPositionLabel(position.public_purchase_plan_id) }}</span>
+                      <strong>{{ formatMoney(position.allocated_amount) }} PLN</strong>
+                      <button type="button" class="delete-inline-btn" @click="removePlanPosition(position.public_purchase_plan_id)">Usun</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="funding-allocation-total">
                   <span>Razem</span>
@@ -282,15 +316,15 @@
               <p v-else class="modal-form__hint">Dodaj przynajmniej jedno zrodlo finansowania.</p>
             </div>
             <div v-if="editingRequestId" class="modal-form__group">
-              <label class="modal-form__label">Kod CPV</label>
-              <input
-                v-model.number="newRequestData.used_cpv_id"
-                type="number"
-                placeholder="np. 42000000"
-                class="modal-form__input"
-              />
+              <label class="modal-form__label">CPV koszykow</label>
+              <button type="button" class="modal-btn modal-btn-save-add cpv-editor-open" @click="openCpvEditorModal">
+                Edytuj CPV koszykow
+              </button>
+              <p class="modal-form__hint">
+                {{ basketSummaryRows.length }} pozycji CPV, {{ formatMoney(basketGrossTotal) }} PLN brutto z koszykow.
+              </p>
             </div>
-            <div v-if="editingRequestId" class="modal-form__group">
+            <div v-if="false" class="modal-form__group">
               <label class="modal-form__label">Pozycja planu zamówień publicznych</label>
               <select
                 v-model="newRequestData.public_purchase_plan_id"
@@ -302,7 +336,7 @@
                   :key="position.public_purchase_plan_id"
                   :value="position.public_purchase_plan_id"
                 >
-                  {{ position.funding_name }} - CPV {{ position.cpv_code }} - pozostalo {{ formatMoney(position.remaining_amount) }} PLN
+                  {{ cpvOptionLabel(position) }} - pozostalo {{ formatMoney(position.remaining_amount) }} PLN
                 </option>
               </select>
             </div>
@@ -324,6 +358,129 @@
         </form>
       </div>
     </div>
+
+    <div v-if="showCpvEditorModal" class="modal-overlay" @click="showCpvEditorModal = false">
+      <div class="modal-content cpv-modal-content" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">CPV koszykow</h2>
+          <button class="modal-close" @click="showCpvEditorModal = false">x</button>
+        </div>
+        <div class="cpv-editor custom-scrollbar">
+          <div class="cpv-main-funding">
+            <label class="modal-form__label">Finansowanie glówne</label>
+            <select v-model.number="newRequestData.funding_id" class="modal-form__input">
+              <option value="" disabled>Wybierz finansowanie glówne...</option>
+              <option v-for="funding in projectFundings" :key="funding.funding_id" :value="funding.funding_id">
+                {{ funding.funding_name }} ({{ formatMoney(funding.available_after_purchase_requests) }} PLN)
+              </option>
+            </select>
+          </div>
+          <div v-if="requestBaskets.length === 0" class="requests-empty requests-empty--compact">
+            <p class="requests-empty-subtext">Brak koszykow przypisanych do tego wniosku</p>
+          </div>
+          <div v-for="basket in requestBaskets" :key="basket.shop_purchase_list_id" class="cpv-basket">
+            <div class="cpv-basket__top">
+              <div>
+                <h3>{{ basket.shop_name || basket.name || `Koszyk #${basket.shop_purchase_list_id}` }}</h3>
+                <p>{{ fundingName(effectiveBasketFundingId(basket)) }} - brutto {{ formatMoney(basket.total_price) }} PLN - netto {{ formatMoney(basket.total_net) }} PLN</p>
+              </div>
+              <div class="cpv-mode-toggle">
+                <button type="button" :class="{ active: basket.cpv_mode === 'single' }" @click="basket.cpv_mode = 'single'">Jedno</button>
+                <button type="button" :class="{ active: basket.cpv_mode === 'split' }" @click="basket.cpv_mode = 'split'">Dzielone</button>
+              </div>
+            </div>
+
+            <div v-if="basket.cpv_mode === 'single'" class="cpv-single-row">
+                <select v-model.number="basket.single_plan_id" class="modal-form__input">
+                  <option value="" disabled>Wybierz CPV z planu finansowania...</option>
+                  <option
+                    v-for="position in planOptionsForFunding(newRequestData.funding_id)"
+                    :key="position.public_purchase_plan_id"
+                    :value="position.public_purchase_plan_id"
+                  >
+                  {{ cpvOptionLabel(position) }} - pozostalo netto {{ formatMoney(position.remaining_amount) }} PLN
+                </option>
+              </select>
+            </div>
+
+            <div v-else class="cpv-split">
+              <div
+                v-for="(row, index) in basket.split_rows"
+                :key="index"
+                class="cpv-split-row"
+              >
+                <select v-model.number="row.funding_id" class="modal-form__input">
+                  <option value="" disabled>Finansowanie...</option>
+                  <option v-for="funding in projectFundings" :key="funding.funding_id" :value="funding.funding_id">
+                    {{ funding.funding_name }}
+                  </option>
+                </select>
+                <select v-model.number="row.public_purchase_plan_id" class="modal-form__input">
+                  <option value="" disabled>CPV...</option>
+                  <option
+                    v-for="position in planOptionsForFunding(row.funding_id)"
+                    :key="position.public_purchase_plan_id"
+                    :value="position.public_purchase_plan_id"
+                  >
+                    {{ cpvOptionLabel(position) }} - pozostalo netto {{ formatMoney(position.remaining_amount) }} PLN
+                  </option>
+                </select>
+                <input
+                  v-model.number="row.allocated_amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Kwota netto"
+                  class="modal-form__input"
+                />
+                <button type="button" class="delete-inline-btn" @click="removeBasketSplitRow(basket, index)">Usun</button>
+              </div>
+              <button type="button" class="modal-btn modal-btn-save-add" @click="addBasketSplitRow(basket)">Dodaj zrodlo</button>
+            </div>
+          </div>
+
+          <div class="cpv-summary">
+            <h3>Podsumowanie</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table cpv-summary-table">
+                <thead>
+                  <tr>
+                    <th>Sklep</th>
+                    <th>Zrodlo finansowania</th>
+                    <th>CPV</th>
+                    <th>Kwota koszyka brutto</th>
+                    <th>Kwota CPV netto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in basketSummaryRows" :key="row.key">
+                    <td>{{ row.shopName }}</td>
+                    <td>{{ row.fundingName }}</td>
+                    <td>
+                      <div class="font-mono">{{ row.cpvCode || '-' }}</div>
+                      <small v-if="row.cpvDetails">{{ row.cpvDetails }}</small>
+                    </td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.grossAmount) }} PLN</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(row.netAmount) }} PLN</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3">Razem</td>
+                    <td class="font-mono text-blue">{{ formatMoney(basketGrossTotal) }} PLN</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(basketNetAssignedTotal) }} PLN</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn modal-btn-cancel" @click="showCpvEditorModal = false">Zamknij</button>
+          <button type="button" class="modal-btn modal-btn-save" @click="applyBasketCpvAssignments">Zapisz CPV</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -336,6 +493,7 @@ const { user } = useAuth()
 const emit = defineEmits(['budget-changed', 'open-shopping'])
 const activeRequest = ref(null)
 const showAddRequestModal = ref(false)
+const showCpvEditorModal = ref(false)
 const editingRequestId = ref(null)
 const sortBy = ref('date-created-desc')
 const currentLayout = ref('grid')
@@ -346,7 +504,9 @@ const closedOrders = ref([])
 const fundings = ref([])
 const fundingPlans = ref([])
 const allocationDraft = ref({ funding_id: '', allocated_amount: null })
+const requestBaskets = ref([])
 const studentsMap = ref({})
+const VAT_RATE = 1.23
 
 const currentFinanceManagerId = computed(() => {
   return user.value?.projectFinanceManagerId || user.value?.id
@@ -364,6 +524,7 @@ const newRequestData = ref({
   project_budget_id: null,
   funding_allocations: [],
   public_purchase_plan_id: null,
+  plan_positions: [],
   plan_exception_justification: ''
 })
 
@@ -382,6 +543,14 @@ const selectedFunding = computed(() =>
   fundings.value.find(funding => Number(funding.funding_id) === Number(newRequestData.value.funding_id)) || null
 )
 
+const projectFundings = computed(() => {
+  const projectBudgetId = Number(newRequestData.value.project_budget_id || 0)
+  if (!projectBudgetId) return fundings.value
+  return fundings.value.filter(
+    funding => Number(funding.project_budget_id) === projectBudgetId
+  )
+})
+
 const allocationTotal = computed(() =>
   newRequestData.value.funding_allocations.reduce(
     (sum, allocation) => sum + Number(allocation.allocated_amount || 0),
@@ -389,14 +558,107 @@ const allocationTotal = computed(() =>
   )
 )
 
-const matchingPlanPositions = computed(() => {
-  const cpv = Number(newRequestData.value.used_cpv_id)
-  return fundingPlans.value.flatMap(plan =>
+const basketGrossTotal = computed(() =>
+  requestBaskets.value.reduce((sum, basket) => sum + Number(basket.total_price || 0), 0)
+)
+
+const basketPlanRows = computed(() =>
+  requestBaskets.value.flatMap(basket => {
+    if (basket.cpv_mode === 'single') {
+      const plan = allPlanPositions.value.find(
+        position => Number(position.public_purchase_plan_id) === Number(basket.single_plan_id)
+      )
+      return plan ? [{
+        shop_purchase_list_id: basket.shop_purchase_list_id,
+        public_purchase_plan_id: plan.public_purchase_plan_id,
+        funding_id: plan.funding_id,
+        cpv_code: plan.cpv_code,
+        description: plan.description,
+        product_category_name: plan.product_category_name,
+        allocated_amount: Number(basket.total_net || 0),
+        basket
+      }] : []
+    }
+    return (basket.split_rows || []).map(row => {
+      const plan = allPlanPositions.value.find(
+        position => Number(position.public_purchase_plan_id) === Number(row.public_purchase_plan_id)
+      )
+      return plan ? {
+        shop_purchase_list_id: basket.shop_purchase_list_id,
+        public_purchase_plan_id: plan.public_purchase_plan_id,
+        funding_id: plan.funding_id,
+        cpv_code: plan.cpv_code,
+        description: plan.description,
+        product_category_name: plan.product_category_name,
+        allocated_amount: Number(row.allocated_amount || 0),
+        basket
+      } : null
+    }).filter(Boolean)
+  }).filter(row => row.allocated_amount > 0)
+)
+
+const basketFundingAllocations = computed(() => {
+  const grouped = new Map()
+  basketPlanRows.value.forEach(row => {
+    const grossAmount = Number(row.allocated_amount || 0) * VAT_RATE
+    grouped.set(row.funding_id, (grouped.get(row.funding_id) || 0) + grossAmount)
+  })
+  return Array.from(grouped.entries()).map(([funding_id, allocated_amount]) => ({
+    funding_id,
+    allocated_amount
+  }))
+})
+
+const basketNetAssignedTotal = computed(() =>
+  basketPlanRows.value.reduce((sum, row) => sum + Number(row.allocated_amount || 0), 0)
+)
+
+const basketSummaryRows = computed(() => {
+  const rows = []
+  requestBaskets.value.forEach(basket => {
+    const assignedRows = basketPlanRows.value.filter(
+      row => Number(row.shop_purchase_list_id) === Number(basket.shop_purchase_list_id)
+    )
+    if (assignedRows.length === 0) {
+      rows.push({
+        key: `${basket.shop_purchase_list_id}-empty`,
+        shopName: basket.shop_name || basket.name || `Koszyk #${basket.shop_purchase_list_id}`,
+        fundingName: 'Nieprzypisane',
+        cpvCode: '',
+        cpvDetails: '',
+        grossAmount: basket.total_price || 0,
+        netAmount: 0
+      })
+      return
+    }
+    assignedRows.forEach(row => {
+      rows.push({
+        key: `${basket.shop_purchase_list_id}-${row.public_purchase_plan_id}`,
+        shopName: basket.shop_name || basket.name || `Koszyk #${basket.shop_purchase_list_id}`,
+        fundingName: fundingName(row.funding_id),
+        cpvCode: row.cpv_code,
+        cpvDetails: [row.description, row.product_category_name].filter(Boolean).join(' - '),
+        grossAmount: basket.total_price || 0,
+        netAmount: row.allocated_amount || 0
+      })
+    })
+  })
+  return rows
+})
+
+const allPlanPositions = computed(() =>
+  fundingPlans.value.flatMap(plan =>
     (plan.public_purchase_plans || []).map(position => ({
       ...position,
+      funding_id: plan.funding_id,
       funding_name: plan.funding_name || fundingName(plan.funding_id)
     }))
-  ).filter( position => Number(position.cpv_code) === cpv )
+  )
+)
+
+const matchingPlanPositions = computed(() => {
+  const cpv = Number(newRequestData.value.used_cpv_id)
+  return allPlanPositions.value.filter(position => Number(position.cpv_code) === cpv)
 })
 
 const selectedPlanPosition = computed(() =>
@@ -406,9 +668,18 @@ const selectedPlanPosition = computed(() =>
 )
 
 const requiresPlanException = computed(() => {
-  if (!selectedFunding.value) return false
-  if (!selectedPlanPosition.value) return true
-  return Number(allocationTotal.value || newRequestData.value.budget_allocated_for_the_order || 0) > Number(selectedPlanPosition.value.remaining_amount || 0)
+  const positions = basketPlanRows.value.length
+    ? basketPlanRows.value.map(row => ({
+        public_purchase_plan_id: row.public_purchase_plan_id,
+        allocated_amount: row.allocated_amount
+      }))
+    : newRequestData.value.plan_positions
+  return positions.some(position => {
+    const planPosition = allPlanPositions.value.find(
+      item => Number(item.public_purchase_plan_id) === Number(position.public_purchase_plan_id)
+    )
+    return planPosition && Number(position.allocated_amount || 0) > Number(planPosition.remaining_amount || 0)
+  })
 })
 
 const isOwner = (request) => {
@@ -479,6 +750,7 @@ const mapRequest = (req) => {
     sourceList__totalNet: req.source_shop_purchase_list?.total_net,
     sourceList__totalPrice: req.source_shop_purchase_list?.total_price,
     planPosition: req.plan_position,
+    planPositions: req.plan_positions || [],
     planExceptionJustification: req.plan_exception_justification,
     planComplianceStatus: req.plan_compliance_status
   }
@@ -554,9 +826,171 @@ const fetchFundingPlansForAllocations = async () => {
   fundingPlans.value = plans.filter(Boolean)
 }
 
+const fetchFundingPlansForIds = async fundingIds => {
+  const uniqueFundingIds = [...new Set((fundingIds || []).map(Number).filter(Boolean))]
+  if (uniqueFundingIds.length === 0) { fundingPlans.value = []; return }
+  const plans = await Promise.all(uniqueFundingIds.map(async fundingId => {
+    const response = await fetch(`${API_URL}/public_purchase_plan_lists?funding_id=${fundingId}`)
+    if (!response.ok) return null
+    const data = await response.json()
+    return data[0] || null
+  }))
+  fundingPlans.value = plans.filter(Boolean)
+}
+
+const buildBasketEditorState = basket => {
+  const netTotal = Number(basket.total_net ?? ((basket.total_price || basket.cost || 0) / VAT_RATE))
+  const fallbackFundingId = Number(newRequestData.value.funding_id || basket.funding_id || '')
+  const savedRows = newRequestData.value.plan_positions.filter(
+    position => Number(position.shop_purchase_list_id) === Number(basket.shop_purchase_list_id)
+  )
+  if (savedRows.length === 1 && Math.abs(Number(savedRows[0].allocated_amount || 0) - netTotal) < 0.01) {
+    return {
+      ...basket,
+      total_price: Number(basket.total_price || basket.cost || 0),
+      total_net: netTotal,
+      cpv_mode: 'single',
+      funding_id: fallbackFundingId || basket.funding_id || '',
+      single_plan_id: savedRows[0].public_purchase_plan_id,
+      split_rows: []
+    }
+  }
+  return {
+    ...basket,
+    total_price: Number(basket.total_price || basket.cost || 0),
+    total_net: netTotal,
+    cpv_mode: savedRows.length > 0 ? 'split' : 'single',
+    funding_id: fallbackFundingId || basket.funding_id || '',
+    single_plan_id: '',
+    split_rows: savedRows.map(row => {
+      const plan = allPlanPositions.value.find(
+        position => Number(position.public_purchase_plan_id) === Number(row.public_purchase_plan_id)
+      )
+      return {
+        funding_id: plan?.funding_id || fallbackFundingId || '',
+        public_purchase_plan_id: row.public_purchase_plan_id,
+        allocated_amount: row.allocated_amount
+      }
+    })
+  }
+}
+
+const fetchRequestBaskets = async requestId => {
+  if (!requestId) { requestBaskets.value = []; return }
+  const response = await fetch(`${API_URL}/lists?purchase_request_id=${requestId}`)
+  if (!response.ok) { requestBaskets.value = []; return }
+  const data = await response.json()
+  requestBaskets.value = (data || []).map(buildBasketEditorState)
+}
+
 const fundingName = fundingId => {
   const funding = fundings.value.find(item => Number(item.funding_id) === Number(fundingId))
   return funding?.funding_name || `Dofinansowanie #${fundingId}`
+}
+
+const planOptionsForFunding = fundingId =>
+  allPlanPositions.value.filter(position => Number(position.funding_id) === Number(fundingId))
+
+const cpvOptionLabel = position => {
+  if (!position) return ''
+  const details = [position.description, position.product_category_name].filter(Boolean).join(' - ')
+  return details
+    ? `CPV ${position.cpv_code} - ${details}`
+    : `CPV ${position.cpv_code} - ${position.funding_name}`
+}
+
+const requestPlanPositionLabel = position => {
+  const details = [position.description, position.product_category_name].filter(Boolean).join(' - ')
+  return details ? `${position.cpv_code} (${details})` : position.cpv_code
+}
+
+const effectiveBasketFundingId = basket =>
+  Number(
+    basket?.cpv_mode === 'single'
+      ? (newRequestData.value.funding_id || basket?.funding_id || '')
+      : (basket?.funding_id || newRequestData.value.funding_id || '')
+  )
+
+const planPositionsForFunding = fundingId =>
+  newRequestData.value.plan_positions.filter(position => {
+    const planPosition = allPlanPositions.value.find(
+      item => Number(item.public_purchase_plan_id) === Number(position.public_purchase_plan_id)
+    )
+    return Number(planPosition?.funding_id) === Number(fundingId)
+  })
+
+const planPositionLabel = publicPurchasePlanId => {
+  const planPosition = allPlanPositions.value.find(
+    item => Number(item.public_purchase_plan_id) === Number(publicPurchasePlanId)
+  )
+  return planPosition
+    ? `${planPosition.funding_name} - ${cpvOptionLabel(planPosition)}`
+    : `Pozycja planu #${publicPurchasePlanId}`
+}
+
+const openCpvEditorModal = () => {
+  showCpvEditorModal.value = true
+}
+
+const addBasketSplitRow = basket => {
+  if (!basket.split_rows) basket.split_rows = []
+  basket.split_rows.push({
+    funding_id: '',
+    public_purchase_plan_id: '',
+    allocated_amount: null
+  })
+}
+
+const removeBasketSplitRow = (basket, index) => {
+  basket.split_rows = (basket.split_rows || []).filter((_, rowIndex) => rowIndex !== index)
+}
+
+const applyBasketCpvAssignments = () => {
+  newRequestData.value.plan_positions = basketPlanRows.value.map(row => ({
+    shop_purchase_list_id: row.shop_purchase_list_id,
+    public_purchase_plan_id: row.public_purchase_plan_id,
+    allocated_amount: row.allocated_amount
+  }))
+  newRequestData.value.funding_allocations = basketFundingAllocations.value
+  newRequestData.value.budget_allocated_for_the_order = basketGrossTotal.value
+  const firstRow = basketPlanRows.value[0]
+  newRequestData.value.used_cpv_id = firstRow?.cpv_code || null
+  newRequestData.value.public_purchase_plan_id = firstRow?.public_purchase_plan_id || null
+  showCpvEditorModal.value = false
+}
+
+const addPlanPositionForFunding = allocation => {
+  const planPositionId = Number(allocation.plan_position_draft_id)
+  const amount = Number(allocation.plan_position_draft_amount || 0)
+  if (!planPositionId || amount <= 0) return
+  const planPosition = allPlanPositions.value.find(
+    item => Number(item.public_purchase_plan_id) === planPositionId
+  )
+  if (!planPosition || Number(planPosition.funding_id) !== Number(allocation.funding_id)) return
+  const existing = newRequestData.value.plan_positions.find(
+    item => Number(item.public_purchase_plan_id) === planPositionId
+  )
+  if (existing) existing.allocated_amount = Number(existing.allocated_amount || 0) + amount
+  else newRequestData.value.plan_positions.push({
+    public_purchase_plan_id: planPositionId,
+    allocated_amount: amount
+  })
+  newRequestData.value.used_cpv_id = planPosition.cpv_code
+  newRequestData.value.public_purchase_plan_id = newRequestData.value.plan_positions[0]?.public_purchase_plan_id || null
+  allocation.plan_position_draft_id = ''
+  allocation.plan_position_draft_amount = null
+}
+
+const removePlanPosition = publicPurchasePlanId => {
+  newRequestData.value.plan_positions = newRequestData.value.plan_positions.filter(
+    item => Number(item.public_purchase_plan_id) !== Number(publicPurchasePlanId)
+  )
+  const firstPlanId = newRequestData.value.plan_positions[0]?.public_purchase_plan_id || null
+  const firstPlan = allPlanPositions.value.find(
+    item => Number(item.public_purchase_plan_id) === Number(firstPlanId)
+  )
+  newRequestData.value.public_purchase_plan_id = firstPlanId
+  newRequestData.value.used_cpv_id = firstPlan?.cpv_code || null
 }
 
 const addFundingAllocation = () => {
@@ -565,7 +999,7 @@ const addFundingAllocation = () => {
   if (!fundingId || amount <= 0) return
   const existing = newRequestData.value.funding_allocations.find(a => Number(a.funding_id) === fundingId)
   if (existing) { existing.allocated_amount = Number(existing.allocated_amount) + amount } 
-  else { newRequestData.value.funding_allocations.push({ funding_id: fundingId, allocated_amount: amount }) }
+  else { newRequestData.value.funding_allocations.push({ funding_id: fundingId, allocated_amount: amount, plan_position_draft_id: '', plan_position_draft_amount: null }) }
   if (!newRequestData.value.funding_id) {
     newRequestData.value.funding_id = fundingId
     const funding = fundings.value.find(item => Number(item.funding_id) === fundingId)
@@ -577,6 +1011,10 @@ const addFundingAllocation = () => {
 
 const removeFundingAllocation = fundingId => {
   newRequestData.value.funding_allocations = newRequestData.value.funding_allocations.filter(a => Number(a.funding_id) !== Number(fundingId))
+  const removedPlanIds = planOptionsForFunding(fundingId).map(position => Number(position.public_purchase_plan_id))
+  newRequestData.value.plan_positions = newRequestData.value.plan_positions.filter(
+    position => !removedPlanIds.includes(Number(position.public_purchase_plan_id))
+  )
   if (Number(newRequestData.value.funding_id) === Number(fundingId)) {
     const first = newRequestData.value.funding_allocations[0]
     newRequestData.value.funding_id = first?.funding_id || ''
@@ -598,9 +1036,11 @@ const resetRequestForm = () => {
   newRequestData.value.project_budget_id = null
   newRequestData.value.funding_allocations = []
   newRequestData.value.public_purchase_plan_id = null
+  newRequestData.value.plan_positions = []
   newRequestData.value.plan_exception_justification = ''
   allocationDraft.value = { funding_id: '', allocated_amount: null }
   fundingPlans.value = []
+  requestBaskets.value = []
 }
 
 const handleNewRequest = async () => {
@@ -608,22 +1048,25 @@ const handleNewRequest = async () => {
     alert('Brak ID skarbnika. Nie mozna zapisac wniosku.')
     return
   }
-  if (editingRequestId.value && allocationTotal.value <= 0) {
-    alert('Dodaj przynajmniej jedno dofinansowanie i kwote.')
-    return
+  if (editingRequestId.value && requestBaskets.value.length > 0) {
+    applyBasketCpvAssignments()
   }
   try {
     const payload = editingRequestId.value ? {
       purchase_request_name: newRequestData.value.purchase_request_name,
       section_name: newRequestData.value.section_name,
-      budget_allocated_for_the_order: allocationTotal.value,
+      budget_allocated_for_the_order: basketGrossTotal.value || allocationTotal.value || newRequestData.value.budget_allocated_for_the_order || 0,
       if_service: newRequestData.value.if_service,
       used_cpv_id: newRequestData.value.used_cpv_id,
       created_at: new Date().toISOString(),
       can_add: newRequestData.value.can_add,
       project_finance_manager_id: currentFinanceManagerId.value,
-      funding_allocations: newRequestData.value.funding_allocations,
-      public_purchase_plan_id: newRequestData.value.public_purchase_plan_id,
+      funding_allocations: newRequestData.value.funding_allocations.map(allocation => ({
+        funding_id: allocation.funding_id,
+        allocated_amount: allocation.allocated_amount
+      })),
+      public_purchase_plan_id: newRequestData.value.plan_positions[0]?.public_purchase_plan_id || null,
+      plan_positions: newRequestData.value.plan_positions,
       plan_exception_justification: newRequestData.value.plan_exception_justification
     } : {
       purchase_request_name: newRequestData.value.purchase_request_name,
@@ -693,17 +1136,54 @@ const openEditRequestModal = async (request) => {
   newRequestData.value.funding_allocations = request.fundingAllocations?.length
     ? request.fundingAllocations.map(allocation => ({
         funding_id: allocation.funding_id,
-        allocated_amount: allocation.allocated_amount
+        allocated_amount: allocation.allocated_amount,
+        plan_position_draft_id: '',
+        plan_position_draft_amount: null
       }))
     : [{
         funding_id: request.fundingId,
-        allocated_amount: request.budget
+        allocated_amount: request.budget,
+        plan_position_draft_id: '',
+        plan_position_draft_amount: null
       }]
   newRequestData.value.public_purchase_plan_id = request.planPosition?.public_purchase_plan_id || null
+  newRequestData.value.plan_positions = request.planPositions?.length
+    ? request.planPositions.map(position => ({
+        shop_purchase_list_id: position.shop_purchase_list_id || null,
+        public_purchase_plan_id: position.public_purchase_plan_id,
+        allocated_amount: position.allocated_amount || request.budget
+      }))
+    : (request.planPosition ? [{
+        public_purchase_plan_id: request.planPosition.public_purchase_plan_id,
+        allocated_amount: request.planPosition.allocated_amount || request.budget
+      }] : [])
   newRequestData.value.plan_exception_justification = request.planExceptionJustification || ''
-  await fetchFundingPlansForAllocations()
+  await fetchFundingPlansForIds(fundings.value.map(funding => funding.funding_id))
+  await fetchRequestBaskets(request.id)
   showAddRequestModal.value = true
 }
+
+watch(
+  () => newRequestData.value.funding_id,
+  newFundingId => {
+    const normalizedFundingId = Number(newFundingId || 0)
+    if (!normalizedFundingId) return
+
+    requestBaskets.value = requestBaskets.value.map(basket => {
+      if (basket.cpv_mode !== 'single') return basket
+      const currentPlan = allPlanPositions.value.find(
+        position => Number(position.public_purchase_plan_id) === Number(basket.single_plan_id)
+      )
+      const shouldResetPlan =
+        currentPlan && Number(currentPlan.funding_id) !== normalizedFundingId
+      return {
+        ...basket,
+        funding_id: normalizedFundingId,
+        single_plan_id: shouldResetPlan ? '' : basket.single_plan_id
+      }
+    })
+  }
+)
 
 onMounted(async () => {
   await fetchStudentsMap()
@@ -805,6 +1285,7 @@ onMounted(async () => {
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); overflow: hidden; }
 .modal-content { width: 90%; max-width: 35vw; max-height: 85vh; background: #0f172a; border: 0.08vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.2vw; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+.cpv-modal-content { max-width: 78vw; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5vh; flex-shrink: 0; }
 .modal-title { font-size: 1.5vw; color: #fff; font-weight: 800; }
 .modal-close { background: transparent; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.4vw; cursor: pointer; transition: color 0.2s; }
@@ -821,6 +1302,26 @@ onMounted(async () => {
 .funding-allocation-list { display: grid; gap: 0.5vw; margin-top: 0.8vw; }
 .funding-allocation-item, .funding-allocation-total { display: grid; grid-template-columns: 1fr auto auto; gap: 0.8vw; align-items: center; padding: 0.75vw; border-radius: 0.6vw; background: rgba(30, 41, 59, 0.62); color: #e2e8f0; }
 .funding-allocation-total { grid-template-columns: 1fr auto; background: rgba(59, 130, 246, 0.16); }
+.plan-position-picker { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 8vw auto; gap: 0.7vw; align-items: center; }
+.plan-position-list { grid-column: 1 / -1; display: grid; gap: 0.45vw; }
+.plan-position-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.7vw; align-items: center; padding: 0.55vw 0.65vw; border-radius: 0.5vw; background: rgba(15, 23, 42, 0.55); color: #e2e8f0; }
+.cpv-editor-open { width: fit-content; }
+.cpv-editor { display: grid; gap: 1vw; overflow-y: auto; padding-right: 0.5vw; min-height: 0; }
+.cpv-main-funding { display: grid; gap: 0.45vw; padding: 0.9vw 1vw; border-radius: 0.7vw; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(148, 163, 184, 0.16); }
+.cpv-basket { display: grid; gap: 0.8vw; padding: 1vw; border-radius: 0.7vw; background: rgba(30, 41, 59, 0.55); border: 1px solid rgba(148, 163, 184, 0.16); }
+.cpv-basket__top { display: flex; justify-content: space-between; gap: 1vw; align-items: flex-start; }
+.cpv-basket__top h3 { margin: 0; color: #ffffff; font-size: 1vw; }
+.cpv-basket__top p { margin: 0.35vw 0 0 0; color: rgba(226, 232, 240, 0.62); font-size: 0.82vw; }
+.cpv-mode-toggle { display: flex; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.5vw; padding: 0.15vw; }
+.cpv-mode-toggle button { border: 0; border-radius: 0.35vw; background: transparent; color: #94a3b8; padding: 0.45vw 0.75vw; font-weight: 700; cursor: pointer; }
+.cpv-mode-toggle button.active { background: rgba(59, 130, 246, 0.22); color: #93c5fd; }
+.cpv-single-row { display: grid; grid-template-columns: 1fr; }
+.cpv-split { display: grid; gap: 0.7vw; }
+.cpv-split-row { display: grid; grid-template-columns: 1fr 1.2fr 8vw auto; gap: 0.7vw; align-items: center; }
+.cpv-summary { display: grid; gap: 0.8vw; }
+.cpv-summary h3 { margin: 0; color: #bfdbfe; font-size: 1vw; }
+.cpv-summary-table { min-width: 900px; }
+.cpv-summary-table tfoot td { font-weight: 800; background: rgba(59, 130, 246, 0.1); }
 .delete-inline-btn { border: 0; background: transparent; color: #fca5a5; cursor: pointer; font-weight: 700; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 1.5vh; border-top: 0.08vw solid rgba(148,163,184,0.15); flex-shrink: 0; margin-top: auto; }

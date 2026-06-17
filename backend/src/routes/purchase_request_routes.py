@@ -13,6 +13,12 @@ class PurchaseRequestFundingAllocationIn(BaseModel):
     allocated_amount: float
 
 
+class PurchaseRequestPlanPositionIn(BaseModel):
+    shop_purchase_list_id: Optional[int] = None
+    public_purchase_plan_id: int
+    allocated_amount: float
+
+
 class PurchaseRequestCreate(BaseModel):
     purchase_request_name: str
     budget_allocated_for_the_order: float
@@ -29,6 +35,7 @@ class PurchaseRequestCreate(BaseModel):
     public_purchase_plan_id: Optional[int] = None
     plan_exception_justification: Optional[str] = None
     funding_allocations: List[PurchaseRequestFundingAllocationIn] = PydanticField(default_factory=list)
+    plan_positions: List[PurchaseRequestPlanPositionIn] = PydanticField(default_factory=list)
 
 
 class PurchaseRequestUpdate(BaseModel):
@@ -40,6 +47,7 @@ class PurchaseRequestUpdate(BaseModel):
     public_purchase_plan_id: Optional[int] = None
     plan_exception_justification: Optional[str] = None
     funding_allocations: List[PurchaseRequestFundingAllocationIn] = PydanticField(default_factory=list)
+    plan_positions: List[PurchaseRequestPlanPositionIn] = PydanticField(default_factory=list)
 
 
 class PurchaseRequestFundingAllocationOut(BaseModel):
@@ -87,10 +95,17 @@ class SourceShopPurchaseListOut(BaseModel):
 class PurchasePlanPositionOut(BaseModel):
     public_purchase_plan_id: int
     cpv_code: int
+    description: Optional[str] = None
     planned_amount: float
     used_amount: float
     remaining_amount: float
     plan_year: int
+    shop_purchase_list_id: Optional[int] = None
+    funding_id: Optional[int] = None
+    funding_name: Optional[str] = None
+    allocated_amount: Optional[float] = None
+    product_category_id: Optional[int] = None
+    product_category_name: Optional[str] = None
 
 
 class PurchaseRequestOut(BaseModel):
@@ -111,6 +126,7 @@ class PurchaseRequestOut(BaseModel):
     project_finance_manager_id: Optional[int] = None
     public_purchase_plan_id: Optional[int] = None
     plan_position: Optional[PurchasePlanPositionOut] = None
+    plan_positions: List[PurchasePlanPositionOut] = PydanticField(default_factory=list)
     plan_exception_justification: Optional[str] = None
     plan_compliance_status: str
     budget_info: Optional[PurchaseRequestBudgetOut] = None
@@ -226,6 +242,147 @@ def _replace_request_allocations(
         session.add(PurchaseRequestFundingAllocation(
             purchase_request_id=purchase_request_id,
             funding_id=funding_id,
+            allocated_amount=amount,
+        ))
+
+
+def _used_amount_for_plan(
+    public_purchase_plan_id: int,
+    session: Session,
+    excluded_purchase_request_id: Optional[int] = None,
+) -> float:
+    plan_rows_statement = select(PurchaseRequestPlanPosition).where(
+        PurchaseRequestPlanPosition.public_purchase_plan_id == public_purchase_plan_id
+    )
+    if excluded_purchase_request_id:
+        plan_rows_statement = plan_rows_statement.where(
+            PurchaseRequestPlanPosition.purchase_request_id != excluded_purchase_request_id
+        )
+    plan_rows = session.exec(plan_rows_statement).all()
+    linked_request_ids = {row.purchase_request_id for row in plan_rows}
+    used_amount = sum(row.allocated_amount for row in plan_rows)
+
+    legacy_statement = select(PurchaseRequest).where(
+        PurchaseRequest.public_purchase_plan_id == public_purchase_plan_id
+    )
+    if excluded_purchase_request_id:
+        legacy_statement = legacy_statement.where(
+            PurchaseRequest.purchase_request_id != excluded_purchase_request_id
+        )
+    legacy_requests = session.exec(legacy_statement).all()
+    used_amount += sum(
+        request.budget_allocated_for_the_order
+        for request in legacy_requests
+        if request.purchase_request_id not in linked_request_ids
+    )
+    return used_amount
+
+
+def _plan_position_out(
+    plan: PublicPurchasePlan,
+    session: Session,
+    allocated_amount: Optional[float] = None,
+    shop_purchase_list_id: Optional[int] = None,
+    excluded_purchase_request_id: Optional[int] = None,
+) -> PurchasePlanPositionOut:
+    plan_list = session.get(
+        PublicPurchasePlanList, plan.public_purchase_plan_list_id
+    )
+    funding = session.get(Funding, plan.funding_id) if plan.funding_id else None
+    category = session.exec(
+        select(ProductCategory).where(
+            ProductCategory.public_purchase_plan_id == plan.public_purchase_plan_id
+        )
+    ).first()
+    used_amount = _used_amount_for_plan(
+        plan.public_purchase_plan_id,
+        session,
+        excluded_purchase_request_id,
+    )
+    return PurchasePlanPositionOut(
+        public_purchase_plan_id=plan.public_purchase_plan_id,
+        cpv_code=plan.cpv_code,
+        description=plan.public_purchase_plan_name,
+        planned_amount=plan.cost,
+        used_amount=used_amount,
+        remaining_amount=plan.cost - used_amount,
+        plan_year=plan_list.plan_year if plan_list else 0,
+        shop_purchase_list_id=shop_purchase_list_id,
+        funding_id=plan.funding_id,
+        funding_name=funding.funding_name if funding else None,
+        allocated_amount=allocated_amount,
+        product_category_id=category.product_category_id if category else None,
+        product_category_name=category.product_category_name if category else None,
+    )
+
+
+def _plan_positions_for_request(
+    request: PurchaseRequest,
+    session: Session,
+) -> List[PurchasePlanPositionOut]:
+    rows = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    if rows:
+        result = []
+        for row in rows:
+            plan = session.get(PublicPurchasePlan, row.public_purchase_plan_id)
+            if plan:
+                result.append(
+                    _plan_position_out(
+                        plan,
+                        session,
+                        row.allocated_amount,
+                        row.shop_purchase_list_id,
+                    )
+                )
+        return result
+
+    if request.public_purchase_plan_id:
+        plan = session.get(PublicPurchasePlan, request.public_purchase_plan_id)
+        if plan:
+            return [
+                _plan_position_out(
+                    plan,
+                    session,
+                    request.budget_allocated_for_the_order,
+                    None,
+                )
+            ]
+    return []
+
+
+def _replace_request_plan_positions(
+    purchase_request_id: int,
+    positions_data: List[PurchaseRequestPlanPositionIn],
+    session: Session,
+):
+    existing = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.purchase_request_id == purchase_request_id
+        )
+    ).all()
+    for position in existing:
+        session.delete(position)
+
+    merged: dict[tuple[int, int], float] = {}
+    for position in positions_data:
+        amount = float(position.allocated_amount or 0)
+        if amount <= 0 or not position.shop_purchase_list_id:
+            continue
+        key = (position.shop_purchase_list_id, position.public_purchase_plan_id)
+        merged[key] = (
+            merged.get(key, 0.0) + amount
+        )
+
+    for (shop_purchase_list_id, public_purchase_plan_id), amount in merged.items():
+        session.add(PurchaseRequestPlanPosition(
+            purchase_request_id=purchase_request_id,
+            shop_purchase_list_id=shop_purchase_list_id,
+            public_purchase_plan_id=public_purchase_plan_id,
             allocated_amount=amount,
         ))
 
@@ -387,31 +544,8 @@ def _budget_info_for_request(request: PurchaseRequest, session: Session) -> Opti
 
 def _purchase_request_out(request: PurchaseRequest, session: Session) -> PurchaseRequestOut:
     budget_info = _budget_info_for_request(request, session)
-    plan_position = None
-    if request.public_purchase_plan_id:
-        plan = session.get(PublicPurchasePlan, request.public_purchase_plan_id)
-        if plan:
-            plan_list = session.get(
-                PublicPurchasePlanList, plan.public_purchase_plan_list_id
-            )
-            linked_requests = session.exec(
-                select(PurchaseRequest).where(
-                    PurchaseRequest.public_purchase_plan_id
-                    == plan.public_purchase_plan_id
-                )
-            ).all()
-            used_amount = sum(
-                linked_request.budget_allocated_for_the_order
-                for linked_request in linked_requests
-            )
-            plan_position = PurchasePlanPositionOut(
-                public_purchase_plan_id=plan.public_purchase_plan_id,
-                cpv_code=plan.cpv_code,
-                planned_amount=plan.cost,
-                used_amount=used_amount,
-                remaining_amount=plan.cost - used_amount,
-                plan_year=plan_list.plan_year if plan_list else 0,
-            )
+    plan_positions = _plan_positions_for_request(request, session)
+    plan_position = plan_positions[0] if plan_positions else None
 
     return PurchaseRequestOut(
         purchase_request_id=request.purchase_request_id,
@@ -431,6 +565,7 @@ def _purchase_request_out(request: PurchaseRequest, session: Session) -> Purchas
         project_finance_manager_id=request.project_finance_manager_id,
         public_purchase_plan_id=request.public_purchase_plan_id,
         plan_position=plan_position,
+        plan_positions=plan_positions,
         plan_exception_justification=request.plan_exception_justification,
         plan_compliance_status=request.plan_compliance_status,
         budget_info=budget_info,
@@ -485,10 +620,11 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
     funding_id = new_purchase_request_data.funding_id
     funding_allocations_data = new_purchase_request_data.funding_allocations or []
     if funding_allocations_data:
-        budget_allocated = sum(
-            float(allocation.allocated_amount or 0)
-            for allocation in funding_allocations_data
-        )
+        if budget_allocated <= 0:
+            budget_allocated = sum(
+                float(allocation.allocated_amount or 0)
+                for allocation in funding_allocations_data
+            )
         funding_id = funding_allocations_data[0].funding_id
         first_funding = session.get(Funding, funding_id)
         if first_funding:
@@ -595,46 +731,63 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
             status_code=400,
             detail="Kwota wniosku przekracza dostępne środki dofinansowania",
         )
-    if not is_draft and (not new_purchase_request_data.used_cpv_id or new_purchase_request_data.used_cpv_id <= 0):
-        raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
-
     plan = None
+    selected_plans: list[tuple[PurchaseRequestPlanPositionIn, PublicPurchasePlan, float]] = []
+    plan_positions_data = new_purchase_request_data.plan_positions or []
+    if not plan_positions_data and new_purchase_request_data.public_purchase_plan_id:
+        plan_positions_data = [
+            PurchaseRequestPlanPositionIn(
+                public_purchase_plan_id=new_purchase_request_data.public_purchase_plan_id,
+                allocated_amount=budget_allocated,
+            )
+        ]
     plan_compliance_status = "draft" if is_draft else "compliant"
     justification = (
         new_purchase_request_data.plan_exception_justification or ""
     ).strip()
-    if not is_draft and new_purchase_request_data.public_purchase_plan_id:
-        plan = session.get(
+    allocation_funding_ids = {
+        allocation.funding_id for allocation in funding_allocations_data
+    } or {funding.funding_id}
+    selected_amounts_by_plan: dict[int, float] = {}
+    for plan_position_data in plan_positions_data:
+        amount = float(plan_position_data.allocated_amount or 0)
+        if amount <= 0:
+            continue
+        selected_plan = session.get(
             PublicPurchasePlan,
-            new_purchase_request_data.public_purchase_plan_id,
+            plan_position_data.public_purchase_plan_id,
         )
-        if not plan:
+        if not selected_plan:
             raise HTTPException(
                 status_code=404, detail="Pozycja planu zamówień nie znaleziona"
             )
-        if plan.funding_id != funding.funding_id:
+        if selected_plan.funding_id not in allocation_funding_ids:
             raise HTTPException(
                 status_code=400,
                 detail="Pozycja planu nie należy do dofinansowania zamówienia",
             )
-        if plan.cpv_code != new_purchase_request_data.used_cpv_id:
+        if selected_plan.cpv_code <= 0:
             raise HTTPException(
                 status_code=400,
                 detail="Kod CPV wniosku nie zgadza się z pozycją planu",
             )
-        used_from_plan = sum(
-            request.budget_allocated_for_the_order
-            for request in session.exec(
-                select(PurchaseRequest).where(
-                    PurchaseRequest.public_purchase_plan_id
-                    == plan.public_purchase_plan_id
-                )
-            ).all()
+        selected_total_for_plan = (
+            selected_amounts_by_plan.get(selected_plan.public_purchase_plan_id, 0.0)
+            + amount
         )
-        if budget_allocated > plan.cost - used_from_plan:
+        used_from_plan = _used_amount_for_plan(
+            selected_plan.public_purchase_plan_id,
+            session,
+        )
+        if selected_total_for_plan > selected_plan.cost - used_from_plan:
             plan_compliance_status = "requires_approval"
-    elif not is_draft:
-        plan_compliance_status = "requires_approval"
+        selected_amounts_by_plan[selected_plan.public_purchase_plan_id] = selected_total_for_plan
+        selected_plans.append((plan_position_data, selected_plan, amount))
+
+    if selected_plans:
+        plan = selected_plans[0][1]
+    if not selected_plans:
+        plan_compliance_status = "draft"
 
     if not is_draft and plan_compliance_status == "requires_approval" and not justification:
         raise HTTPException(
@@ -661,7 +814,7 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
         purchase_request_name = new_purchase_request_data.purchase_request_name,
         budget_allocated_for_the_order = budget_allocated,
         if_service = new_purchase_request_data.if_service,
-        used_cpv_id = new_purchase_request_data.used_cpv_id or 0,
+        used_cpv_id = plan.cpv_code if plan else (new_purchase_request_data.used_cpv_id or 0),
         project_budget_id = project_budget.project_budget_id,
         funding_id = funding.funding_id,
         created_at = new_purchase_request_data.created_at,
@@ -688,6 +841,18 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
             ],
             session,
         )
+        _replace_request_plan_positions(
+            new_purchase_request.purchase_request_id,
+            [
+                PurchaseRequestPlanPositionIn(
+                    shop_purchase_list_id=plan_position_data.shop_purchase_list_id,
+                    public_purchase_plan_id=selected_plan.public_purchase_plan_id,
+                    allocated_amount=amount,
+                )
+                for plan_position_data, selected_plan, amount in selected_plans
+            ],
+            session,
+        )
     if source_settlement:
         source_settlement.purchase_request_id = new_purchase_request.purchase_request_id
     session.commit()
@@ -708,14 +873,12 @@ def update_purchase_request(
     funding_allocations_data = update_data.funding_allocations or []
     budget_allocated = update_data.budget_allocated_for_the_order
     if funding_allocations_data:
-        budget_allocated = sum(
-            float(allocation.allocated_amount or 0)
-            for allocation in funding_allocations_data
-        )
-    if budget_allocated <= 0:
-        raise HTTPException(status_code=400, detail="Kwota wniosku musi byc wieksza od zera")
-    if not update_data.used_cpv_id or update_data.used_cpv_id <= 0:
-        raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
+        if budget_allocated <= 0:
+            budget_allocated = sum(
+                float(allocation.allocated_amount or 0)
+                for allocation in funding_allocations_data
+            )
+    is_draft = budget_allocated <= 0
 
     if funding_allocations_data:
         for allocation in funding_allocations_data:
@@ -726,32 +889,50 @@ def update_purchase_request(
                 raise HTTPException(status_code=404, detail="Dofinansowanie nie znalezione")
 
     plan = None
-    plan_compliance_status = "compliant"
+    selected_plans: list[tuple[PurchaseRequestPlanPositionIn, PublicPurchasePlan, float]] = []
+    plan_positions_data = update_data.plan_positions or []
+    if not plan_positions_data and update_data.public_purchase_plan_id:
+        plan_positions_data = [
+            PurchaseRequestPlanPositionIn(
+                public_purchase_plan_id=update_data.public_purchase_plan_id,
+                allocated_amount=budget_allocated,
+            )
+        ]
+    plan_compliance_status = "draft" if is_draft or not plan_positions_data else "compliant"
     justification = (update_data.plan_exception_justification or "").strip()
-    if update_data.public_purchase_plan_id:
-        plan = session.get(PublicPurchasePlan, update_data.public_purchase_plan_id)
-        if not plan:
-            raise HTTPException(status_code=404, detail="Pozycja planu nie znaleziona")
-        allocation_funding_ids = [allocation.funding_id for allocation in funding_allocations_data]
-        if funding_allocations_data and plan.funding_id not in allocation_funding_ids:
-            raise HTTPException(status_code=400, detail="Pozycja planu nie nalezy do wybranych dofinansowan")
-        if not funding_allocations_data and plan.funding_id != purchase_request.funding_id:
-            raise HTTPException(status_code=400, detail="Pozycja planu nie nalezy do dofinansowania")
-        if plan.cpv_code != update_data.used_cpv_id:
-            raise HTTPException(status_code=400, detail="Kod CPV nie zgadza sie z pozycja planu")
-        used_from_plan = sum(
-            request.budget_allocated_for_the_order
-            for request in session.exec(
-                select(PurchaseRequest).where(
-                    PurchaseRequest.public_purchase_plan_id == plan.public_purchase_plan_id,
-                    PurchaseRequest.purchase_request_id != purchase_request_id,
-                )
-            ).all()
+
+    allocation_funding_ids = {
+        allocation.funding_id for allocation in funding_allocations_data
+    } or {purchase_request.funding_id}
+    selected_amounts_by_plan: dict[int, float] = {}
+    for plan_position_data in plan_positions_data:
+        amount = float(plan_position_data.allocated_amount or 0)
+        if amount <= 0:
+            continue
+        selected_plan = session.get(
+            PublicPurchasePlan,
+            plan_position_data.public_purchase_plan_id,
         )
-        if budget_allocated > plan.cost - used_from_plan:
+        if not selected_plan:
+            raise HTTPException(status_code=404, detail="Pozycja planu nie znaleziona")
+        if selected_plan.funding_id not in allocation_funding_ids:
+            raise HTTPException(status_code=400, detail="Pozycja planu nie nalezy do wybranych dofinansowan")
+        selected_total_for_plan = (
+            selected_amounts_by_plan.get(selected_plan.public_purchase_plan_id, 0.0)
+            + amount
+        )
+        used_from_plan = _used_amount_for_plan(
+            selected_plan.public_purchase_plan_id,
+            session,
+            purchase_request_id,
+        )
+        if selected_total_for_plan > selected_plan.cost - used_from_plan:
             plan_compliance_status = "requires_approval"
-    else:
-        plan_compliance_status = "requires_approval"
+        selected_amounts_by_plan[selected_plan.public_purchase_plan_id] = selected_total_for_plan
+        selected_plans.append((plan_position_data, selected_plan, amount))
+
+    if selected_plans:
+        plan = selected_plans[0][1]
 
     if plan_compliance_status == "requires_approval" and not justification:
         raise HTTPException(status_code=400, detail="Uzasadnienie odstepstwa jest wymagane")
@@ -759,7 +940,7 @@ def update_purchase_request(
     purchase_request.purchase_request_name = update_data.purchase_request_name
     purchase_request.budget_allocated_for_the_order = budget_allocated
     purchase_request.if_service = update_data.if_service
-    purchase_request.used_cpv_id = update_data.used_cpv_id
+    purchase_request.used_cpv_id = plan.cpv_code if plan else (update_data.used_cpv_id or 0)
     purchase_request.can_add = update_data.can_add
     purchase_request.public_purchase_plan_id = plan.public_purchase_plan_id if plan else None
     purchase_request.plan_exception_justification = justification or None
@@ -788,6 +969,18 @@ def update_purchase_request(
             funding_allocations_data,
             session,
         )
+    _replace_request_plan_positions(
+        purchase_request.purchase_request_id,
+        [
+            PurchaseRequestPlanPositionIn(
+                shop_purchase_list_id=plan_position_data.shop_purchase_list_id,
+                public_purchase_plan_id=selected_plan.public_purchase_plan_id,
+                allocated_amount=amount,
+            )
+            for plan_position_data, selected_plan, amount in selected_plans
+        ],
+        session,
+    )
     session.commit()
     session.refresh(purchase_request)
     return _purchase_request_out(purchase_request, session)

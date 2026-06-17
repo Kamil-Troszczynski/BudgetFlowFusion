@@ -7,22 +7,13 @@
       </div>
 
       <form class="list-form" @submit.prevent="handleSubmit">
-        <div v-if="publicPurchasePlan" class="shop-meta-preview">
-          <div class="meta-preview-item">
-            <span class="meta-preview-label">Zamowienie publiczne:</span>
-            <span class="meta-preview-value text-blue">CPV {{ publicPurchasePlan.cpv_code }}</span>
-          </div>
-          <div class="meta-preview-item">
-            <span class="meta-preview-label">Limit:</span>
-            <span class="meta-preview-value text-emerald">{{ Number(publicPurchasePlan.cost || 0).toFixed(2) }} PLN</span>
-          </div>
-        </div>
-
+  
         <div class="list-form-group">
           <label class="list-form-label">Sklep docelowy</label>
           <select
             v-model="form.shopId"
             class="list-form-select"
+            :class="{ 'list-form-select--error': duplicateListWarning }"
             required
             @change="handleShopChange"
           >
@@ -33,7 +24,15 @@
           </select>
         </div>
 
-        <div v-if="selectedShopInfo" class="shop-meta-preview">
+        <div v-if="duplicateListWarning" class="duplicate-warning-banner">
+          <span class="warning-banner-icon">⚠</span>
+          <div class="warning-banner-content">
+            <strong>Ten sklep posiada już aktywną listę!</strong><br />
+            Istnieje już otwarta lista dla tego dostawcy. Znajdź ją na głównym ekranie i dopisz swoje pozycje, aby połączyć przesyłkę.
+          </div>
+        </div>
+
+        <div v-if="selectedShopInfo && !duplicateListWarning" class="shop-meta-preview">
           <div class="meta-preview-item">
             <span class="meta-preview-label">Czas dostawy:</span>
             <span class="meta-preview-value text-blue">{{ selectedShopInfo.deliveryTime || 'Brak danych' }}</span>
@@ -75,24 +74,9 @@
             <option value="3">Niski (Może poczekać)</option>
           </select>
         </div>
-
-        <div v-if="isTreasurer" class="list-form-group group-treasurer-only">
-          <div class="treasurer-badge-indicator">Panel Skarbnika</div>
-          <label class="list-form-label">Dofinansowanie (Opcjonalnie dla skarbnika)</label>
-          <select
-            v-model="form.fundingId"
-            class="list-form-select"
-          >
-            <option value="">Przypisz dofinansowanie później...</option>
-            <option v-for="funding in fundings" :key="funding.id" :value="funding.id">
-              {{ funding.name }} - {{ funding.sectionName }} (dostępne: {{ funding.available }} PLN)
-            </option>
-          </select>
-        </div>
-
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-btn-cancel" @click="closeModal">Anuluj</button>
-          <button type="submit" class="modal-btn modal-btn-save">Utwórz listę</button>
+          <button type="submit" class="modal-btn modal-btn-save" :disabled="duplicateListWarning">Utwórz listę</button>
         </div>
       </form>
     </div>
@@ -118,7 +102,9 @@ const emit = defineEmits(['close', 'submit-list'])
 
 const shops = ref([])
 const fundings = ref([])
+const existingLists = ref([])
 const selectedShopInfo = ref(null)
+const duplicateListWarning = ref(false)
 const { user } = useAuth()
 
 const isTreasurer = computed(() => user.value?.role === 'treasurer')
@@ -129,6 +115,18 @@ const form = ref({
   fundingId: '',
   priority: 2
 })
+
+const fetchExistingLists = async () => {
+  try {
+    const timestamp = new Date().getTime()
+    const response = await fetch(`http://localhost:8080/api/lists?open_only=true&t=${timestamp}`)
+    if (response.ok) {
+      existingLists.value = await response.json()
+    }
+  } catch (error) {
+    console.error("Błąd pobierania aktywnych list:", error)
+  }
+}
 
 const fetchShops = async () => {
   try {
@@ -167,10 +165,20 @@ const fetchFundings = async () => {
 const handleShopChange = () => {
   const found = shops.value.find(s => s.id === form.value.shopId)
   selectedShopInfo.value = found || null
+
+  if (form.value.shopId) {
+    const hasDuplicate = existingLists.value.some(
+      list => Number(list.shop_id) === Number(form.value.shopId) && (list.settlement_id === null || list.settlement_id === undefined)
+    )
+    duplicateListWarning.value = hasDuplicate
+  } else {
+    duplicateListWarning.value = false
+  }
 }
 
 onMounted(() => {
   fetchShops()
+  fetchExistingLists()
   if (isTreasurer.value) {
     fetchFundings()
   }
@@ -181,10 +189,13 @@ const closeModal = () => {
   setTimeout(() => {
     form.value = { name: '', shopId: '', fundingId: '', priority: 2 }
     selectedShopInfo.value = null
+    duplicateListWarning.value = false
   }, 200)
 }
 
 const handleSubmit = () => {
+  if (duplicateListWarning.value) return
+
   const selectedShop = shops.value.find(s => s.id === form.value.shopId)
 
   const newList = {
@@ -222,22 +233,25 @@ const handleSubmit = () => {
 .list-form-label { display: block; margin-bottom: 0.6vw; color: rgba(226, 232, 240, 0.85); font-size: 0.9vw; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
 .list-form-input, .list-form-select { width: 100%; box-sizing: border-box; padding: 0.9vw; background: rgba(30, 41, 59, 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #ffffff; font-size: 0.95vw; transition: all 0.2s; font-family: inherit; }
 .list-form-input:focus, .list-form-select:focus { outline: none; border-color: #3b82f6; background: rgba(30, 41, 59, 0.9); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+.list-form-select--error { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; }
 .list-form-textarea { resize: none; font-family: inherit; }
+
+.duplicate-warning-banner { display: flex; gap: 1vw; align-items: flex-start; padding: 1vw; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 0.6vw; margin-bottom: 1.5vw; text-align: left; }
+.warning-banner-icon { font-size: 1.4vw; color: #f59e0b; line-height: 1; }
+.warning-banner-content { font-size: 0.85vw; color: #cbd5e1; line-height: 1.4; }
 
 .shop-meta-preview { display: flex; flex-direction: column; gap: 0.5vw; padding: 0.9vw 1.2vw; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 0.6vw; margin-top: -1vw; margin-bottom: 1.5vw; }
 .meta-preview-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.85vw; }
 .meta-preview-label { color: #64748b; font-weight: 600; }
 .meta-preview-value { font-weight: 700; }
 
-.group-treasurer-only { border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 0.8vw; padding: 1.2vw; background: rgba(245, 158, 11, 0.02); position: relative; margin-top: 2vw; }
-.treasurer-badge-indicator { position: absolute; top: -0.7vw; right: 1vw; background: #d97706; color: #ffffff; font-size: 0.7vw; font-weight: 800; padding: 0.15vw 0.5vw; border-radius: 0.3vw; text-transform: uppercase; letter-spacing: 0.05em; }
-
 .modal-actions { display: flex; gap: 1vw; justify-content: flex-end; margin-top: 2vw; padding-top: 1.5vw; border-top: 0.1vw solid rgba(148, 163, 184, 0.1); }
 .modal-btn { padding: 0.8vw 1.8vw; border-radius: 0.6vw; font-size: 0.95vw; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; font-family: inherit; }
 .modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: #e2e8f0; }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); color: #ffffff; }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
-.modal-btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+.modal-btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+.modal-btn-save:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .text-blue { color: #60a5fa; }
 .text-emerald { color: #34d399; }
