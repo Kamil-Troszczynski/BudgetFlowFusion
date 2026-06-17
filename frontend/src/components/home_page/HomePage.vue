@@ -156,7 +156,6 @@
                   <div>
                     <p class="budget-overview__eyebrow">Projekt</p>
                     <h3>{{ activeBudgetProject.project_name || activeBudgetProject.project_budget_name }}</h3>
-                    <span>{{ activeBudgetProject.project_budget_name }}</span>
                   </div>
                   <div class="budget-project-detail__meter">
                     <div class="budget-progress__bar">
@@ -1940,6 +1939,547 @@ const handleLogout = () => {
 
   .modal-btn {
     width: 100%;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard__container {
+    width: min(100% - 48px, 1480px);
+    max-width: 1480px;
+    padding: 0;
+  }
+
+  .dashboard__header {
+    padding: 10px 0;
+    border-bottom-width: 1px;
+    backdrop-filter: blur(12px);
+  }
+
+  .dashboard__header-content {
+    gap: 28px;
+  }
+
+  .dashboard__logo-section {
+    gap: 18px;
+  }
+
+  .dashboard__logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+
+  .dashboard__title {
+    font-size: clamp(24px, 1.25vw, 32px);
+  }
+
+  .dashboard__nav {
+    gap: 8px;
+  }
+
+  .dashboard__nav-link,
+  .dashboard__user-name,
+  .dashboard__dropdown-item,
+  .dashboard__card-link {
+    font-size: 15px;
+  }
+
+  .dashboard__nav-link {
+    padding: 9px 16px;
+    border-radius: 8px;
+  }
+
+  .dashboard__main {
+    padding: 48px 0 32px;
+  }
+
+  .dashboard__welcome {
+    margin: 24px 0 28px;
+  }
+
+  .dashboard__welcome-title {
+    font-size: clamp(32px, 2vw, 42px);
+    margin-bottom: 28px;
+  }
+
+  .dashboard__user-info-card,
+  .dashboard__card,
+  .budget-project-detail__top {
+    border-radius: 14px;
+    border-width: 1px;
+  }
+
+  .dashboard__user-info-card {
+    padding: 30px;
+    margin-bottom: 28px;
+  }
+
+  .dashboard__user-info-title,
+  .dashboard__card-title,
+  .budget-overview__header h2,
+  .budget-project-detail__top h3,
+  .budget-fundings__header h3 {
+    font-size: 22px;
+  }
+
+  .dashboard__user-info-content {
+    gap: 14px;
+  }
+
+  .dashboard__user-info-row {
+    gap: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+  }
+
+  .dashboard__user-info-label,
+  .dashboard__user-info-value,
+  .budget-stat__label {
+    font-size: 16px;
+  }
+
+  .dashboard__grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 24px;
+  }
+
+  .dashboard__card-header,
+  .dashboard__card-body {
+    padding: 22px;
+  }
+
+  .dashboard__card-badge {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .budget-stat {
+    padding: 16px 0;
+  }
+
+  .budget-stat__value {
+    font-size: 26px;
+  }
+
+  .budget-progress {
+    margin-top: 20px;
+  }
+
+  .budget-progress__bar {
+    height: 7px;
+    margin-bottom: 8px;
+  }
+
+  .budget-progress__text,
+  .budget-overview__stat span,
+  .budget-project-metrics span,
+  .budget-project-detail__top span,
+  .budget-project-detail__meter p,
+  .budget-fundings__header span,
+  .budget-table th,
+  .budget-table td {
+    font-size: 14px;
+  }
+
+  .budget-overview {
+    gap: 22px;
+  }
+
+  .budget-overview__header {
+    padding: 22px 0 18px;
+  }
+
+  .budget-overview__stats,
+  .budget-project-metrics {
+    gap: 16px;
+  }
+
+  .budget-overview__stat,
+  .budget-project-metrics > div {
+    gap: 8px;
+    padding: 18px;
+    border-radius: 10px;
+    border-width: 1px;
+  }
+
+  .budget-overview__stat strong,
+  .budget-project-metrics strong {
+    font-size: 18px;
+  }
+
+  .budget-project-tabs {
+    gap: 10px;
+  }
+
+  .budget-project-tab {
+    flex-basis: 240px;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 10px;
+    border-width: 1px;
+  }
+
+  .budget-project-tab span,
+  .budget-project-tab strong {
+    font-size: 14px;
+  }
+
+  .budget-project-detail {
+    gap: 18px;
+  }
+
+  .budget-project-detail__top {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 28px;
+    padding: 22px;
+  }
+
+  .budget-table th,
+  .budget-table td {
+    padding: 14px 16px;
+  }
+
+  .modal-content {
+    max-width: min(720px, 90vw);
+    padding: 32px;
+    border-radius: 16px;
+    border-width: 1px;
+  }
+
+  .members-modal {
+    max-width: min(560px, 90vw);
+  }
+}
+
+@media (min-width: 1800px) {
+  .dashboard__container {
+    max-width: 1540px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard__container {
+    width: min(100% - 28px, 100%);
+    max-width: none;
+    padding: 0;
+  }
+
+  .dashboard__header {
+    padding: 10px 0;
+  }
+
+  .dashboard__header-content {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard__logo-section {
+    gap: 12px;
+  }
+
+  .dashboard__logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+  }
+
+  .dashboard__title {
+    font-size: 24px;
+  }
+
+  .dashboard__nav {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .dashboard__nav-link {
+    flex: 0 0 auto;
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+  }
+
+  .dashboard__user-section {
+    justify-content: flex-start;
+  }
+
+  .dashboard__user-name {
+    display: inline-flex;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .dashboard__main {
+    padding: 18px 0 26px;
+  }
+
+  .dashboard__welcome {
+    margin: 14px 0 16px;
+  }
+
+  .dashboard__welcome-title {
+    font-size: 28px;
+    margin-bottom: 18px;
+  }
+
+  .dashboard__user-info-card,
+  .dashboard__card {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .dashboard__user-info-card {
+    margin-bottom: 18px;
+  }
+
+  .dashboard__user-info-header {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+  }
+
+  .dashboard__user-info-title,
+  .dashboard__card-title,
+  .budget-overview__header h2,
+  .budget-project-detail__top h3,
+  .budget-fundings__header h3 {
+    font-size: 20px;
+  }
+
+  .dashboard__user-info-row {
+    display: grid;
+    gap: 5px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .dashboard__user-info-label,
+  .dashboard__user-info-value,
+  .budget-stat__label {
+    min-width: 0;
+    font-size: 15px;
+  }
+
+  .dashboard__grid,
+  .budget-overview__stats,
+  .budget-project-metrics {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dashboard__card-header,
+  .dashboard__card-body {
+    padding: 0;
+  }
+
+  .dashboard__card-header {
+    margin-bottom: 14px;
+    border-bottom: 0;
+  }
+
+  .budget-stat {
+    padding: 12px 0;
+  }
+
+  .budget-stat__value {
+    font-size: 22px;
+  }
+
+  .budget-overview {
+    gap: 16px;
+  }
+
+  .budget-overview__header {
+    display: grid;
+    gap: 12px;
+    padding: 14px 0;
+  }
+
+  .budget-overview__eyebrow {
+    font-size: 12px;
+  }
+
+  .budget-overview__stat,
+  .budget-project-metrics > div,
+  .budget-project-detail__top {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .budget-overview__stat span,
+  .budget-project-metrics span,
+  .budget-project-detail__top span,
+  .budget-project-detail__meter p {
+    font-size: 14px;
+  }
+
+  .budget-overview__stat strong,
+  .budget-project-metrics strong {
+    font-size: 17px;
+  }
+
+  .budget-project-tab {
+    flex-basis: 220px;
+    padding: 13px;
+    border-radius: 9px;
+  }
+
+  .budget-project-tab span,
+  .budget-project-tab strong,
+  .budget-table th,
+  .budget-table td {
+    font-size: 14px;
+  }
+
+  .budget-project-detail__top {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .budget-table {
+    min-width: 760px;
+  }
+
+  .budget-table th,
+  .budget-table td {
+    padding: 12px;
+  }
+
+  .modal-content,
+  .members-modal {
+    width: min(100% - 28px, 720px);
+    max-width: none;
+    padding: 22px;
+    border-radius: 14px;
+  }
+
+  .modal-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard__container {
+    width: min(100% - 20px, 100%);
+  }
+
+  .dashboard__header {
+    position: sticky;
+  }
+
+  .dashboard__logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .dashboard__title {
+    font-size: 20px;
+  }
+
+  .dashboard__nav-link,
+  .dashboard__user-name,
+  .dashboard__card-link {
+    font-size: 13px;
+  }
+
+  .dashboard__welcome-title {
+    font-size: 24px;
+  }
+
+  .dashboard__user-info-card,
+  .dashboard__card {
+    padding: 14px;
+  }
+
+  .dashboard__user-info-title,
+  .dashboard__card-title,
+  .budget-overview__header h2,
+  .budget-project-detail__top h3,
+  .budget-fundings__header h3 {
+    font-size: 18px;
+  }
+
+  .budget-stat__value {
+    font-size: 20px;
+  }
+
+  .budget-fundings__header {
+    display: grid;
+    gap: 4px;
+  }
+
+  .budget-project-tab {
+    flex-basis: 190px;
+  }
+
+  .modal-content,
+  .members-modal {
+    width: calc(100vw - 20px);
+    max-height: 88dvh;
+    padding: 18px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-btn,
+  .modal-btn-save,
+  .modal-btn-cancel {
+    width: 100%;
+    min-height: 42px;
+    font-size: 14px;
+  }
+
+  .edit-form-label,
+  .edit-form-input,
+  .edit-form-select,
+  .member-item__name,
+  .member-item__details {
+    font-size: 14px;
+  }
+
+  .edit-form-input,
+  .edit-form-select {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .dashboard__section :deep(.modal-content),
+  .dashboard__section :deep(.cpv-modal-content) {
+    width: calc(100vw - 20px);
+    max-width: none;
+    max-height: 88dvh;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .dashboard__section :deep(.modal-title),
+  .dashboard__section :deep(h2),
+  .dashboard__section :deep(h3) {
+    font-size: 18px;
+  }
+
+  .dashboard__section :deep(.modal-form__input),
+  .dashboard__section :deep(input),
+  .dashboard__section :deep(select),
+  .dashboard__section :deep(textarea),
+  .dashboard__section :deep(button) {
+    font-size: 14px;
+  }
+
+  .dashboard__section :deep(.excel-table-wrapper),
+  .dashboard__section :deep(.budget-table-wrap) {
+    overflow-x: auto;
+  }
+
+  .dashboard__section :deep(.excel-list-table),
+  .dashboard__section :deep(table) {
+    min-width: 720px;
   }
 }
 </style>
