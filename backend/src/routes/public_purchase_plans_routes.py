@@ -23,7 +23,8 @@ class PublicPurchasePlanOut(BaseModel):
     public_purchase_plan_id: int
     public_purchase_plan_name: str
     description: Optional[str] = None
-    cpv_code: int
+    cpv_code: str
+    plan_position_number: Optional[str] = None
     cost: float
     used_amount: float = 0.0
     remaining_amount: float = 0.0
@@ -38,6 +39,8 @@ class PublicPurchasePlanListOut(BaseModel):
     public_purchase_plan_list_id: int
     public_plan_list_name: str
     plan_year: int
+    plan_number: Optional[str] = None
+    fund_responsible_person: Optional[str] = None
     funding_id: int
     funding_name: str
     funding_price: float
@@ -52,7 +55,7 @@ class PurchaseRequestForBudgetOut(BaseModel):
     purchase_request_name: str
     budget_allocated_for_the_order: float
     if_service: bool
-    used_cpv_id: Optional[int] = None
+    used_cpv_id: Optional[str] = None
     created_at: Optional[str] = None
     can_add: bool
     project_finance_manager_id: Optional[int] = None
@@ -97,18 +100,22 @@ class PublicPurchasePlanListCreate(BaseModel):
     funding_id: int
     public_plan_list_name: str
     plan_year: int
+    plan_number: Optional[str] = None
+    fund_responsible_person: Optional[str] = None
 
 
 class PublicPurchasePlanCreate(BaseModel):
     public_purchase_plan_list_id: int
-    cpv_code: int
+    cpv_code: str
+    plan_position_number: Optional[str] = None
     cost: float
     description: Optional[str] = None
     product_category_id: Optional[int] = None
 
 
 class PublicPurchasePlanUpdate(BaseModel):
-    cpv_code: int
+    cpv_code: str
+    plan_position_number: Optional[str] = None
     cost: float
     description: Optional[str] = None
     product_category_id: Optional[int] = None
@@ -153,7 +160,7 @@ def _category_for_plan(
 def _assign_category_to_plan(
     public_purchase_plan_id: int,
     product_category_id: Optional[int],
-    cpv_code: int,
+    cpv_code: str,
     session: Session,
 ):
     current_categories = session.exec(
@@ -172,7 +179,7 @@ def _assign_category_to_plan(
     if not category:
         raise HTTPException(status_code=404, detail="Kategoria produktu nie znaleziona")
     category.public_purchase_plan_id = public_purchase_plan_id
-    category.cpv = str(cpv_code)
+    category.cpv = cpv_code
     session.add(category)
 
 
@@ -192,6 +199,7 @@ def _plan_out(
         public_purchase_plan_name=plan.public_purchase_plan_name,
         description=plan.public_purchase_plan_name,
         cpv_code=plan.cpv_code,
+        plan_position_number=plan.plan_position_number,
         cost=plan.cost,
         used_amount=used,
         remaining_amount=plan.cost - used,
@@ -248,6 +256,8 @@ def _plan_list_out(plan_list: PublicPurchasePlanList, session: Session) -> Publi
         public_purchase_plan_list_id=plan_list.public_purchase_plan_list_id,
         public_plan_list_name=plan_list.public_plan_list_name,
         plan_year=plan_list.plan_year,
+        plan_number=plan_list.plan_number,
+        fund_responsible_person=plan_list.fund_responsible_person,
         funding_id=plan_list.funding_id,
         funding_name=funding.funding_name,
         funding_price=funding.funding_price,
@@ -466,10 +476,18 @@ def create_public_purchase_plan_list(
     if plan_list:
         plan_list.public_plan_list_name = new_list_data.public_plan_list_name
         plan_list.plan_year = new_list_data.plan_year
+        plan_list.plan_number = (new_list_data.plan_number or "").strip() or None
+        plan_list.fund_responsible_person = (
+            new_list_data.fund_responsible_person or funding.signing_person or ""
+        ).strip() or None
     else:
         plan_list = PublicPurchasePlanList(
             public_plan_list_name=new_list_data.public_plan_list_name,
             plan_year=new_list_data.plan_year,
+            plan_number=(new_list_data.plan_number or "").strip() or None,
+            fund_responsible_person=(
+                new_list_data.fund_responsible_person or funding.signing_person or ""
+            ).strip() or None,
             funding_id=funding.funding_id,
         )
 
@@ -523,7 +541,8 @@ def create_public_purchase_plan(
 ):
     if new_plan_data.cost <= 0:
         raise HTTPException(status_code=400, detail="Kwota planowana musi być większa od zera")
-    if new_plan_data.cpv_code <= 0:
+    cpv_code = (new_plan_data.cpv_code or "").strip()
+    if not cpv_code:
         raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
 
     plan_list = session.get(PublicPurchasePlanList, new_plan_data.public_purchase_plan_list_id)
@@ -534,7 +553,7 @@ def create_public_purchase_plan(
         select(PublicPurchasePlan).where(
             PublicPurchasePlan.public_purchase_plan_list_id
             == plan_list.public_purchase_plan_list_id,
-            PublicPurchasePlan.cpv_code == new_plan_data.cpv_code,
+            PublicPurchasePlan.cpv_code == cpv_code,
         )
     ).first()
     if duplicate:
@@ -552,9 +571,10 @@ def create_public_purchase_plan(
 
     new_plan = PublicPurchasePlan(
         public_purchase_plan_name=(
-            new_plan_data.description or f"CPV {new_plan_data.cpv_code}"
+            new_plan_data.description or f"CPV {cpv_code}"
         ),
-        cpv_code=new_plan_data.cpv_code,
+        cpv_code=cpv_code,
+        plan_position_number=(new_plan_data.plan_position_number or "").strip() or None,
         cost=new_plan_data.cost,
         funding_id=plan_list.funding_id,
         gslbccf_id=grouped_shops_list.gslbccf_id,
@@ -582,7 +602,8 @@ def update_public_purchase_plan(
 ):
     if update_data.cost <= 0:
         raise HTTPException(status_code=400, detail="Kwota planowana musi byc wieksza od zera")
-    if update_data.cpv_code <= 0:
+    cpv_code = (update_data.cpv_code or "").strip()
+    if not cpv_code:
         raise HTTPException(status_code=400, detail="Kod CPV jest wymagany")
 
     plan = session.get(PublicPurchasePlan, public_purchase_plan_id)
@@ -592,7 +613,7 @@ def update_public_purchase_plan(
     duplicate = session.exec(
         select(PublicPurchasePlan).where(
             PublicPurchasePlan.public_purchase_plan_list_id == plan.public_purchase_plan_list_id,
-            PublicPurchasePlan.cpv_code == update_data.cpv_code,
+            PublicPurchasePlan.cpv_code == cpv_code,
             PublicPurchasePlan.public_purchase_plan_id != public_purchase_plan_id,
         )
     ).first()
@@ -602,10 +623,11 @@ def update_public_purchase_plan(
             detail="Ten kod CPV juz istnieje w planie dofinansowania",
         )
 
-    plan.cpv_code = update_data.cpv_code
+    plan.cpv_code = cpv_code
+    plan.plan_position_number = (update_data.plan_position_number or "").strip() or None
     plan.cost = update_data.cost
     plan.public_purchase_plan_name = (
-        update_data.description or f"CPV {update_data.cpv_code}"
+        update_data.description or f"CPV {cpv_code}"
     )
     _assign_category_to_plan(
         plan.public_purchase_plan_id,

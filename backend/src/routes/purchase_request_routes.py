@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from fastapi import Depends, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel, Field as PydanticField
-from datetime import datetime
+from datetime import datetime, date
 
 
 
@@ -23,7 +23,7 @@ class PurchaseRequestCreate(BaseModel):
     purchase_request_name: str
     budget_allocated_for_the_order: float
     if_service: bool
-    used_cpv_id: Optional[int]
+    used_cpv_id: Optional[str]
     section_name: Optional[str] = None
     project_budget_id: Optional[int] = None
     funding_id: Optional[int] = None
@@ -42,7 +42,7 @@ class PurchaseRequestUpdate(BaseModel):
     purchase_request_name: str
     budget_allocated_for_the_order: float
     if_service: bool
-    used_cpv_id: Optional[int]
+    used_cpv_id: Optional[str]
     can_add: bool = True
     public_purchase_plan_id: Optional[int] = None
     plan_exception_justification: Optional[str] = None
@@ -94,12 +94,16 @@ class SourceShopPurchaseListOut(BaseModel):
 
 class PurchasePlanPositionOut(BaseModel):
     public_purchase_plan_id: int
-    cpv_code: int
+    cpv_code: str
+    plan_position_number: Optional[str] = None
     description: Optional[str] = None
     planned_amount: float
     used_amount: float
     remaining_amount: float
     plan_year: int
+    public_plan_list_name: Optional[str] = None
+    plan_number: Optional[str] = None
+    fund_responsible_person: Optional[str] = None
     shop_purchase_list_id: Optional[int] = None
     funding_id: Optional[int] = None
     funding_name: Optional[str] = None
@@ -113,7 +117,7 @@ class PurchaseRequestOut(BaseModel):
     purchase_request_name: str
     budget_allocated_for_the_order: float
     if_service: bool
-    used_cpv_id: Optional[int] = None
+    used_cpv_id: Optional[str] = None
     project_budget_id: int
     project_budget_name: Optional[str] = None
     funding_id: int
@@ -132,6 +136,90 @@ class PurchaseRequestOut(BaseModel):
     budget_info: Optional[PurchaseRequestBudgetOut] = None
     source_shop_purchase_list: Optional[SourceShopPurchaseListOut] = None
     funding_allocations: List[PurchaseRequestFundingAllocationOut] = PydanticField(default_factory=list)
+    document_request_name: Optional[str] = None
+    contract_value_date: Optional[date] = None
+    euro_exchange_rate: Optional[float] = None
+    main_cpv_code: Optional[str] = None
+    final_net_total: Optional[float] = None
+    final_gross_total: Optional[float] = None
+    finalization_status: Optional[str] = None
+    finalized_at: Optional[datetime] = None
+
+
+class PurchaseRequestFinalizeIn(BaseModel):
+    document_request_name: str
+    euro_exchange_rate: float
+    contract_value_date: date
+
+
+class PurchaseRequestFinalizationDraftIn(BaseModel):
+    document_request_name: Optional[str] = None
+    euro_exchange_rate: Optional[float] = None
+    contract_value_date: Optional[date] = None
+
+
+class FinalizationCpvRowOut(BaseModel):
+    cpv_code: str
+    allocated_net_amount: float
+    allocated_eur_amount: float = 0.0
+    is_main_cpv: bool = False
+
+
+class FinalizationPlanRowOut(BaseModel):
+    public_purchase_plan_id: int
+    plan_name: Optional[str] = None
+    public_plan_list_name: Optional[str] = None
+    plan_number: Optional[str] = None
+    fund_responsible_person: Optional[str] = None
+    funding_organizer: Optional[str] = None
+    funding_signing_person: Optional[str] = None
+    plan_position_number: Optional[str] = None
+    cpv_code: Optional[str] = None
+    funding_id: Optional[int] = None
+    funding_name: Optional[str] = None
+    planned_net_amount: float
+    allocated_net_amount: float
+
+
+class FinalizationFundingGrossRowOut(BaseModel):
+    funding_id: Optional[int] = None
+    funding_name: Optional[str] = None
+    gross_amount: float
+
+
+class FinalizationSnapshotRowOut(BaseModel):
+    shop_purchase_list_id: Optional[int] = None
+    shop_name: Optional[str] = None
+    public_purchase_plan_id: Optional[int] = None
+    cpv_code: Optional[str] = None
+    plan_name: Optional[str] = None
+    public_plan_list_name: Optional[str] = None
+    plan_number: Optional[str] = None
+    fund_responsible_person: Optional[str] = None
+    funding_organizer: Optional[str] = None
+    funding_signing_person: Optional[str] = None
+    plan_position_number: Optional[str] = None
+    funding_id: Optional[int] = None
+    funding_name: Optional[str] = None
+    planned_net_amount: float = 0.0
+    allocated_net_amount: float = 0.0
+    allocated_eur_amount: float = 0.0
+    allocated_gross_amount: float = 0.0
+    is_main_cpv: bool = False
+
+
+class PurchaseRequestFinalizationOut(BaseModel):
+    purchase_request_id: int
+    document_request_name: Optional[str] = None
+    contract_value_date: date
+    euro_exchange_rate: Optional[float] = None
+    main_cpv_code: Optional[str] = None
+    net_total: float
+    gross_total: float
+    cpv_rows: List[FinalizationCpvRowOut] = PydanticField(default_factory=list)
+    plan_rows: List[FinalizationPlanRowOut] = PydanticField(default_factory=list)
+    funding_gross_rows: List[FinalizationFundingGrossRowOut] = PydanticField(default_factory=list)
+    snapshot_rows: List[FinalizationSnapshotRowOut] = PydanticField(default_factory=list)
 
 
 def _shop_purchase_list_total(shop_purchase_list: ShopPurchaseList, session: Session) -> float:
@@ -302,11 +390,17 @@ def _plan_position_out(
     return PurchasePlanPositionOut(
         public_purchase_plan_id=plan.public_purchase_plan_id,
         cpv_code=plan.cpv_code,
+        plan_position_number=plan.plan_position_number,
         description=plan.public_purchase_plan_name,
         planned_amount=plan.cost,
         used_amount=used_amount,
         remaining_amount=plan.cost - used_amount,
         plan_year=plan_list.plan_year if plan_list else 0,
+        public_plan_list_name=plan_list.public_plan_list_name if plan_list else None,
+        plan_number=plan_list.plan_number if plan_list else None,
+        fund_responsible_person=(
+            plan_list.fund_responsible_person if plan_list else None
+        ),
         shop_purchase_list_id=shop_purchase_list_id,
         funding_id=plan.funding_id,
         funding_name=funding.funding_name if funding else None,
@@ -571,7 +665,196 @@ def _purchase_request_out(request: PurchaseRequest, session: Session) -> Purchas
         budget_info=budget_info,
         source_shop_purchase_list=_source_list_for_request(request, session),
         funding_allocations=_allocations_for_request(request.purchase_request_id, session),
+        document_request_name=request.document_request_name,
+        contract_value_date=request.contract_value_date,
+        euro_exchange_rate=request.euro_exchange_rate,
+        main_cpv_code=request.main_cpv_code,
+        final_net_total=request.final_net_total,
+        final_gross_total=request.final_gross_total,
+        finalization_status=request.finalization_status,
+        finalized_at=request.finalized_at,
     )
+
+
+def _request_purchase_lists(
+    request: PurchaseRequest,
+    session: Session,
+) -> List[ShopPurchaseList]:
+    if not request.gslbccf_id:
+        return []
+    return session.exec(
+        select(ShopPurchaseList).where(
+            ShopPurchaseList.gslbccf_id == request.gslbccf_id
+        )
+    ).all()
+
+
+def _finalization_row_dicts(
+    request: PurchaseRequest,
+    session: Session,
+    euro_rate: Optional[float] = None,
+) -> list[dict]:
+    rows = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    result = []
+    for row in rows:
+        plan = session.get(PublicPurchasePlan, row.public_purchase_plan_id)
+        if not plan:
+            continue
+        plan_list = session.get(
+            PublicPurchasePlanList, plan.public_purchase_plan_list_id
+        )
+        funding = session.get(Funding, plan.funding_id) if plan.funding_id else None
+        purchase_list = (
+            session.get(ShopPurchaseList, row.shop_purchase_list_id)
+            if row.shop_purchase_list_id
+            else None
+        )
+        shop = session.get(Shop, purchase_list.shop_id) if purchase_list else None
+        net_amount = float(row.allocated_amount or 0)
+        gross_amount = net_amount * 1.23
+        result.append({
+            "shop_purchase_list_id": row.shop_purchase_list_id,
+            "shop_name": shop.shop_name if shop else None,
+            "public_purchase_plan_id": plan.public_purchase_plan_id,
+            "cpv_code": plan.cpv_code,
+            "plan_name": plan.public_purchase_plan_name,
+            "public_plan_list_name": (
+                plan_list.public_plan_list_name if plan_list else None
+            ),
+            "plan_number": plan_list.plan_number if plan_list else None,
+            "fund_responsible_person": (
+                (plan_list.fund_responsible_person if plan_list else None)
+                or (funding.signing_person if funding else None)
+            ),
+            "funding_organizer": funding.organizer if funding else None,
+            "funding_signing_person": funding.signing_person if funding else None,
+            "plan_position_number": plan.plan_position_number,
+            "funding_id": plan.funding_id,
+            "funding_name": funding.funding_name if funding else None,
+            "planned_net_amount": float(plan.cost or 0),
+            "allocated_net_amount": net_amount,
+            "allocated_eur_amount": (
+                net_amount / euro_rate if euro_rate and euro_rate > 0 else 0.0
+            ),
+            "allocated_gross_amount": gross_amount,
+            "is_main_cpv": False,
+        })
+
+    cpv_totals: dict[str, float] = {}
+    for row in result:
+        cpv_code = row["cpv_code"] or ""
+        cpv_totals[cpv_code] = cpv_totals.get(cpv_code, 0.0) + row["allocated_net_amount"]
+    main_cpv = (
+        max(cpv_totals.items(), key=lambda item: item[1])[0]
+        if cpv_totals
+        else None
+    )
+    for row in result:
+        row["is_main_cpv"] = bool(main_cpv and row["cpv_code"] == main_cpv)
+    return result
+
+
+def _finalization_summary(
+    request: PurchaseRequest,
+    session: Session,
+    euro_rate: Optional[float] = None,
+    value_date: Optional[date] = None,
+) -> PurchaseRequestFinalizationOut:
+    rows = _finalization_row_dicts(request, session, euro_rate)
+    cpv_totals: dict[str, float] = {}
+    for row in rows:
+        cpv_code = row["cpv_code"] or ""
+        cpv_totals[cpv_code] = cpv_totals.get(cpv_code, 0.0) + row["allocated_net_amount"]
+    main_cpv = (
+        max(cpv_totals.items(), key=lambda item: item[1])[0]
+        if cpv_totals
+        else None
+    )
+    cpv_rows = [
+        FinalizationCpvRowOut(
+            cpv_code=cpv_code,
+            allocated_net_amount=net_amount,
+            allocated_eur_amount=(
+                net_amount / euro_rate if euro_rate and euro_rate > 0 else 0.0
+            ),
+            is_main_cpv=cpv_code == main_cpv,
+        )
+        for cpv_code, net_amount in sorted(cpv_totals.items())
+    ]
+
+    plan_totals: dict[int, dict] = {}
+    funding_gross_totals: dict[Optional[int], dict] = {}
+    for row in rows:
+        plan_id = row["public_purchase_plan_id"]
+        if plan_id not in plan_totals:
+            plan_totals[plan_id] = {**row, "allocated_net_amount": 0.0}
+        plan_totals[plan_id]["allocated_net_amount"] += row["allocated_net_amount"]
+
+        funding_id = row["funding_id"]
+        if funding_id not in funding_gross_totals:
+            funding_gross_totals[funding_id] = {
+                "funding_id": funding_id,
+                "funding_name": row["funding_name"],
+                "gross_amount": 0.0,
+            }
+        funding_gross_totals[funding_id]["gross_amount"] += row["allocated_gross_amount"]
+
+    return PurchaseRequestFinalizationOut(
+        purchase_request_id=request.purchase_request_id,
+        document_request_name=request.document_request_name or request.purchase_request_name,
+        contract_value_date=value_date or request.contract_value_date or date.today(),
+        euro_exchange_rate=euro_rate or request.euro_exchange_rate,
+        main_cpv_code=main_cpv,
+        net_total=sum(row["allocated_net_amount"] for row in rows),
+        gross_total=sum(row["allocated_gross_amount"] for row in rows),
+        cpv_rows=cpv_rows,
+        plan_rows=[
+            FinalizationPlanRowOut(
+                public_purchase_plan_id=row["public_purchase_plan_id"],
+                plan_name=row["plan_name"],
+                public_plan_list_name=row["public_plan_list_name"],
+                plan_number=row["plan_number"],
+                fund_responsible_person=row["fund_responsible_person"],
+                funding_organizer=row["funding_organizer"],
+                funding_signing_person=row["funding_signing_person"],
+                plan_position_number=row["plan_position_number"],
+                cpv_code=row["cpv_code"],
+                funding_id=row["funding_id"],
+                funding_name=row["funding_name"],
+                planned_net_amount=row["planned_net_amount"],
+                allocated_net_amount=row["allocated_net_amount"],
+            )
+            for row in plan_totals.values()
+        ],
+        funding_gross_rows=[
+            FinalizationFundingGrossRowOut(**row)
+            for row in funding_gross_totals.values()
+        ],
+        snapshot_rows=[FinalizationSnapshotRowOut(**row) for row in rows],
+    )
+
+
+def _ensure_request_can_be_finalized(
+    request: PurchaseRequest,
+    session: Session,
+) -> list[ShopPurchaseList]:
+    purchase_lists = _request_purchase_lists(request, session)
+    if not purchase_lists:
+        raise HTTPException(status_code=400, detail="Wniosek nie ma koszykow do zamkniecia")
+    plan_rows = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    if not plan_rows:
+        raise HTTPException(status_code=400, detail="Wniosek nie ma przypisanych pozycji CPV")
+    return purchase_lists
 
 
 @app.get("/api/purchase_requests/detail/{purchase_request_id}", response_model=PurchaseRequestOut)
@@ -600,6 +883,247 @@ def get_purchase_requests(
         )
     purchase_requests = session.exec(statement).all()
     return [_purchase_request_out(purchase_request, session) for purchase_request in purchase_requests]
+
+
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/prepare_finalization",
+    response_model=PurchaseRequestFinalizationOut,
+)
+def prepare_purchase_request_finalization(
+    purchase_request_id: int,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+
+    purchase_lists = _ensure_request_can_be_finalized(request, session)
+    for purchase_list in purchase_lists:
+        total_cost = _shop_purchase_list_total(purchase_list, session)
+        if purchase_list.settlement_id:
+            settlement = session.get(Settlement, purchase_list.settlement_id)
+            if settlement:
+                settlement.purchase_request_id = request.purchase_request_id
+                session.add(settlement)
+        else:
+            settlement = Settlement(
+                created_at=datetime.now(),
+                paid_by_project_finance_manager_id=request.project_finance_manager_id,
+                purchase_request_id=request.purchase_request_id,
+            )
+            session.add(settlement)
+            session.flush()
+            purchase_list.settlement_id = settlement.settlement_id
+        purchase_list.cost = total_cost
+        session.add(purchase_list)
+
+    request.can_add = False
+    request.finalization_status = "prepared"
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return _finalization_summary(request, session)
+
+
+@app.patch(
+    "/api/purchase_requests/{purchase_request_id}/finalization_draft",
+    response_model=PurchaseRequestFinalizationOut,
+)
+def save_purchase_request_finalization_draft(
+    purchase_request_id: int,
+    draft_data: PurchaseRequestFinalizationDraftIn,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status not in ("prepared", "draft"):
+        raise HTTPException(status_code=400, detail="Szkic mozna zapisac tylko przed finalnym zatwierdzeniem")
+
+    if draft_data.document_request_name is not None:
+        request.document_request_name = (draft_data.document_request_name or "").strip() or None
+    if draft_data.euro_exchange_rate is not None:
+        if draft_data.euro_exchange_rate <= 0:
+            raise HTTPException(status_code=400, detail="Kurs euro musi byc wiekszy od zera")
+        request.euro_exchange_rate = draft_data.euro_exchange_rate
+    if draft_data.contract_value_date is not None:
+        request.contract_value_date = draft_data.contract_value_date
+    if request.finalization_status == "draft":
+        request.finalization_status = "prepared"
+    request.can_add = False
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return _finalization_summary(
+        request,
+        session,
+        request.euro_exchange_rate,
+        request.contract_value_date,
+    )
+
+
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/finalize",
+    response_model=PurchaseRequestFinalizationOut,
+)
+def finalize_purchase_request(
+    purchase_request_id: int,
+    finalization_data: PurchaseRequestFinalizeIn,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if finalization_data.euro_exchange_rate <= 0:
+        raise HTTPException(status_code=400, detail="Kurs euro musi byc wiekszy od zera")
+    document_name = (finalization_data.document_request_name or "").strip()
+    if not document_name:
+        raise HTTPException(status_code=400, detail="Nazwa wniosku na dokumencie jest wymagana")
+
+    purchase_lists = _ensure_request_can_be_finalized(request, session)
+    for purchase_list in purchase_lists:
+        if not purchase_list.settlement_id:
+            settlement = Settlement(
+                created_at=datetime.now(),
+                paid_by_project_finance_manager_id=request.project_finance_manager_id,
+                purchase_request_id=request.purchase_request_id,
+            )
+            session.add(settlement)
+            session.flush()
+            purchase_list.settlement_id = settlement.settlement_id
+        else:
+            settlement = session.get(Settlement, purchase_list.settlement_id)
+            if settlement:
+                settlement.purchase_request_id = request.purchase_request_id
+                session.add(settlement)
+        purchase_list.cost = _shop_purchase_list_total(purchase_list, session)
+        session.add(purchase_list)
+
+    summary = _finalization_summary(
+        request,
+        session,
+        finalization_data.euro_exchange_rate,
+        finalization_data.contract_value_date,
+    )
+    if not summary.snapshot_rows:
+        raise HTTPException(status_code=400, detail="Brak pozycji CPV do zapisania")
+
+    existing_snapshots = session.exec(
+        select(PurchaseRequestFinalizationSnapshot).where(
+            PurchaseRequestFinalizationSnapshot.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    for snapshot in existing_snapshots:
+        session.delete(snapshot)
+
+    for row in summary.snapshot_rows:
+        session.add(PurchaseRequestFinalizationSnapshot(
+            purchase_request_id=request.purchase_request_id,
+            shop_purchase_list_id=row.shop_purchase_list_id,
+            public_purchase_plan_id=row.public_purchase_plan_id,
+            funding_id=row.funding_id,
+            shop_name=row.shop_name,
+            funding_name=row.funding_name,
+            plan_name=row.plan_name,
+            plan_number=row.plan_number,
+            fund_responsible_person=row.fund_responsible_person,
+            plan_position_number=row.plan_position_number,
+            cpv_code=row.cpv_code,
+            planned_net_amount=row.planned_net_amount,
+            allocated_net_amount=row.allocated_net_amount,
+            allocated_eur_amount=row.allocated_eur_amount,
+            allocated_gross_amount=row.allocated_gross_amount,
+            is_main_cpv=row.is_main_cpv,
+            created_at=datetime.now(),
+        ))
+
+    request.document_request_name = document_name
+    request.contract_value_date = finalization_data.contract_value_date
+    request.euro_exchange_rate = finalization_data.euro_exchange_rate
+    request.main_cpv_code = summary.main_cpv_code
+    request.used_cpv_id = summary.main_cpv_code
+    request.final_net_total = summary.net_total
+    request.final_gross_total = summary.gross_total
+    request.budget_allocated_for_the_order = summary.gross_total
+    request.can_add = False
+    request.finalization_status = "finalized"
+    request.finalized_at = datetime.now()
+    session.add(request)
+
+    _replace_request_allocations(
+        request.purchase_request_id,
+        [
+            PurchaseRequestFundingAllocationIn(
+                funding_id=row.funding_id,
+                allocated_amount=row.gross_amount,
+            )
+            for row in summary.funding_gross_rows
+            if row.funding_id
+        ],
+        session,
+    )
+
+    session.commit()
+    session.refresh(request)
+    return _finalization_summary(
+        request,
+        session,
+        finalization_data.euro_exchange_rate,
+        finalization_data.contract_value_date,
+    )
+
+
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/return_to_open",
+    response_model=PurchaseRequestOut,
+)
+def return_purchase_request_to_open(
+    purchase_request_id: int,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status != "prepared":
+        raise HTTPException(
+            status_code=400,
+            detail="Do otwartych mozna cofnac tylko wniosek do dokonczenia",
+        )
+
+    settlement_ids = []
+    for purchase_list in _request_purchase_lists(request, session):
+        if purchase_list.settlement_id:
+            settlement_ids.append(purchase_list.settlement_id)
+            purchase_list.settlement_id = None
+            session.add(purchase_list)
+
+    session.flush()
+    for settlement_id in set(settlement_ids):
+        settlement = session.get(Settlement, settlement_id)
+        if not settlement:
+            continue
+        invoices = session.exec(
+            select(Invoice).where(Invoice.settlement_id == settlement_id)
+        ).all()
+        linked_lists = session.exec(
+            select(ShopPurchaseList).where(
+                ShopPurchaseList.settlement_id == settlement_id
+            )
+        ).all()
+        if invoices or linked_lists:
+            settlement.purchase_request_id = None
+            session.add(settlement)
+        elif settlement.purchase_request_id == request.purchase_request_id:
+            session.delete(settlement)
+
+    request.can_add = True
+    request.finalization_status = "draft"
+    request.finalized_at = None
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return _purchase_request_out(request, session)
 
 
 @app.get("/api/purchase_requests/{project_finance_manager_id}", response_model=List[PurchaseRequestOut])
@@ -766,7 +1290,7 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
                 status_code=400,
                 detail="Pozycja planu nie należy do dofinansowania zamówienia",
             )
-        if selected_plan.cpv_code <= 0:
+        if not selected_plan.cpv_code:
             raise HTTPException(
                 status_code=400,
                 detail="Kod CPV wniosku nie zgadza się z pozycją planu",
@@ -814,7 +1338,7 @@ def create_purchase_request(new_purchase_request_data: PurchaseRequestCreate, se
         purchase_request_name = new_purchase_request_data.purchase_request_name,
         budget_allocated_for_the_order = budget_allocated,
         if_service = new_purchase_request_data.if_service,
-        used_cpv_id = plan.cpv_code if plan else (new_purchase_request_data.used_cpv_id or 0),
+        used_cpv_id = plan.cpv_code if plan else (new_purchase_request_data.used_cpv_id or None),
         project_budget_id = project_budget.project_budget_id,
         funding_id = funding.funding_id,
         created_at = new_purchase_request_data.created_at,
@@ -940,7 +1464,7 @@ def update_purchase_request(
     purchase_request.purchase_request_name = update_data.purchase_request_name
     purchase_request.budget_allocated_for_the_order = budget_allocated
     purchase_request.if_service = update_data.if_service
-    purchase_request.used_cpv_id = plan.cpv_code if plan else (update_data.used_cpv_id or 0)
+    purchase_request.used_cpv_id = plan.cpv_code if plan else (update_data.used_cpv_id or None)
     purchase_request.can_add = update_data.can_add
     purchase_request.public_purchase_plan_id = plan.public_purchase_plan_id if plan else None
     purchase_request.plan_exception_justification = justification or None

@@ -2,10 +2,13 @@
   <section class="plans">
     <header class="plans__header">
       <div>
-        <h2>Plany zamówień publicznych</h2>
-        <p>Każde dofinansowanie ma własny roczny plan kwot według kodów CPV.</p>
+        <h2>Dofinansowania i plany publiczne</h2>
+        <p>Twórz dofinansowania, zadania budżetowe i roczne plany CPV.</p>
       </div>
-      <button type="button" class="button button--secondary" @click="loadData">Odśwież</button>
+      <div class="header-actions">
+        <button type="button" class="button" @click="openFundingModal">Nowe dofinansowanie</button>
+        <button type="button" class="button button--secondary" @click="loadData">Odśwież</button>
+      </div>
     </header>
 
     <div v-if="loading" class="state">Ładowanie planów...</div>
@@ -24,6 +27,7 @@
         >
           <strong>{{ funding.funding_name }}</strong>
           <span>{{ funding.project_budget_name }}</span>
+          <span v-if="funding.organizer">Organizator: {{ funding.organizer }}</span>
           <span>{{ formatMoney(funding.funding_price) }} PLN</span>
         </button>
       </nav>
@@ -32,13 +36,22 @@
         <header class="workspace__header">
           <div>
             <h3>{{ selectedFunding.funding_name }}</h3>
-            <p>{{ selectedFunding.project_budget_name }}</p>
+            <p>{{ selectedFunding.project_budget_name }}<span v-if="selectedFunding.organizer"> | {{ selectedFunding.organizer }}</span></p>
           </div>
           <dl>
             <div><dt>Dofinansowanie</dt><dd>{{ formatMoney(selectedFunding.funding_price) }} PLN</dd></div>
             <div><dt>Zaplanowano</dt><dd>{{ formatMoney(selectedPlan?.total_cost) }} PLN</dd></div>
+            <div><dt>Podpisuje</dt><dd>{{ selectedFunding.signing_person || '-' }}</dd></div>
           </dl>
+          <button type="button" class="button button--secondary" @click="openFundingModal(selectedFunding)">Edytuj dofinansowanie</button>
         </header>
+
+        <div v-if="selectedFunding.tasks?.length" class="tasks-summary">
+          <div v-for="task in selectedFunding.tasks" :key="task.funding_task_id" class="task-chip">
+            <span>{{ task.task_name }}</span>
+            <strong>{{ formatMoney(task.task_budget) }} PLN</strong>
+          </div>
+        </div>
 
         <form v-if="!selectedPlan" class="create-plan" @submit.prevent="createPlanList">
           <div>
@@ -49,6 +62,14 @@
             <span>Rok planu</span>
             <input v-model.number="planYear" type="number" min="2000" max="2100" required />
           </label>
+          <label>
+            <span>Kod planu</span>
+            <input v-model="planNumber" type="text" placeholder="np. ZP/2026/01" />
+          </label>
+          <label>
+            <span>Osoba odpowiedzialna</span>
+            <input v-model="fundResponsiblePerson" type="text" :placeholder="selectedFunding.signing_person || 'Imie i nazwisko'" />
+          </label>
           <button class="button" type="submit">Utwórz plan</button>
         </form>
 
@@ -56,7 +77,11 @@
           <div class="table-header">
             <div>
               <h3>{{ selectedPlan.public_plan_list_name }}</h3>
-              <p>Rok {{ selectedPlan.plan_year }}</p>
+              <p>
+                Rok {{ selectedPlan.plan_year }}
+                <span v-if="selectedPlan.plan_number"> | Kod planu {{ selectedPlan.plan_number }}</span>
+                <span v-if="selectedPlan.fund_responsible_person"> | Odp. {{ selectedPlan.fund_responsible_person }}</span>
+              </p>
             </div>
             <button class="button" type="button" @click="openPositionModal">Dodaj pozycję CPV</button>
           </div>
@@ -69,6 +94,7 @@
               <thead>
                 <tr>
                   <th>Kod CPV</th>
+                  <th>Pozycja planu</th>
                   <th>Opis</th>
                   <th>Kategoria</th>
                   <th>Planowana kwota netto</th>
@@ -80,6 +106,7 @@
               <tbody>
                 <tr v-for="position in selectedPlan.public_purchase_plans" :key="position.public_purchase_plan_id">
                   <td><strong>{{ position.cpv_code }}</strong></td>
+                  <td>{{ position.plan_position_number || '-' }}</td>
                   <td>{{ position.description || position.public_purchase_plan_name || '-' }}</td>
                   <td>{{ position.product_category_name || '-' }}</td>
                   <td>{{ formatMoney(position.cost) }} PLN</td>
@@ -122,7 +149,11 @@
         <form @submit.prevent="savePosition">
           <label>
             <span>Kod CPV</span>
-            <input v-model.number="newPosition.cpv_code" type="number" min="1" placeholder="np. 42000000" required />
+            <input v-model="newPosition.cpv_code" type="text" placeholder="np. 42000000-6" required />
+          </label>
+          <label>
+            <span>Numer pozycji w planie</span>
+            <input v-model="newPosition.plan_position_number" type="text" placeholder="np. 1.2.3" />
           </label>
           <label>
             <span>Krotki opis</span>
@@ -152,6 +183,62 @@
         </form>
       </div>
     </div>
+
+    <div v-if="showFundingModal" class="modal-overlay" @click="closeFundingModal">
+      <div class="modal modal--wide" @click.stop>
+        <header>
+          <h3>{{ editingFundingId ? 'Edycja dofinansowania' : 'Nowe dofinansowanie' }}</h3>
+          <button type="button" title="Zamknij" @click="closeFundingModal">x</button>
+        </header>
+        <form @submit.prevent="saveFunding">
+          <label>
+            <span>Sekcja/projekt</span>
+            <select v-model.number="newFunding.project_budget_id" required>
+              <option :value="null" disabled>Wybierz sekcję...</option>
+              <option v-for="budget in projectBudgets" :key="budget.project_budget_id" :value="budget.project_budget_id">
+                {{ budget.project_budget_name }} - {{ budget.project_name || budget.association_budget_name }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>Nazwa dofinansowania</span>
+            <input v-model="newFunding.funding_name" type="text" required />
+          </label>
+          <label>
+            <span>Organizator</span>
+            <input v-model="newFunding.organizer" type="text" required />
+          </label>
+          <label>
+            <span>Osoba podpisująca wnioski</span>
+            <input v-model="newFunding.signing_person" type="text" required />
+          </label>
+          <label>
+            <span>Kwota dofinansowania</span>
+            <input v-model.number="newFunding.funding_price" type="number" min="0.01" step="0.01" required />
+          </label>
+
+          <div class="funding-tasks">
+            <div class="tasks-header">
+              <strong>Zadania w dofinansowaniu</strong>
+              <button class="button button--secondary" type="button" @click="addFundingTask">Dodaj zadanie</button>
+            </div>
+            <div v-for="(task, index) in newFunding.tasks" :key="index" class="task-row">
+              <input v-model="task.task_name" type="text" placeholder="Nazwa zadania" />
+              <input v-model.number="task.task_budget" type="number" min="0.01" step="0.01" placeholder="Budżet" />
+              <button type="button" class="delete" @click="removeFundingTask(index)">Usuń</button>
+            </div>
+            <p :class="{ negative: fundingTasksTotal > Number(newFunding.funding_price || 0) }">
+              Suma zadań: {{ formatMoney(fundingTasksTotal) }} PLN
+            </p>
+          </div>
+
+          <footer>
+            <button class="button button--secondary" type="button" @click="closeFundingModal">Anuluj</button>
+            <button class="button" type="submit">{{ editingFundingId ? 'Zapisz dofinansowanie' : 'Utwórz dofinansowanie' }}</button>
+          </footer>
+        </form>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -167,14 +254,28 @@ const toast = useToast()
 const fundings = ref([])
 const planLists = ref([])
 const categories = ref([])
+const projectBudgets = ref([])
 const activeFundingId = ref(null)
 const loading = ref(false)
 const error = ref('')
 const planYear = ref(new Date().getFullYear())
+const planNumber = ref('')
+const fundResponsiblePerson = ref('')
 const showPositionModal = ref(false)
+const showFundingModal = ref(false)
 const editingPositionId = ref(null)
+const editingFundingId = ref(null)
+const newFunding = ref({
+  project_budget_id: null,
+  funding_name: '',
+  organizer: '',
+  signing_person: '',
+  funding_price: null,
+  tasks: []
+})
 const newPosition = ref({
-  cpv_code: null,
+  cpv_code: '',
+  plan_position_number: '',
   cost: null,
   description: '',
   product_category_id: null
@@ -185,6 +286,9 @@ const selectedFunding = computed(() =>
 )
 const selectedPlan = computed(() =>
   planLists.value.find(plan => plan.funding_id === selectedFunding.value?.funding_id) || null
+)
+const fundingTasksTotal = computed(() =>
+  newFunding.value.tasks.reduce((sum, task) => sum + Number(task.task_budget || 0), 0)
 )
 
 const formatMoney = value => Number(value || 0).toLocaleString('pl-PL', {
@@ -197,15 +301,17 @@ const loadData = async () => {
   loading.value = true
   error.value = ''
   try {
-    const [fundingsResponse, plansResponse, categoriesResponse] = await Promise.all([
+    const [fundingsResponse, plansResponse, categoriesResponse, budgetsResponse] = await Promise.all([
       fetch(`${API_URL}/fundings?association_id=${user.value.association_id}`),
       fetch(`${API_URL}/public_purchase_plan_lists?association_id=${user.value.association_id}`),
-      fetch(`${API_URL}/categories`)
+      fetch(`${API_URL}/categories`),
+      fetch(`${API_URL}/project_budgets?association_id=${user.value.association_id}`)
     ])
     if (!fundingsResponse.ok || !plansResponse.ok) throw new Error('Nie udało się pobrać planów.')
     fundings.value = await fundingsResponse.json()
     planLists.value = await plansResponse.json()
     categories.value = categoriesResponse.ok ? await categoriesResponse.json() : []
+    projectBudgets.value = budgetsResponse.ok ? await budgetsResponse.json() : []
     if (!fundings.value.some(funding => funding.funding_id === activeFundingId.value)) {
       activeFundingId.value = fundings.value[0]?.funding_id || null
     }
@@ -225,6 +331,8 @@ const createPlanList = async () => {
     body: JSON.stringify({
       funding_id: funding.funding_id,
       plan_year: Number(planYear.value),
+      plan_number: planNumber.value.trim(),
+      fund_responsible_person: (fundResponsiblePerson.value || funding.signing_person || '').trim(),
       public_plan_list_name: `Plan ZP - ${funding.funding_name}`
     })
   })
@@ -234,17 +342,95 @@ const createPlanList = async () => {
   await loadData()
 }
 
+const resetFundingForm = () => {
+  editingFundingId.value = null
+  newFunding.value = {
+    project_budget_id: projectBudgets.value[0]?.project_budget_id || null,
+    funding_name: '',
+    organizer: '',
+    signing_person: '',
+    funding_price: null,
+    tasks: []
+  }
+}
+
+const openFundingModal = (funding = null) => {
+  if (funding) {
+    editingFundingId.value = funding.funding_id
+    newFunding.value = {
+      project_budget_id: funding.project_budget_id || null,
+      funding_name: funding.funding_name || '',
+      organizer: funding.organizer || '',
+      signing_person: funding.signing_person || '',
+      funding_price: funding.funding_price || null,
+      tasks: (funding.tasks || []).map(task => ({
+        task_name: task.task_name || '',
+        task_budget: task.task_budget || null
+      }))
+    }
+  } else {
+    resetFundingForm()
+  }
+  showFundingModal.value = true
+}
+
+const closeFundingModal = () => {
+  showFundingModal.value = false
+  editingFundingId.value = null
+}
+
+const addFundingTask = () => {
+  newFunding.value.tasks.push({ task_name: '', task_budget: null })
+}
+
+const removeFundingTask = index => {
+  newFunding.value.tasks.splice(index, 1)
+}
+
+const saveFunding = async () => {
+  if (fundingTasksTotal.value > Number(newFunding.value.funding_price || 0)) {
+    return toast.error('Suma zadan nie moze przekraczac kwoty dofinansowania.')
+  }
+  const isEditing = Boolean(editingFundingId.value)
+  const response = await fetch(`${API_URL}/fundings${isEditing ? `/${editingFundingId.value}` : ''}`, {
+    method: isEditing ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      project_budget_id: newFunding.value.project_budget_id,
+      funding_name: newFunding.value.funding_name.trim(),
+      organizer: newFunding.value.organizer.trim(),
+      signing_person: newFunding.value.signing_person.trim(),
+      funding_price: Number(newFunding.value.funding_price),
+      tasks: newFunding.value.tasks
+        .filter(task => task.task_name || task.task_budget)
+        .map(task => ({
+          task_name: String(task.task_name || '').trim(),
+          task_budget: Number(task.task_budget || 0)
+        }))
+    })
+  })
+  const data = await response.json()
+  if (!response.ok) return toast.error(data.detail || 'Nie udalo sie zapisac dofinansowania.')
+  closeFundingModal()
+  toast.success(isEditing ? 'Dofinansowanie zostalo zaktualizowane.' : 'Dofinansowanie zostalo utworzone.')
+  await loadData()
+  activeFundingId.value = data.funding_id
+  fundResponsiblePerson.value = data.signing_person || ''
+}
+
 const openPositionModal = (position = null) => {
   editingPositionId.value = position?.public_purchase_plan_id || null
   newPosition.value = position
     ? {
         cpv_code: position.cpv_code,
+        plan_position_number: position.plan_position_number || '',
         cost: position.cost,
         description: position.description || '',
         product_category_id: position.product_category_id || null
       }
     : {
-        cpv_code: null,
+        cpv_code: '',
+        plan_position_number: '',
         cost: null,
         description: '',
         product_category_id: null
@@ -264,7 +450,8 @@ const savePosition = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       public_purchase_plan_list_id: selectedPlan.value.public_purchase_plan_list_id,
-      cpv_code: Number(newPosition.value.cpv_code),
+      cpv_code: String(newPosition.value.cpv_code || '').trim(),
+      plan_position_number: String(newPosition.value.plan_position_number || '').trim(),
       cost: Number(newPosition.value.cost),
       description: (newPosition.value.description || '').trim(),
       product_category_id: newPosition.value.product_category_id || null
@@ -290,7 +477,7 @@ onMounted(loadData)
 
 <style scoped>
 .plans { color: #fff; padding: 28px 0; }
-.plans__header, .workspace__header, .table-header, .create-plan, .modal header, .modal footer {
+.plans__header, .workspace__header, .table-header, .create-plan, .modal header, .modal footer, .header-actions {
   display: flex; justify-content: space-between; align-items: center; gap: 20px;
 }
 h2, h3, p { margin: 0; }
@@ -308,9 +495,12 @@ p, dt { color: #94a3b8; }
 .funding span { color: #94a3b8; }
 .funding--active { border-color: #60a5fa; background: rgba(30, 41, 59, .9); }
 .workspace { padding: 22px; background: rgba(15, 23, 42, .65); border: 1px solid rgba(148, 163, 184, .18); border-radius: 8px; }
-.workspace__header { padding-bottom: 20px; border-bottom: 1px solid rgba(148, 163, 184, .16); }
+.workspace__header { padding-bottom: 20px; border-bottom: 1px solid rgba(148, 163, 184, .16); flex-wrap: wrap; }
 dl { display: flex; gap: 24px; margin: 0; }
 dt { font-size: 12px; } dd { margin: 3px 0 0; font-weight: 700; }
+.tasks-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 16px; }
+.task-chip { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 7px; background: rgba(30, 41, 59, .6); border: 1px solid rgba(148, 163, 184, .14); color: #cbd5e1; }
+.task-chip strong { color: #bfdbfe; }
 .create-plan { margin-top: 20px; padding: 18px; background: rgba(30, 41, 59, .62); border-radius: 8px; }
 .table-header { margin: 22px 0 14px; }
 .button {
@@ -327,13 +517,19 @@ th { color: #94a3b8; font-size: 13px; }
 .delete { border: 0; background: transparent; color: #fca5a5; cursor: pointer; }
 label { display: grid; gap: 7px; color: #cbd5e1; font-weight: 700; }
 input { padding: 11px; border: 1px solid #475569; border-radius: 7px; background: #0f172a; color: #fff; }
+select, textarea { padding: 11px; border: 1px solid #475569; border-radius: 7px; background: #0f172a; color: #fff; }
 .modal-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(2, 6, 23, .78); z-index: 1000; }
 .modal { width: min(460px, calc(100vw - 32px)); padding: 22px; border-radius: 8px; background: #111827; }
+.modal--wide { width: min(720px, calc(100vw - 32px)); max-height: 88vh; overflow-y: auto; }
 .modal header button { border: 0; background: transparent; color: #fff; font-size: 25px; cursor: pointer; }
 .modal form { display: grid; gap: 18px; margin-top: 20px; }
+.funding-tasks { display: grid; gap: 10px; padding: 14px; border-radius: 8px; background: rgba(15, 23, 42, .55); border: 1px solid rgba(148, 163, 184, .14); }
+.tasks-header, .task-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.task-row { grid-template-columns: 1fr 150px auto; }
 @media (max-width: 850px) {
   .plans__layout { grid-template-columns: 1fr; }
-  .plans__header, .workspace__header, .create-plan { align-items: flex-start; flex-direction: column; }
+  .plans__header, .workspace__header, .create-plan, .header-actions { align-items: flex-start; flex-direction: column; }
+  .task-row { grid-template-columns: 1fr; }
   dl { flex-wrap: wrap; }
 }
 </style>

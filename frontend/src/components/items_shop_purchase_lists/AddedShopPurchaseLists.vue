@@ -20,7 +20,7 @@
             :key="plan.purchase_request_id"
             :value="plan.purchase_request_id"
           >
-            {{ plan.purchase_request_name }} - {{ plan.funding_name }} ({{ formatMoney(plan.remaining_amount) }} PLN)
+            {{ plan.purchase_request_name }} - {{ plan.funding_name }} ({{ formatMoney(plan.remaining_amount) }} PLN){{ plan.can_add ? '' : ' - tylko odczyt' }}
           </option>
         </select>
       </div>
@@ -243,7 +243,7 @@ const currentStudentId = computed(() => Number(user.value?.id))
 const selectedPublicPurchasePlan = computed(() =>
   publicPurchasePlans.value.find(plan => Number(plan.purchase_request_id) === Number(selectedPublicPurchasePlanId.value)) || null
 )
-const canCreateList = computed(() => !!selectedPublicPurchasePlan.value)
+const canCreateList = computed(() => !!selectedPublicPurchasePlan.value?.can_add)
 
 const userLists = computed(() => allLists.value)
 const ownLists = computed(() => allLists.value.filter(list => Number(list.student_id) === currentStudentId.value))
@@ -331,10 +331,11 @@ const fetchPublicPurchasePlans = async () => {
     if (!response.ok) throw new Error('Blad sieci przy pobieraniu zamowien')
     const requests = await response.json()
     publicPurchasePlans.value = requests
-      .filter(request => request.can_add)
       .map(request => ({
         purchase_request_id: request.purchase_request_id,
         purchase_request_name: request.purchase_request_name,
+        can_add: request.can_add,
+        finalization_status: request.finalization_status,
         funding_id: request.funding_id,
         funding_name: request.funding_name,
         public_purchase_plan_id: request.public_purchase_plan_id,
@@ -480,15 +481,15 @@ const isOwnList = (list) => {
 
 // Zmiana reguł: Tylko skarbnik może zamykać i usuwać dowolne listy
 const canCloseList = (list) => {
-  return isTreasurer.value && list?.isOpen
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add && list?.isOpen
 }
 
 const canReopenList = (list) => {
-  return isTreasurer.value && list && !list.isOpen
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add && list && !list.isOpen
 }
 
 const canDeleteList = (list) => {
-  return isTreasurer.value
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add
 }
 
 const formatMoney = (value) => {

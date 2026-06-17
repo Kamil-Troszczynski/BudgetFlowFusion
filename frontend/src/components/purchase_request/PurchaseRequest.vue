@@ -101,6 +101,8 @@
                 <div class="request-card__actions">
                   <button class="request-card__button view" @click="emit('open-shopping', request)">Otwórz koszyk</button>
                   <button v-if="isOwner(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
+                  <button v-if="canFinalizeRequest(request)" class="request-card__button finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request) }}</button>
+                  <button v-if="canReturnToOpen(request)" class="request-card__button reopen" @click="returnToOpen(request)">Przywróć do otwartych</button>
                   <button class="request-card__button view" @click="activeRequest = request">Podsumowanie</button>
                   <button v-if="isOwner(request)" class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
                 </div>
@@ -138,6 +140,8 @@
                       <div class="table-row-actions">
                         <button class="table-btn view" @click="emit('open-shopping', request)">Lista</button>
                         <button v-if="isOwner(request)" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
+                        <button v-if="canFinalizeRequest(request)" class="table-btn finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request, true) }}</button>
+                        <button v-if="canReturnToOpen(request)" class="table-btn reopen" @click="returnToOpen(request)">Otwórz</button>
                         <button class="table-btn view" @click="activeRequest = request">Podsumowanie</button>
                         <button v-if="isOwner(request)" class="table-btn delete" @click="deleteRequest(request.id)">Usuń</button>
                       </div>
@@ -205,6 +209,30 @@
           <div class="request-info">
             <p>Zgodność z planem ZP</p>
             <strong>{{ formatPlanStatus(activeRequest.planComplianceStatus) }}</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Nazwa na dokumencie</p>
+            <strong>{{ activeRequest.documentRequestName || activeRequest.name }}</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Data ustalenia wartości</p>
+            <strong>{{ formatDate(activeRequest.contractValueDate) }}</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Kurs euro</p>
+            <strong>{{ formatMoney(activeRequest.euroExchangeRate) }}</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Główny CPV</p>
+            <strong class="font-mono">{{ activeRequest.mainCpvCode || '-' }}</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Suma netto CPV</p>
+            <strong class="text-emerald">{{ formatMoney(activeRequest.finalNetTotal) }} PLN</strong>
+          </div>
+          <div v-if="activeRequest.finalizationStatus === 'finalized'" class="request-info">
+            <p>Suma brutto finalna</p>
+            <strong class="text-blue">{{ formatMoney(activeRequest.finalGrossTotal) }} PLN</strong>
           </div>
         </div>
       </div>
@@ -481,6 +509,111 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showFinalizationModal" class="modal-overlay">
+      <div class="modal-content finalization-modal-content" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Finalizacja wniosku</h2>
+          <button class="modal-close" @click="showFinalizationModal = false">x</button>
+        </div>
+        <div v-if="finalizationLoading" class="requests-empty requests-empty--compact">
+          <p class="requests-empty-subtext">Przygotowywanie podsumowania...</p>
+        </div>
+        <form v-else class="finalization-editor custom-scrollbar" @submit.prevent="saveFinalization">
+          <div class="finalization-grid">
+            <label class="modal-form__group">
+              <span class="modal-form__label">Nazwa wniosku na dokumencie</span>
+              <input v-model="finalizationForm.document_request_name" class="modal-form__input" type="text" required />
+            </label>
+            <label class="modal-form__group">
+              <span class="modal-form__label">Kurs euro dla ZP</span>
+              <input v-model.number="finalizationForm.euro_exchange_rate" class="modal-form__input" type="number" min="0.0001" step="0.0001" required />
+            </label>
+            <label class="modal-form__group">
+              <span class="modal-form__label">Data ustalenia wartości</span>
+              <input v-model="finalizationForm.contract_value_date" class="modal-form__input" type="date" required />
+            </label>
+          </div>
+
+          <section class="finalization-section">
+            <h3>Kody CPV</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>CPV</th>
+                    <th>Kwota netto</th>
+                    <th>Kwota euro</th>
+                    <th>Główny</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in finalizationCpvRows" :key="row.cpv_code">
+                    <td class="font-mono">{{ row.cpv_code }}</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.allocated_eur_amount) }} EUR</td>
+                    <td>{{ row.is_main_cpv ? 'Tak' : '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="finalization-section">
+            <h3>Plany i pozycje</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Kod planu</th>
+                    <th>Odpowiedzialny</th>
+                    <th>Organizator</th>
+                    <th>Pozycja</th>
+                    <th>CPV</th>
+                    <th>Plan netto</th>
+                    <th>Wydajemy netto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in finalizationSummary?.plan_rows || []" :key="row.public_purchase_plan_id">
+                    <td>{{ row.public_plan_list_name || row.plan_name || '-' }}</td>
+                    <td>{{ row.plan_number || '-' }}</td>
+                    <td>{{ row.fund_responsible_person || row.funding_signing_person || '-' }}</td>
+                    <td>{{ row.funding_organizer || '-' }}</td>
+                    <td>{{ row.plan_position_number || '-' }}</td>
+                    <td class="font-mono">{{ row.cpv_code || '-' }}</td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.planned_net_amount) }} PLN</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="finalization-section">
+            <h3>Kwoty brutto według finansowania</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Kwota brutto razem</span>
+                <strong>{{ formatMoney(finalizationSummary?.gross_total) }} PLN</strong>
+              </div>
+              <div v-for="row in finalizationSummary?.funding_gross_rows || []" :key="row.funding_id || row.funding_name">
+                <span>{{ row.funding_name || 'Brak finansowania' }}</span>
+                <strong>{{ formatMoney(row.gross_amount) }} PLN</strong>
+              </div>
+            </div>
+          </section>
+
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" :disabled="finalizationSaving" @click="saveFinalizationDraft">Przerwij i dokończ później</button>
+            <button type="submit" class="modal-btn modal-btn-save" :disabled="finalizationSaving">
+              {{ finalizationSaving ? 'Zapisywanie...' : 'Potwierdź i zakończ' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -494,6 +627,16 @@ const emit = defineEmits(['budget-changed', 'open-shopping'])
 const activeRequest = ref(null)
 const showAddRequestModal = ref(false)
 const showCpvEditorModal = ref(false)
+const showFinalizationModal = ref(false)
+const finalizationLoading = ref(false)
+const finalizationSaving = ref(false)
+const finalizationRequest = ref(null)
+const finalizationSummary = ref(null)
+const finalizationForm = ref({
+  document_request_name: '',
+  euro_exchange_rate: null,
+  contract_value_date: new Date().toISOString().slice(0, 10)
+})
 const editingRequestId = ref(null)
 const sortBy = ref('date-created-desc')
 const currentLayout = ref('grid')
@@ -517,7 +660,7 @@ const newRequestData = ref({
   section_name: '',
   budget_allocated_for_the_order: null,
   if_service: false,
-  used_cpv_id: 1,
+  used_cpv_id: null,
   can_add: true,
   shop_purchase_list_id: '',
   funding_id: '',
@@ -646,6 +789,14 @@ const basketSummaryRows = computed(() => {
   return rows
 })
 
+const finalizationCpvRows = computed(() => {
+  const rate = Number(finalizationForm.value.euro_exchange_rate || 0)
+  return (finalizationSummary.value?.cpv_rows || []).map(row => ({
+    ...row,
+    allocated_eur_amount: rate > 0 ? Number(row.allocated_net_amount || 0) / rate : 0
+  }))
+})
+
 const allPlanPositions = computed(() =>
   fundingPlans.value.flatMap(plan =>
     (plan.public_purchase_plans || []).map(position => ({
@@ -657,8 +808,8 @@ const allPlanPositions = computed(() =>
 )
 
 const matchingPlanPositions = computed(() => {
-  const cpv = Number(newRequestData.value.used_cpv_id)
-  return allPlanPositions.value.filter(position => Number(position.cpv_code) === cpv)
+  const cpv = String(newRequestData.value.used_cpv_id || '')
+  return allPlanPositions.value.filter(position => String(position.cpv_code || '') === cpv)
 })
 
 const selectedPlanPosition = computed(() =>
@@ -686,6 +837,19 @@ const isOwner = (request) => {
   return Number(request.project_finance_manager_id) === Number(currentFinanceManagerId.value)
 }
 
+const canFinalizeRequest = request =>
+  isOwner(request)
+  && ['pending', 'prepared'].includes(request.status)
+  && Number(request.sourceList__shopCount || 0) > 0
+
+const canReturnToOpen = request =>
+  isOwner(request) && request.finalizationStatus === 'prepared'
+
+const finalizationActionLabel = (request, short = false) =>
+  request.finalizationStatus === 'prepared'
+    ? (short ? 'Dokończ' : 'Dokończ wniosek')
+    : (short ? 'Stwórz' : 'Stwórz wniosek')
+
 const filterAndSortList = (itemsList) => {
   let filtered = [...itemsList]
   if (selectedSectionFilter.value) {
@@ -706,7 +870,8 @@ const aggregatedRequestGroups = computed(() => {
   const processed = filterAndSortList(allRequests.value)
   return [
     { key: 'open', title: 'Otwarte wnioski', items: processed.filter(r => r.status === 'pending') },
-    { key: 'closed', title: 'Zamknięte wnioski', items: processed.filter(r => r.status !== 'pending') }
+    { key: 'prepared', title: 'Wnioski do dokończenia', items: processed.filter(r => r.status === 'prepared') },
+    { key: 'closed', title: 'Zamknięte wnioski', items: processed.filter(r => !['pending', 'prepared'].includes(r.status)) }
   ]
 })
 
@@ -734,7 +899,9 @@ const mapRequest = (req) => {
     sectionName: req.section_name || req.project_budget_name,
     budget: req.budget_allocated_for_the_order,
     ifService: req.if_service,
-    status: req.can_add ? 'pending' : 'approved',
+    status: req.finalization_status === 'prepared'
+      ? 'prepared'
+      : (req.can_add ? 'pending' : 'approved'),
     created_at: req.created_at,
     updated_at: req.updated_at,
     used_cpv_id: req.used_cpv_id,
@@ -752,7 +919,14 @@ const mapRequest = (req) => {
     planPosition: req.plan_position,
     planPositions: req.plan_positions || [],
     planExceptionJustification: req.plan_exception_justification,
-    planComplianceStatus: req.plan_compliance_status
+    planComplianceStatus: req.plan_compliance_status,
+    documentRequestName: req.document_request_name,
+    contractValueDate: req.contract_value_date,
+    euroExchangeRate: req.euro_exchange_rate,
+    mainCpvCode: req.main_cpv_code,
+    finalNetTotal: req.final_net_total,
+    finalGrossTotal: req.final_gross_total,
+    finalizationStatus: req.finalization_status
   }
 }
 
@@ -893,14 +1067,22 @@ const planOptionsForFunding = fundingId =>
 
 const cpvOptionLabel = position => {
   if (!position) return ''
-  const details = [position.description, position.product_category_name].filter(Boolean).join(' - ')
+  const prefix = [
+    position.plan_position_number ? `poz. ${position.plan_position_number}` : '',
+    position.plan_number ? `plan ${position.plan_number}` : ''
+  ].filter(Boolean).join(', ')
+  const details = [prefix, position.description, position.product_category_name].filter(Boolean).join(' - ')
   return details
     ? `CPV ${position.cpv_code} - ${details}`
     : `CPV ${position.cpv_code} - ${position.funding_name}`
 }
 
 const requestPlanPositionLabel = position => {
-  const details = [position.description, position.product_category_name].filter(Boolean).join(' - ')
+  const details = [
+    position.plan_position_number ? `poz. ${position.plan_position_number}` : '',
+    position.description,
+    position.product_category_name
+  ].filter(Boolean).join(' - ')
   return details ? `${position.cpv_code} (${details})` : position.cpv_code
 }
 
@@ -1029,7 +1211,7 @@ const resetRequestForm = () => {
   newRequestData.value.section_name = ''
   newRequestData.value.budget_allocated_for_the_order = null
   newRequestData.value.if_service = false
-  newRequestData.value.used_cpv_id = 1
+  newRequestData.value.used_cpv_id = null
   newRequestData.value.can_add = true
   newRequestData.value.shop_purchase_list_id = ''
   newRequestData.value.funding_id = ''
@@ -1041,6 +1223,107 @@ const resetRequestForm = () => {
   allocationDraft.value = { funding_id: '', allocated_amount: null }
   fundingPlans.value = []
   requestBaskets.value = []
+}
+
+const prepareFinalization = async request => {
+  finalizationRequest.value = request
+  finalizationLoading.value = true
+  showFinalizationModal.value = true
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${request.id}/prepare_finalization`, {
+      method: 'POST'
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie przygotowac wniosku')
+    finalizationSummary.value = data
+    finalizationForm.value = {
+      document_request_name: data.document_request_name || request.name,
+      euro_exchange_rate: data.euro_exchange_rate || null,
+      contract_value_date: data.contract_value_date || new Date().toISOString().slice(0, 10)
+    }
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie przygotowac finalizacji.')
+    showFinalizationModal.value = false
+  } finally {
+    finalizationLoading.value = false
+  }
+}
+
+const saveFinalization = async () => {
+  if (!finalizationRequest.value) return
+  finalizationSaving.value = true
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${finalizationRequest.value.id}/finalize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        document_request_name: finalizationForm.value.document_request_name,
+        euro_exchange_rate: Number(finalizationForm.value.euro_exchange_rate || 0),
+        contract_value_date: finalizationForm.value.contract_value_date
+      })
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zapisac finalizacji')
+    finalizationSummary.value = data
+    showFinalizationModal.value = false
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie zapisac finalizacji.')
+  } finally {
+    finalizationSaving.value = false
+  }
+}
+
+const saveFinalizationDraft = async () => {
+  if (!finalizationRequest.value) {
+    showFinalizationModal.value = false
+    return
+  }
+  finalizationSaving.value = true
+  try {
+    const payload = {
+      document_request_name: finalizationForm.value.document_request_name,
+      contract_value_date: finalizationForm.value.contract_value_date
+    }
+    if (Number(finalizationForm.value.euro_exchange_rate || 0) > 0) {
+      payload.euro_exchange_rate = Number(finalizationForm.value.euro_exchange_rate)
+    }
+    const response = await fetch(`${API_URL}/purchase_requests/${finalizationRequest.value.id}/finalization_draft`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zapisac szkicu finalizacji')
+    finalizationSummary.value = data
+    showFinalizationModal.value = false
+    await fetchRequests()
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie zapisac szkicu finalizacji.')
+  } finally {
+    finalizationSaving.value = false
+  }
+}
+
+const returnToOpen = async request => {
+  if (!confirm('Przywrócić wniosek do otwartych i odblokować edycję koszyków?')) return
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${request.id}/return_to_open`, {
+      method: 'POST'
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie przywrocic wniosku')
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie przywrocic wniosku do otwartych.')
+  }
 }
 
 const handleNewRequest = async () => {
@@ -1107,7 +1390,7 @@ const deleteRequest = async (id) => {
 }
 
 const formatStatus = (status) => {
-  const map = { pending: 'Oczekujący', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
+  const map = { pending: 'Oczekujący', prepared: 'Do dokończenia', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
   return map[status] || status
 }
 const formatPlanStatus = status => status === 'compliant' ? 'Zgodny z planem' : (status === 'requires_approval' ? 'Wymaga zgody' : status || 'Brak danych')
@@ -1128,7 +1411,7 @@ const openEditRequestModal = async (request) => {
   newRequestData.value.section_name = request.sectionName || ''
   newRequestData.value.budget_allocated_for_the_order = request.budget
   newRequestData.value.if_service = request.ifService
-  newRequestData.value.used_cpv_id = request.used_cpv_id || 1
+  newRequestData.value.used_cpv_id = request.used_cpv_id || null
   newRequestData.value.can_add = request.status === 'pending'
   newRequestData.value.shop_purchase_list_id = ''
   newRequestData.value.funding_id = request.fundingId
@@ -1231,6 +1514,7 @@ onMounted(async () => {
 
 .request-card__badge { padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.8vw; font-weight: 700; white-space: nowrap; text-transform: uppercase; text-align: center; }
 .request-card__badge.pending { background: rgba(251, 191, 36, 0.15); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.25); }
+.request-card__badge.prepared { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
 .request-card__badge.approved { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.25); }
 .request-card__badge.rejected { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); }
 
@@ -1243,6 +1527,10 @@ onMounted(async () => {
 .request-card__button { flex: 1; min-width: 5.5vw; padding: 0.6vw; border: none; border-radius: 0.5vw; font-size: 0.85vw; font-weight: 700; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
 .request-card__button.view { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.2); }
 .request-card__button.view:hover { background: #2563eb; color: white; border-color: #2563eb; }
+.request-card__button.finalize { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
+.request-card__button.finalize:hover { background: #059669; color: #ffffff; border-color: #059669; }
+.request-card__button.reopen { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.28); }
+.request-card__button.reopen:hover { background: #d97706; color: #ffffff; border-color: #d97706; }
 .request-card__button.delete { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
 .request-card__button.delete:hover { background: #dc2626; color: white; border-color: #dc2626; }
 
@@ -1258,6 +1546,10 @@ onMounted(async () => {
 .table-btn { padding: 0.4vw 0.8vw; border: none; border-radius: 0.4vw; font-size: 0.78vw; font-weight: 700; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
 .table-btn.view { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.2); }
 .table-btn.view:hover { background: #2563eb; color: white; }
+.table-btn.finalize { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
+.table-btn.finalize:hover { background: #059669; color: white; }
+.table-btn.reopen { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.28); }
+.table-btn.reopen:hover { background: #d97706; color: white; }
 .table-btn.delete { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
 .table-btn.delete:hover { background: #dc2626; color: white; }
 
@@ -1286,6 +1578,7 @@ onMounted(async () => {
 .modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); overflow: hidden; }
 .modal-content { width: 90%; max-width: 35vw; max-height: 85vh; background: #0f172a; border: 0.08vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.2vw; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
 .cpv-modal-content { max-width: 78vw; }
+.finalization-modal-content { max-width: min(92vw, 1280px); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5vh; flex-shrink: 0; }
 .modal-title { font-size: 1.5vw; color: #fff; font-weight: 800; }
 .modal-close { background: transparent; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.4vw; cursor: pointer; transition: color 0.2s; }
@@ -1322,6 +1615,15 @@ onMounted(async () => {
 .cpv-summary h3 { margin: 0; color: #bfdbfe; font-size: 1vw; }
 .cpv-summary-table { min-width: 900px; }
 .cpv-summary-table tfoot td { font-weight: 800; background: rgba(59, 130, 246, 0.1); }
+.finalization-editor { display: grid; gap: 1vw; overflow-y: auto; padding-right: 0.5vw; min-height: 0; }
+.finalization-grid { display: grid; grid-template-columns: 1.6fr 0.7fr 0.8fr; gap: 0.9vw; }
+.finalization-section { display: grid; gap: 0.75vw; padding: 1vw; border-radius: 0.7vw; background: rgba(30, 41, 59, 0.48); border: 1px solid rgba(148, 163, 184, 0.16); }
+.finalization-section h3 { margin: 0; color: #bfdbfe; font-size: 1vw; }
+.finalization-table { min-width: 760px; }
+.finalization-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8vw; }
+.finalization-totals div { display: grid; gap: 0.35vw; padding: 0.85vw; border-radius: 0.6vw; background: rgba(15, 23, 42, 0.58); border: 1px solid rgba(148, 163, 184, 0.12); }
+.finalization-totals span { color: #94a3b8; font-size: 0.82vw; font-weight: 700; text-transform: uppercase; }
+.finalization-totals strong { color: #e2e8f0; font-size: 1vw; }
 .delete-inline-btn { border: 0; background: transparent; color: #fca5a5; cursor: pointer; font-weight: 700; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 1.5vh; border-top: 0.08vw solid rgba(148,163,184,0.15); flex-shrink: 0; margin-top: auto; }

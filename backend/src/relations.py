@@ -60,9 +60,17 @@ class PurchaseRequest(SQLModel, table=True):
     purchase_request_name: str
     budget_allocated_for_the_order: float
     if_service: bool
-    used_cpv_id: int
+    used_cpv_id: Optional[str] = Field(default=None)
     created_at: datetime
     can_add: bool
+    document_request_name: Optional[str] = Field(default=None)
+    contract_value_date: Optional[date] = Field(default=None)
+    euro_exchange_rate: Optional[float] = Field(default=None)
+    main_cpv_code: Optional[str] = Field(default=None)
+    final_net_total: Optional[float] = Field(default=None)
+    final_gross_total: Optional[float] = Field(default=None)
+    finalization_status: str = Field(default="draft")
+    finalized_at: Optional[datetime] = Field(default=None)
 
     project_budget_id: int = Field(foreign_key="project_budget.project_budget_id")
     funding_id: int = Field(foreign_key="funding.funding_id")
@@ -80,6 +88,29 @@ class PurchaseRequest(SQLModel, table=True):
     grouped_shops_list: Optional["GroupedShopsListByCpvCategoryAndFunding"] = Relationship(back_populates="purchase_requests")
     settlements: list["Settlement"] = Relationship(back_populates="purchase_request")
     project_finance_manager: Optional["ProjectFinanceManager"] = Relationship(back_populates="purchase_requests")
+
+
+class PurchaseRequestFinalizationSnapshot(SQLModel, table=True):
+    __tablename__ = "purchase_request_finalization_snapshot"
+
+    snapshot_id: Optional[int] = Field(default=None, primary_key=True)
+    purchase_request_id: int = Field(foreign_key="purchase_request.purchase_request_id")
+    shop_purchase_list_id: Optional[int] = Field(default=None, foreign_key="shop_purchase_list.shop_purchase_list_id")
+    public_purchase_plan_id: Optional[int] = Field(default=None, foreign_key="public_purchase_plan.public_purchase_plan_id")
+    funding_id: Optional[int] = Field(default=None, foreign_key="funding.funding_id")
+    shop_name: Optional[str] = Field(default=None)
+    funding_name: Optional[str] = Field(default=None)
+    plan_name: Optional[str] = Field(default=None)
+    plan_number: Optional[str] = Field(default=None)
+    fund_responsible_person: Optional[str] = Field(default=None)
+    plan_position_number: Optional[str] = Field(default=None)
+    cpv_code: Optional[str] = Field(default=None)
+    planned_net_amount: float = 0.0
+    allocated_net_amount: float = 0.0
+    allocated_eur_amount: float = 0.0
+    allocated_gross_amount: float = 0.0
+    is_main_cpv: bool = False
+    created_at: datetime
 
 
 class PurchaseRequestFundingAllocation(SQLModel, table=True):
@@ -106,6 +137,8 @@ class PublicPurchasePlanList(SQLModel, table=True):
     public_purchase_plan_list_id: Optional[int] = Field(default=None, primary_key=True)
     public_plan_list_name: str
     plan_year: int
+    plan_number: Optional[str] = Field(default=None)
+    fund_responsible_person: Optional[str] = Field(default=None)
     funding_id: int = Field(foreign_key="funding.funding_id", unique=True)
 
     funding: Optional["Funding"] = Relationship(back_populates="public_purchase_plan_list")
@@ -117,6 +150,8 @@ class Funding(SQLModel, table=True):
 
     funding_id: Optional[int] = Field(default=None, primary_key=True)
     funding_name: str
+    organizer: Optional[str] = Field(default=None)
+    signing_person: Optional[str] = Field(default=None)
     funding_price: float
     spent_money: float
 
@@ -130,6 +165,18 @@ class Funding(SQLModel, table=True):
     purchase_requests: list[PurchaseRequest] = Relationship(back_populates="funding")
     shop_purchase_lists: list["ShopPurchaseList"] = Relationship(back_populates="funding")
     public_purchase_plan_list: Optional[PublicPurchasePlanList] = Relationship(back_populates="funding")
+    tasks: list["FundingTask"] = Relationship(back_populates="funding")
+
+
+class FundingTask(SQLModel, table=True):
+    __tablename__ = "funding_task"
+
+    funding_task_id: Optional[int] = Field(default=None, primary_key=True)
+    funding_id: int = Field(foreign_key="funding.funding_id")
+    task_name: str
+    task_budget: float
+
+    funding: Optional[Funding] = Relationship(back_populates="tasks")
 
 
 class Settlement(SQLModel, table=True):
@@ -176,7 +223,8 @@ class PublicPurchasePlan(SQLModel, table=True):
 
     public_purchase_plan_id: Optional[int] = Field(default=None, primary_key=True)
     public_purchase_plan_name: str
-    cpv_code: int
+    cpv_code: str
+    plan_position_number: Optional[str] = Field(default=None)
     cost: float
 
     funding_id: Optional[int] = Field(default=None, foreign_key="funding.funding_id")

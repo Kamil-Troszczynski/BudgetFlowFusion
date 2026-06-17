@@ -86,6 +86,36 @@ def migrate_project_budgets():
                 PRIMARY KEY (purchase_request_id, shop_purchase_list_id, public_purchase_plan_id)
             )
         """))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_request_finalization_snapshot (
+                snapshot_id SERIAL PRIMARY KEY,
+                purchase_request_id INTEGER NOT NULL REFERENCES purchase_request(purchase_request_id) ON DELETE CASCADE,
+                shop_purchase_list_id INTEGER REFERENCES shop_purchase_list(shop_purchase_list_id),
+                public_purchase_plan_id INTEGER REFERENCES public_purchase_plan(public_purchase_plan_id),
+                funding_id INTEGER REFERENCES funding(funding_id),
+                shop_name VARCHAR,
+                funding_name VARCHAR,
+                plan_name VARCHAR,
+                plan_number VARCHAR,
+                fund_responsible_person VARCHAR,
+                plan_position_number VARCHAR,
+                cpv_code VARCHAR,
+                planned_net_amount DOUBLE PRECISION DEFAULT 0,
+                allocated_net_amount DOUBLE PRECISION DEFAULT 0,
+                allocated_eur_amount DOUBLE PRECISION DEFAULT 0,
+                allocated_gross_amount DOUBLE PRECISION DEFAULT 0,
+                is_main_cpv BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS funding_task (
+                funding_task_id SERIAL PRIMARY KEY,
+                funding_id INTEGER NOT NULL REFERENCES funding(funding_id) ON DELETE CASCADE,
+                task_name VARCHAR NOT NULL,
+                task_budget DOUBLE PRECISION NOT NULL
+            )
+        """))
         if (
             "purchase_request_plan_position" in table_names
             and "shop_purchase_list_id" not in plan_position_columns
@@ -150,6 +180,26 @@ def migrate_project_budgets():
                 "ALTER TABLE purchase_request "
                 "ADD COLUMN plan_compliance_status VARCHAR DEFAULT 'compliant'"
             ))
+        if "document_request_name" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN document_request_name VARCHAR"))
+        if "contract_value_date" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN contract_value_date DATE"))
+        if "euro_exchange_rate" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN euro_exchange_rate DOUBLE PRECISION"))
+        if "main_cpv_code" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN main_cpv_code VARCHAR"))
+        if "final_net_total" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN final_net_total DOUBLE PRECISION"))
+        if "final_gross_total" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN final_gross_total DOUBLE PRECISION"))
+        if "finalization_status" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN finalization_status VARCHAR DEFAULT 'draft'"))
+        if "finalized_at" not in purchase_request_columns:
+            connection.execute(text("ALTER TABLE purchase_request ADD COLUMN finalized_at TIMESTAMP"))
+        if "organizer" not in funding_columns:
+            connection.execute(text("ALTER TABLE funding ADD COLUMN organizer VARCHAR"))
+        if "signing_person" not in funding_columns:
+            connection.execute(text("ALTER TABLE funding ADD COLUMN signing_person VARCHAR"))
         if "funding_id" not in plan_list_columns:
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan_list ADD COLUMN funding_id INTEGER"
@@ -158,10 +208,24 @@ def migrate_project_budgets():
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan_list ADD COLUMN plan_year INTEGER DEFAULT 2026"
             ))
+        if "plan_number" not in plan_list_columns:
+            connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN plan_number VARCHAR"))
+        if "fund_responsible_person" not in plan_list_columns:
+            connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN fund_responsible_person VARCHAR"))
         if "cpv_code" not in plan_columns:
             connection.execute(text(
-                "ALTER TABLE public_purchase_plan ADD COLUMN cpv_code INTEGER"
+                "ALTER TABLE public_purchase_plan ADD COLUMN cpv_code VARCHAR"
             ))
+        else:
+            connection.execute(text(
+                "ALTER TABLE public_purchase_plan ALTER COLUMN cpv_code TYPE VARCHAR USING cpv_code::VARCHAR"
+            ))
+        if "used_cpv_id" in purchase_request_columns:
+            connection.execute(text(
+                "ALTER TABLE purchase_request ALTER COLUMN used_cpv_id TYPE VARCHAR USING used_cpv_id::VARCHAR"
+            ))
+        if "plan_position_number" not in plan_columns:
+            connection.execute(text("ALTER TABLE public_purchase_plan ADD COLUMN plan_position_number VARCHAR"))
         if "tax_rate" not in item_columns:
             connection.execute(text(
                 "ALTER TABLE item ADD COLUMN tax_rate DOUBLE PRECISION DEFAULT 23"
@@ -199,8 +263,8 @@ def migrate_project_budgets():
                         1
                     ),
                     ''
-                )::INTEGER,
-                1
+                ),
+                '1'
             )
             WHERE cpv_code IS NULL
         """))
