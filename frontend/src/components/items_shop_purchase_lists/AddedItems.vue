@@ -17,6 +17,7 @@
           type="text"
           placeholder="Nazwa, sklep, kategoria albo CPV..."
           class="history-input"
+          
         />
       </label>
       <label class="history-filter">
@@ -284,7 +285,7 @@ onMounted(fetchHistory)
 }
 
 .history-input {
-  width: 100%;
+  width: auto;
   padding: 0.8vw 0.9vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.22);
   border-radius: 0.65vw;

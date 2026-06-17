@@ -377,6 +377,114 @@
               ></textarea>
             </div>
           </div>
+          <section v-if="false" class="finalization-section">
+            <h3>Podsumowanie sklepów do rozliczeń</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Sklep</th>
+                    <th>Opis zakupów</th>
+                    <th>Kwota brutto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
+                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
+                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section v-if="false" class="finalization-section">
+            <h3>Końcowe podsumowanie</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Status po zatwierdzeniu</span>
+                <strong>Oczekuje na akceptację księgowości</strong>
+              </div>
+              <div>
+                <span>Dokumenty</span>
+                <strong>Eksport PDF/XLSX będzie dostępny później</strong>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="false" class="finalization-section">
+            <h3>Podsumowanie sklepow do ksiegowosci</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Sklep</th>
+                    <th>Opis zakupow</th>
+                    <th>Kwota brutto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
+                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
+                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section v-if="false" class="finalization-section">
+            <h3>Koncowe podsumowanie</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Status po zatwierdzeniu</span>
+                <strong>Oczekuje na akceptacje ksiegowosci</strong>
+              </div>
+              <div>
+                <span>Dokumenty</span>
+                <strong>Eksport PDF/XLSX bedzie dostepny pozniej</strong>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="showFinalizationModal" class="finalization-section">
+            <h3>Podsumowanie sklepow do ksiegowosci</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Sklep</th>
+                    <th>Opis zakupow</th>
+                    <th>Kwota brutto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
+                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
+                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section v-if="showFinalizationModal" class="finalization-section">
+            <h3>Koncowe podsumowanie</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Status po zatwierdzeniu</span>
+                <strong>Oczekuje na akceptacje ksiegowosci</strong>
+              </div>
+              <div>
+                <span>Dokumenty</span>
+                <strong>Eksport PDF/XLSX bedzie dostepny pozniej</strong>
+              </div>
+            </div>
+          </section>
+
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" @click="showAddRequestModal = false">Anuluj</button>
             <button type="submit" :class="editingRequestId ? 'modal-btn modal-btn-finish' : 'modal-btn modal-btn-save'" :disabled="editingRequestId && allocationTotal <= 0">
@@ -605,8 +713,45 @@
             </div>
           </section>
 
+          <section class="finalization-section">
+            <h3>Podsumowanie sklepow do ksiegowosci</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Sklep</th>
+                    <th>Opis zakupow</th>
+                    <th>Kwota brutto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
+                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
+                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="finalization-section">
+            <h3>Koncowe podsumowanie</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Status po zatwierdzeniu</span>
+                <strong>Oczekuje na akceptacje ksiegowosci</strong>
+              </div>
+              <div>
+                <span>Dokumenty</span>
+                <strong>Eksport PDF/XLSX bedzie dostepny pozniej</strong>
+              </div>
+            </div>
+          </section>
+
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-cancel" :disabled="finalizationSaving" @click="saveFinalizationDraft">Przerwij i dokończ później</button>
+            <button type="button" class="modal-btn modal-btn-finish" :disabled="finalizationSaving || finalizationRequest?.finalizationStatus !== 'accounting_pending'" @click="sendToSettlement">Przekaz do rozliczen</button>
             <button type="submit" class="modal-btn modal-btn-save" :disabled="finalizationSaving">
               {{ finalizationSaving ? 'Zapisywanie...' : 'Potwierdź i zakończ' }}
             </button>
@@ -632,6 +777,7 @@ const finalizationLoading = ref(false)
 const finalizationSaving = ref(false)
 const finalizationRequest = ref(null)
 const finalizationSummary = ref(null)
+const settlementLines = ref([])
 const finalizationForm = ref({
   document_request_name: '',
   euro_exchange_rate: null,
@@ -839,7 +985,8 @@ const isOwner = (request) => {
 
 const canFinalizeRequest = request =>
   isOwner(request)
-  && ['pending', 'prepared'].includes(request.status)
+  && ['pending', 'prepared', 'approved', 'accounting'].includes(request.status)
+  && request.finalizationStatus !== 'settlement'
   && Number(request.sourceList__shopCount || 0) > 0
 
 const canReturnToOpen = request =>
@@ -849,6 +996,13 @@ const finalizationActionLabel = (request, short = false) =>
   request.finalizationStatus === 'prepared'
     ? (short ? 'Dokończ' : 'Dokończ wniosek')
     : (short ? 'Stwórz' : 'Stwórz wniosek')
+
+const workflowActionLabel = (request, short = false) => {
+  if (request.finalizationStatus === 'settlement') return short ? 'Historia' : 'Podglad historii'
+  if (request.finalizationStatus === 'finalized') return short ? 'Rozlicz' : 'Przekaz do rozliczen'
+  if (request.finalizationStatus === 'prepared') return short ? 'Dokoncz' : 'Dokoncz wniosek'
+  return short ? 'Edytuj' : 'Edytuj / finalizuj'
+}
 
 const filterAndSortList = (itemsList) => {
   let filtered = [...itemsList]
@@ -901,7 +1055,9 @@ const mapRequest = (req) => {
     ifService: req.if_service,
     status: req.finalization_status === 'prepared'
       ? 'prepared'
-      : (req.can_add ? 'pending' : 'approved'),
+      : (req.finalization_status === 'accounting_pending'
+        ? 'accounting'
+        : (req.can_add ? 'pending' : 'approved')),
     created_at: req.created_at,
     updated_at: req.updated_at,
     used_cpv_id: req.used_cpv_id,
@@ -1241,6 +1397,7 @@ const prepareFinalization = async request => {
       euro_exchange_rate: data.euro_exchange_rate || null,
       contract_value_date: data.contract_value_date || new Date().toISOString().slice(0, 10)
     }
+    await fetchSettlementLines(request.id)
     await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
   } catch (error) {
     console.error(error)
@@ -1251,10 +1408,47 @@ const prepareFinalization = async request => {
   }
 }
 
+const fetchSettlementLines = async requestId => {
+  if (!requestId) {
+    settlementLines.value = []
+    return
+  }
+  const response = await fetch(`${API_URL}/purchase_requests/${requestId}/settlement_lines`)
+  if (!response.ok) {
+    settlementLines.value = []
+    return
+  }
+  settlementLines.value = await response.json()
+}
+
+const saveSettlementLines = async () => {
+  if (!finalizationRequest.value) return
+  const response = await fetch(`${API_URL}/purchase_requests/${finalizationRequest.value.id}/settlement_lines`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lines: settlementLines.value.map(line => ({
+        settlement_line_id: line.settlement_line_id,
+        shop_purchase_list_id: line.shop_purchase_list_id,
+        invoice_id: line.invoice_id,
+        shop_name: line.shop_name,
+        purchase_description: line.purchase_description,
+        planned_gross_amount: Number(line.planned_gross_amount || 0),
+        actual_gross_amount: line.actual_gross_amount,
+        is_extra: Boolean(line.is_extra)
+      }))
+    })
+  })
+  const data = await response.json().catch(() => [])
+  if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zapisac podsumowania rozliczen')
+  settlementLines.value = data
+}
+
 const saveFinalization = async () => {
   if (!finalizationRequest.value) return
   finalizationSaving.value = true
   try {
+    await saveSettlementLines()
     const response = await fetch(`${API_URL}/purchase_requests/${finalizationRequest.value.id}/finalize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1267,12 +1461,34 @@ const saveFinalization = async () => {
     const data = await response.json()
     if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zapisac finalizacji')
     finalizationSummary.value = data
-    showFinalizationModal.value = false
+    finalizationRequest.value = { ...finalizationRequest.value, finalizationStatus: 'accounting_pending' }
+    await fetchSettlementLines(finalizationRequest.value.id)
     await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
     emit('budget-changed')
   } catch (error) {
     console.error(error)
     alert(error.message || 'Nie udalo sie zapisac finalizacji.')
+  } finally {
+    finalizationSaving.value = false
+  }
+}
+
+const sendToSettlement = async () => {
+  if (!finalizationRequest.value) return
+  finalizationSaving.value = true
+  try {
+    await saveSettlementLines()
+    const response = await fetch(`${API_URL}/purchase_requests/${finalizationRequest.value.id}/send_to_settlement`, {
+      method: 'POST'
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie przekazac wniosku do rozliczen')
+    showFinalizationModal.value = false
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udalo sie przekazac wniosku do rozliczen.')
   } finally {
     finalizationSaving.value = false
   }
@@ -1515,6 +1731,7 @@ onMounted(async () => {
 .request-card__badge { padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 0.8vw; font-weight: 700; white-space: nowrap; text-transform: uppercase; text-align: center; }
 .request-card__badge.pending { background: rgba(251, 191, 36, 0.15); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.25); }
 .request-card__badge.prepared { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
+.request-card__badge.accounting { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.28); }
 .request-card__badge.approved { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.25); }
 .request-card__badge.rejected { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); }
 

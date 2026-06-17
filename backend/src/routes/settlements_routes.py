@@ -34,6 +34,20 @@ class ShopPurchaseListOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SettlementLineOut(BaseModel):
+    settlement_line_id: int
+    purchase_request_id: int
+    shop_purchase_list_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    invoice_number: Optional[str] = None
+    shop_name: str
+    purchase_description: Optional[str] = None
+    planned_gross_amount: float = 0.0
+    actual_gross_amount: Optional[float] = None
+    difference_amount: float = 0.0
+    is_extra: bool = False
+
+
 class SettlementOut(BaseModel):
     settlement_id: int
     created_at: datetime
@@ -42,6 +56,7 @@ class SettlementOut(BaseModel):
     purchase_request: Optional[PurchaseRequestOut] = None
     invoices: List[InvoiceOut] = []
     shop_purchase_lists: List[ShopPurchaseListOut] = []
+    settlement_lines: List[SettlementLineOut] = []
     total_spent: Optional[float] = None
     model_config = ConfigDict(from_attributes=True)
 
@@ -138,24 +153,61 @@ def create_invoice_for_settlement(
 
 def _enrich_settlements(settlements, session: Session) -> List[SettlementOut]:
     result = []
+    emitted_request_ids = set()
     for s in settlements:
         purchase_request = (
             session.get(PurchaseRequest, s.purchase_request_id) if s.purchase_request_id else None
         )
+        if purchase_request and purchase_request.finalization_status != "settlement":
+            continue
+        if s.purchase_request_id and s.purchase_request_id in emitted_request_ids:
+            continue
+        if s.purchase_request_id:
+            emitted_request_ids.add(s.purchase_request_id)
 
-        invoices = session.exec(
-            select(Invoice).where(Invoice.settlement_id == s.settlement_id)
-        ).all()
+        related_settlements = [s]
+        if s.purchase_request_id:
+            related_settlements = session.exec(
+                select(Settlement).where(
+                    Settlement.purchase_request_id == s.purchase_request_id
+                )
+            ).all()
+        related_settlement_ids = [
+            settlement.settlement_id
+            for settlement in related_settlements
+            if settlement.settlement_id
+        ]
 
-        shop_purchase_lists = session.exec(
-            select(ShopPurchaseList).where(
-                ShopPurchaseList.settlement_id == s.settlement_id
-            )
-        ).all()
+        invoices = []
+        if related_settlement_ids:
+            invoices = session.exec(
+                select(Invoice).where(Invoice.settlement_id.in_(related_settlement_ids))
+            ).all()
+
+        shop_purchase_lists = []
+        if related_settlement_ids:
+            shop_purchase_lists = session.exec(
+                select(ShopPurchaseList).where(
+                    ShopPurchaseList.settlement_id.in_(related_settlement_ids)
+                )
+            ).all()
+
+        settlement_lines = []
+        if s.purchase_request_id:
+            settlement_lines = session.exec(
+                select(PurchaseRequestSettlementLine).where(
+                    PurchaseRequestSettlementLine.purchase_request_id
+                    == s.purchase_request_id
+                )
+            ).all()
         
-        total_spent = sum(
-            (getattr(i, 'net_total', 0) or 0) + (getattr(i, 'vat_total', 0) or 0)
-            for i in invoices
+        total_spent = (
+            sum(float(line.actual_gross_amount or 0) for line in settlement_lines)
+            if settlement_lines
+            else sum(
+                (getattr(i, 'net_total', 0) or 0) + (getattr(i, 'vat_total', 0) or 0)
+                for i in invoices
+            )
         )
 
         result.append(
@@ -185,6 +237,29 @@ def _enrich_settlements(settlements, session: Session) -> List[SettlementOut]:
                     ) for i in invoices
                 ],
                 shop_purchase_lists=[ShopPurchaseListOut.model_validate(sp) for sp in shop_purchase_lists],
+                settlement_lines=[
+                    SettlementLineOut(
+                        settlement_line_id=line.settlement_line_id,
+                        purchase_request_id=line.purchase_request_id,
+                        shop_purchase_list_id=line.shop_purchase_list_id,
+                        invoice_id=line.invoice_id,
+                        invoice_number=(
+                            session.get(Invoice, line.invoice_id).number
+                            if line.invoice_id and session.get(Invoice, line.invoice_id)
+                            else None
+                        ),
+                        shop_name=line.shop_name,
+                        purchase_description=line.purchase_description,
+                        planned_gross_amount=line.planned_gross_amount,
+                        actual_gross_amount=line.actual_gross_amount,
+                        difference_amount=(
+                            float(line.planned_gross_amount or 0)
+                            - float(line.actual_gross_amount or 0)
+                        ),
+                        is_extra=line.is_extra,
+                    )
+                    for line in settlement_lines
+                ],
                 total_spent=total_spent,
             )
         )

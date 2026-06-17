@@ -222,6 +222,45 @@ class PurchaseRequestFinalizationOut(BaseModel):
     snapshot_rows: List[FinalizationSnapshotRowOut] = PydanticField(default_factory=list)
 
 
+class PurchaseRequestSettlementLineOut(BaseModel):
+    settlement_line_id: int
+    purchase_request_id: int
+    shop_purchase_list_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    invoice_number: Optional[str] = None
+    shop_name: str
+    purchase_description: Optional[str] = None
+    planned_gross_amount: float = 0.0
+    actual_gross_amount: Optional[float] = None
+    difference_amount: float = 0.0
+    is_extra: bool = False
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class PurchaseRequestSettlementLineIn(BaseModel):
+    settlement_line_id: Optional[int] = None
+    shop_purchase_list_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    shop_name: str
+    purchase_description: Optional[str] = None
+    planned_gross_amount: float = 0.0
+    actual_gross_amount: Optional[float] = None
+    is_extra: bool = False
+
+
+class PurchaseRequestSettlementLinesSaveIn(BaseModel):
+    lines: List[PurchaseRequestSettlementLineIn] = PydanticField(default_factory=list)
+
+
+class PurchaseRequestSettlementLinePatchIn(BaseModel):
+    invoice_id: Optional[int] = None
+    actual_gross_amount: Optional[float] = None
+    shop_name: Optional[str] = None
+    purchase_description: Optional[str] = None
+    planned_gross_amount: Optional[float] = None
+
+
 def _shop_purchase_list_total(shop_purchase_list: ShopPurchaseList, session: Session) -> float:
     line_items = session.exec(
         select(ShopPurchaseListItem).where(
@@ -234,6 +273,128 @@ def _shop_purchase_list_total(shop_purchase_list: ShopPurchaseList, session: Ses
         if item:
             total += (item.price or 0) * line.amount
     return total or shop_purchase_list.cost or 0.0
+
+
+def _settlement_line_out(
+    line: PurchaseRequestSettlementLine,
+    session: Session,
+) -> PurchaseRequestSettlementLineOut:
+    invoice = session.get(Invoice, line.invoice_id) if line.invoice_id else None
+    actual = line.actual_gross_amount
+    planned = float(line.planned_gross_amount or 0)
+    return PurchaseRequestSettlementLineOut(
+        settlement_line_id=line.settlement_line_id,
+        purchase_request_id=line.purchase_request_id,
+        shop_purchase_list_id=line.shop_purchase_list_id,
+        invoice_id=line.invoice_id,
+        invoice_number=invoice.number if invoice else None,
+        shop_name=line.shop_name,
+        purchase_description=line.purchase_description,
+        planned_gross_amount=planned,
+        actual_gross_amount=actual,
+        difference_amount=planned - float(actual or 0),
+        is_extra=line.is_extra,
+        created_at=line.created_at,
+        updated_at=line.updated_at,
+    )
+
+
+def _line_description_for_purchase_list(
+    purchase_list: ShopPurchaseList,
+    session: Session,
+) -> str:
+    grouped: dict[str, float] = {}
+    fallback_items: dict[str, float] = {}
+    line_items = session.exec(
+        select(ShopPurchaseListItem).where(
+            ShopPurchaseListItem.shop_purchase_list_id
+            == purchase_list.shop_purchase_list_id
+        )
+    ).all()
+    for line_item in line_items:
+        item = session.get(Item, line_item.item_id)
+        if not item:
+            continue
+        gross = float(item.price or 0) * float(line_item.amount or 0)
+        fallback_items[item.name] = fallback_items.get(item.name, 0.0) + gross
+        subcategory = session.get(
+            ProductSubcategory,
+            item.product_subcategory_id,
+        ) if item.product_subcategory_id else None
+        category = session.get(
+            ProductCategory,
+            subcategory.product_category_id,
+        ) if subcategory and subcategory.product_category_id else None
+        label = (
+            subcategory.product_subcategory_name
+            if subcategory
+            else (category.product_category_name if category else None)
+        )
+        if label:
+            grouped[label] = grouped.get(label, 0.0) + gross
+
+    source = grouped if grouped else fallback_items
+    top_labels = [
+        label for label, _ in sorted(
+            source.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )[:3]
+    ]
+    return ", ".join(top_labels) if top_labels else (purchase_list.name or "Zakupy z koszyka")
+
+
+def _ensure_settlement_lines_for_request(
+    request: PurchaseRequest,
+    session: Session,
+) -> list[PurchaseRequestSettlementLine]:
+    existing = session.exec(
+        select(PurchaseRequestSettlementLine).where(
+            PurchaseRequestSettlementLine.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    if existing:
+        return existing
+
+    for purchase_list in _request_purchase_lists(request, session):
+        shop = session.get(Shop, purchase_list.shop_id)
+        session.add(PurchaseRequestSettlementLine(
+            purchase_request_id=request.purchase_request_id,
+            shop_purchase_list_id=purchase_list.shop_purchase_list_id,
+            shop_name=(
+                shop.shop_name
+                if shop
+                else (purchase_list.name or f"Koszyk #{purchase_list.shop_purchase_list_id}")
+            ),
+            purchase_description=_line_description_for_purchase_list(
+                purchase_list,
+                session,
+            ),
+            planned_gross_amount=_shop_purchase_list_total(purchase_list, session),
+            actual_gross_amount=None,
+            is_extra=False,
+            created_at=datetime.now(),
+        ))
+    session.commit()
+    return session.exec(
+        select(PurchaseRequestSettlementLine).where(
+            PurchaseRequestSettlementLine.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+
+
+def _settlement_lines_for_request(
+    purchase_request_id: int,
+    session: Session,
+) -> list[PurchaseRequestSettlementLineOut]:
+    lines = session.exec(
+        select(PurchaseRequestSettlementLine).where(
+            PurchaseRequestSettlementLine.purchase_request_id == purchase_request_id
+        )
+    ).all()
+    return [_settlement_line_out(line, session) for line in lines]
 
 
 def _ensure_group_for_plan(plan: PublicPurchasePlan, session: Session) -> int:
@@ -759,12 +920,36 @@ def _finalization_row_dicts(
     return result
 
 
+def _default_euro_rate_for_request(
+    request: PurchaseRequest,
+    session: Session,
+) -> Optional[float]:
+    plan_rows = session.exec(
+        select(PurchaseRequestPlanPosition).where(
+            PurchaseRequestPlanPosition.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    for row in plan_rows:
+        plan = session.get(PublicPurchasePlan, row.public_purchase_plan_id)
+        if not plan:
+            continue
+        plan_list = session.get(
+            PublicPurchasePlanList,
+            plan.public_purchase_plan_list_id,
+        )
+        if plan_list and plan_list.euro_exchange_rate:
+            return plan_list.euro_exchange_rate
+    return request.euro_exchange_rate
+
+
 def _finalization_summary(
     request: PurchaseRequest,
     session: Session,
     euro_rate: Optional[float] = None,
     value_date: Optional[date] = None,
 ) -> PurchaseRequestFinalizationOut:
+    euro_rate = euro_rate or _default_euro_rate_for_request(request, session)
     rows = _finalization_row_dicts(request, session, euro_rate)
     cpv_totals: dict[str, float] = {}
     for row in rows:
@@ -896,6 +1081,14 @@ def prepare_purchase_request_finalization(
     request = session.get(PurchaseRequest, purchase_request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status in ("finalized", "accounting_pending", "settlement"):
+        _ensure_settlement_lines_for_request(request, session)
+        return _finalization_summary(
+            request,
+            session,
+            request.euro_exchange_rate,
+            request.contract_value_date,
+        )
 
     purchase_lists = _ensure_request_can_be_finalized(request, session)
     for purchase_list in purchase_lists:
@@ -1047,7 +1240,7 @@ def finalize_purchase_request(
     request.final_gross_total = summary.gross_total
     request.budget_allocated_for_the_order = summary.gross_total
     request.can_add = False
-    request.finalization_status = "finalized"
+    request.finalization_status = "accounting_pending"
     request.finalized_at = datetime.now()
     session.add(request)
 
@@ -1066,12 +1259,210 @@ def finalize_purchase_request(
 
     session.commit()
     session.refresh(request)
+    _ensure_settlement_lines_for_request(request, session)
     return _finalization_summary(
         request,
         session,
         finalization_data.euro_exchange_rate,
         finalization_data.contract_value_date,
     )
+
+
+@app.get(
+    "/api/purchase_requests/{purchase_request_id}/settlement_lines",
+    response_model=List[PurchaseRequestSettlementLineOut],
+)
+def get_purchase_request_settlement_lines(
+    purchase_request_id: int,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    _ensure_settlement_lines_for_request(request, session)
+    return _settlement_lines_for_request(purchase_request_id, session)
+
+
+@app.put(
+    "/api/purchase_requests/{purchase_request_id}/settlement_lines",
+    response_model=List[PurchaseRequestSettlementLineOut],
+)
+def save_purchase_request_settlement_lines(
+    purchase_request_id: int,
+    payload: PurchaseRequestSettlementLinesSaveIn,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status == "settlement":
+        raise HTTPException(
+            status_code=400,
+            detail="Planowane pozycje mozna zmieniac przed przekazaniem do rozliczen",
+        )
+
+    existing = {
+        line.settlement_line_id: line
+        for line in session.exec(
+            select(PurchaseRequestSettlementLine).where(
+                PurchaseRequestSettlementLine.purchase_request_id
+                == purchase_request_id
+            )
+        ).all()
+    }
+    seen_ids = set()
+    for line_data in payload.lines:
+        shop_name = (line_data.shop_name or "").strip()
+        if not shop_name:
+            raise HTTPException(status_code=400, detail="Nazwa sklepu jest wymagana")
+        planned_amount = float(line_data.planned_gross_amount or 0)
+        if planned_amount < 0:
+            raise HTTPException(status_code=400, detail="Kwota planowana nie moze byc ujemna")
+        line = existing.get(line_data.settlement_line_id)
+        if not line:
+            line = PurchaseRequestSettlementLine(
+                purchase_request_id=purchase_request_id,
+                shop_name=shop_name,
+                created_at=datetime.now(),
+            )
+        line.shop_purchase_list_id = line_data.shop_purchase_list_id
+        line.invoice_id = line_data.invoice_id
+        line.shop_name = shop_name
+        line.purchase_description = (line_data.purchase_description or "").strip() or None
+        line.planned_gross_amount = planned_amount
+        line.actual_gross_amount = line_data.actual_gross_amount
+        line.is_extra = line_data.is_extra
+        line.updated_at = datetime.now()
+        session.add(line)
+        session.flush()
+        seen_ids.add(line.settlement_line_id)
+
+    for line_id, line in existing.items():
+        if line_id not in seen_ids:
+            session.delete(line)
+
+    session.commit()
+    return _settlement_lines_for_request(purchase_request_id, session)
+
+
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/send_to_settlement",
+    response_model=PurchaseRequestOut,
+)
+def send_purchase_request_to_settlement(
+    purchase_request_id: int,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status not in ("accounting_pending", "settlement"):
+        raise HTTPException(
+            status_code=400,
+            detail="Do rozliczen mozna przekazac tylko zatwierdzony wniosek",
+        )
+    lines = _ensure_settlement_lines_for_request(request, session)
+    if not lines:
+        raise HTTPException(status_code=400, detail="Brak pozycji do rozliczenia")
+    settlements = session.exec(
+        select(Settlement).where(
+            Settlement.purchase_request_id == purchase_request_id
+        )
+    ).all()
+    if not settlements:
+        settlement = Settlement(
+            created_at=datetime.now(),
+            paid_by_project_finance_manager_id=request.project_finance_manager_id,
+            purchase_request_id=purchase_request_id,
+        )
+        session.add(settlement)
+    request.can_add = False
+    request.finalization_status = "settlement"
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return _purchase_request_out(request, session)
+
+
+@app.patch(
+    "/api/purchase_request_settlement_lines/{settlement_line_id}",
+    response_model=PurchaseRequestSettlementLineOut,
+)
+def update_purchase_request_settlement_line(
+    settlement_line_id: int,
+    payload: PurchaseRequestSettlementLinePatchIn,
+    session: Session = Depends(get_session),
+):
+    line = session.get(PurchaseRequestSettlementLine, settlement_line_id)
+    if not line:
+        raise HTTPException(status_code=404, detail="Pozycja rozliczenia nie znaleziona")
+    if "invoice_id" in payload.model_fields_set:
+        if payload.invoice_id is not None:
+            invoice = session.get(Invoice, payload.invoice_id)
+            if not invoice:
+                raise HTTPException(status_code=404, detail="Faktura nie znaleziona")
+        line.invoice_id = payload.invoice_id
+    if payload.actual_gross_amount is not None:
+        if payload.actual_gross_amount < 0:
+            raise HTTPException(status_code=400, detail="Kwota faktyczna nie moze byc ujemna")
+        line.actual_gross_amount = payload.actual_gross_amount
+    if payload.shop_name is not None:
+        shop_name = payload.shop_name.strip()
+        if not shop_name:
+            raise HTTPException(status_code=400, detail="Nazwa sklepu jest wymagana")
+        line.shop_name = shop_name
+    if payload.purchase_description is not None:
+        line.purchase_description = payload.purchase_description.strip() or None
+    if payload.planned_gross_amount is not None:
+        if payload.planned_gross_amount < 0:
+            raise HTTPException(status_code=400, detail="Kwota planowana nie moze byc ujemna")
+        line.planned_gross_amount = payload.planned_gross_amount
+    line.updated_at = datetime.now()
+    session.add(line)
+    session.commit()
+    session.refresh(line)
+    return _settlement_line_out(line, session)
+
+
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/settlement_lines/extra",
+    response_model=PurchaseRequestSettlementLineOut,
+)
+def add_extra_purchase_request_settlement_line(
+    purchase_request_id: int,
+    payload: PurchaseRequestSettlementLineIn,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status != "settlement":
+        raise HTTPException(
+            status_code=400,
+            detail="Dodatkowe pozycje mozna dodawac po przekazaniu wniosku do rozliczen",
+        )
+    shop_name = (payload.shop_name or "").strip()
+    if not shop_name:
+        raise HTTPException(status_code=400, detail="Nazwa sklepu jest wymagana")
+    actual_amount = payload.actual_gross_amount
+    if actual_amount is None:
+        actual_amount = payload.planned_gross_amount
+    if actual_amount is None or actual_amount < 0:
+        raise HTTPException(status_code=400, detail="Kwota faktyczna jest wymagana")
+    line = PurchaseRequestSettlementLine(
+        purchase_request_id=purchase_request_id,
+        shop_name=shop_name,
+        purchase_description=(payload.purchase_description or "").strip() or None,
+        planned_gross_amount=float(payload.planned_gross_amount or 0),
+        actual_gross_amount=float(actual_amount),
+        invoice_id=payload.invoice_id,
+        is_extra=True,
+        created_at=datetime.now(),
+    )
+    session.add(line)
+    session.commit()
+    session.refresh(line)
+    return _settlement_line_out(line, session)
 
 
 @app.post(

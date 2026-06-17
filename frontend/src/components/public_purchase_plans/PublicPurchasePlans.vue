@@ -74,6 +74,13 @@
         </form>
 
         <template v-else>
+          <form class="plan-rate-form" @submit.prevent="savePlanListSettings">
+            <label>
+              <span>Roczny kurs euro</span>
+              <input v-model.number="selectedPlan.euro_exchange_rate" type="number" min="0.0001" step="0.0001" placeholder="np. 4.6371" />
+            </label>
+            <button class="button button--secondary" type="submit">Zapisz kurs</button>
+          </form>
           <div class="table-header">
             <div>
               <h3>{{ selectedPlan.public_plan_list_name }}</h3>
@@ -261,6 +268,7 @@ const error = ref('')
 const planYear = ref(new Date().getFullYear())
 const planNumber = ref('')
 const fundResponsiblePerson = ref('')
+const planEuroExchangeRate = ref(null)
 const showPositionModal = ref(false)
 const showFundingModal = ref(false)
 const editingPositionId = ref(null)
@@ -333,12 +341,33 @@ const createPlanList = async () => {
       plan_year: Number(planYear.value),
       plan_number: planNumber.value.trim(),
       fund_responsible_person: (fundResponsiblePerson.value || funding.signing_person || '').trim(),
+      euro_exchange_rate: planEuroExchangeRate.value ? Number(planEuroExchangeRate.value) : null,
       public_plan_list_name: `Plan ZP - ${funding.funding_name}`
     })
   })
   const data = await response.json()
   if (!response.ok) return toast.error(data.detail || 'Nie udało się utworzyć planu.')
   toast.success('Plan dofinansowania został utworzony.')
+  await loadData()
+}
+
+const savePlanListSettings = async () => {
+  if (!selectedFunding.value || !selectedPlan.value) return
+  const response = await fetch(`${API_URL}/public_purchase_plan_lists`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      funding_id: selectedFunding.value.funding_id,
+      public_plan_list_name: selectedPlan.value.public_plan_list_name,
+      plan_year: Number(selectedPlan.value.plan_year),
+      plan_number: selectedPlan.value.plan_number || '',
+      fund_responsible_person: selectedPlan.value.fund_responsible_person || selectedFunding.value.signing_person || '',
+      euro_exchange_rate: selectedPlan.value.euro_exchange_rate ? Number(selectedPlan.value.euro_exchange_rate) : null
+    })
+  })
+  const data = await response.json()
+  if (!response.ok) return toast.error(data.detail || 'Nie udalo sie zapisac kursu euro.')
+  toast.success('Kurs euro zostal zapisany.')
   await loadData()
 }
 
@@ -502,6 +531,7 @@ dt { font-size: 12px; } dd { margin: 3px 0 0; font-weight: 700; }
 .task-chip { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 7px; background: rgba(30, 41, 59, .6); border: 1px solid rgba(148, 163, 184, .14); color: #cbd5e1; }
 .task-chip strong { color: #bfdbfe; }
 .create-plan { margin-top: 20px; padding: 18px; background: rgba(30, 41, 59, .62); border-radius: 8px; }
+.plan-rate-form { display: grid; grid-template-columns: minmax(180px, 260px) auto; gap: 12px; align-items: end; margin-top: 18px; padding: 14px; background: rgba(30, 41, 59, .45); border: 1px solid rgba(148, 163, 184, .14); border-radius: 8px; }
 .table-header { margin: 22px 0 14px; }
 .button {
   padding: 10px 16px; border: 0; border-radius: 7px; background: #2563eb; color: #fff;

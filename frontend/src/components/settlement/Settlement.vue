@@ -182,6 +182,48 @@
 
         <div class="settlement-details__invoices">
           <div class="invoice-section-header">
+            <h3>Pozycje rozliczenia</h3>
+            <button class="request-card__button upload" type="button" @click="addExtraLine">
+              + Dodaj pozycje
+            </button>
+          </div>
+          <div class="settlement-lines-table custom-scrollbar">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sklep</th>
+                  <th>Opis</th>
+                  <th>Plan brutto</th>
+                  <th>Faktycznie</th>
+                  <th>Faktura</th>
+                  <th>Roznica</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="line in activeSettlement.settlementLines" :key="line.settlement_line_id">
+                  <td><input v-model="line.shop_name" class="modal-form__input" /></td>
+                  <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-description"></textarea></td>
+                  <td><input v-model.number="line.planned_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" /></td>
+                  <td><input v-model.number="line.actual_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" /></td>
+                  <td>
+                    <select v-model="line.invoice_id" class="modal-form__input">
+                      <option :value="null">Brak</option>
+                      <option v-for="invoice in activeSettlement.invoices" :key="invoice.invoice_id" :value="invoice.invoice_id">
+                        {{ invoice.number || invoice.invoice_name }}
+                      </option>
+                    </select>
+                  </td>
+                  <td>{{ formatMoney(Number(line.planned_gross_amount || 0) - Number(line.actual_gross_amount || 0)) }} PLN</td>
+                  <td><button class="request-card__button view" type="button" @click="saveSettlementLine(line)">Zapisz</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="settlement-details__invoices">
+          <div class="invoice-section-header">
             <h3>Załączone faktury</h3>
             <button class="request-card__button upload" type="button" @click="showAddInvoiceModal = true">
               + Dodaj fakturę
@@ -372,6 +414,7 @@ const mapSettlements = (data = []) =>
 
     invoices: req.invoices ?? [],
     shopPurchaseLists: req.shop_purchase_lists ?? [],
+    settlementLines: req.settlement_lines ?? [],
 
     purchaseRequest: req.purchase_request ?? null,
 
@@ -517,6 +560,67 @@ const handleNewInvoice = async () => {
   }
 }
 
+const saveSettlementLine = async (line) => {
+  try {
+    if (line.isNew) {
+      const response = await fetch(`${API_URL}/purchase_requests/${activeSettlement.value.purchaseRequestId}/settlement_lines/extra`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shop_name: line.shop_name,
+          purchase_description: line.purchase_description,
+          planned_gross_amount: Number(line.planned_gross_amount || 0),
+          actual_gross_amount: Number(line.actual_gross_amount || 0),
+          invoice_id: line.invoice_id || null,
+          is_extra: true
+        })
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Nie udalo sie dodac pozycji')
+      line.isNew = false
+      Object.assign(line, data)
+      await loadData()
+      return
+    }
+
+    const response = await fetch(`${API_URL}/purchase_request_settlement_lines/${line.settlement_line_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shop_name: line.shop_name,
+        purchase_description: line.purchase_description,
+        planned_gross_amount: Number(line.planned_gross_amount || 0),
+        actual_gross_amount: line.actual_gross_amount === null || line.actual_gross_amount === ''
+          ? null
+          : Number(line.actual_gross_amount || 0),
+        invoice_id: line.invoice_id || null
+      })
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zapisac pozycji')
+    Object.assign(line, data)
+    await loadData()
+  } catch (err) {
+    console.error(err)
+    alert(err.message || 'Nie udalo sie zapisac pozycji rozliczenia.')
+  }
+}
+
+const addExtraLine = () => {
+  if (!activeSettlement.value?.purchaseRequestId) return
+  activeSettlement.value.settlementLines.push({
+    settlement_line_id: `new-${Date.now()}`,
+    purchase_request_id: activeSettlement.value.purchaseRequestId,
+    shop_name: '',
+    purchase_description: '',
+    planned_gross_amount: 0,
+    actual_gross_amount: null,
+    invoice_id: null,
+    is_extra: true,
+    isNew: true
+  })
+}
+
 const calcProgress = (settlement) => {
   const invoices = settlement?.invoices?.length ?? 0
   const lists = settlement?.shopPurchaseLists?.length ?? 0
@@ -556,6 +660,11 @@ const formatDate = (date) => {
     new Date(date)
   )
 }
+
+const formatMoney = (value) => Number(value || 0).toLocaleString('pl-PL', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+})
 
 onMounted(() => {
   fetchAllSettlements()
@@ -906,6 +1015,38 @@ watch(
   color: #86efac;
   font-weight: 700;
   font-size: 1vw;
+}
+
+.settlement-lines-table {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 2vh;
+}
+
+.settlement-lines-table table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.settlement-lines-table th,
+.settlement-lines-table td {
+  padding: 0.75vw;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+  vertical-align: top;
+}
+
+.settlement-lines-table th {
+  color: #94a3b8;
+  font-size: 0.78vw;
+  text-transform: uppercase;
+  background: rgba(30, 41, 59, 0.55);
+}
+
+.settlement-line-description {
+  min-height: 4.5vw;
+  resize: vertical;
 }
 
 .modal-overlay {

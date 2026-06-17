@@ -41,6 +41,7 @@ class PublicPurchasePlanListOut(BaseModel):
     plan_year: int
     plan_number: Optional[str] = None
     fund_responsible_person: Optional[str] = None
+    euro_exchange_rate: Optional[float] = None
     funding_id: int
     funding_name: str
     funding_price: float
@@ -102,6 +103,7 @@ class PublicPurchasePlanListCreate(BaseModel):
     plan_year: int
     plan_number: Optional[str] = None
     fund_responsible_person: Optional[str] = None
+    euro_exchange_rate: Optional[float] = None
 
 
 class PublicPurchasePlanCreate(BaseModel):
@@ -258,6 +260,7 @@ def _plan_list_out(plan_list: PublicPurchasePlanList, session: Session) -> Publi
         plan_year=plan_list.plan_year,
         plan_number=plan_list.plan_number,
         fund_responsible_person=plan_list.fund_responsible_person,
+        euro_exchange_rate=plan_list.euro_exchange_rate,
         funding_id=plan_list.funding_id,
         funding_name=funding.funding_name,
         funding_price=funding.funding_price,
@@ -465,6 +468,8 @@ def create_public_purchase_plan_list(
     funding = session.get(Funding, new_list_data.funding_id)
     if not funding:
         raise HTTPException(status_code=404, detail="Dofinansowanie nie znalezione")
+    if new_list_data.euro_exchange_rate is not None and new_list_data.euro_exchange_rate <= 0:
+        raise HTTPException(status_code=400, detail="Kurs euro musi byc wiekszy od zera")
     if new_list_data.plan_year < 2000 or new_list_data.plan_year > 2100:
         raise HTTPException(status_code=400, detail="Nieprawidłowy rok planu")
 
@@ -480,6 +485,7 @@ def create_public_purchase_plan_list(
         plan_list.fund_responsible_person = (
             new_list_data.fund_responsible_person or funding.signing_person or ""
         ).strip() or None
+        plan_list.euro_exchange_rate = new_list_data.euro_exchange_rate
     else:
         plan_list = PublicPurchasePlanList(
             public_plan_list_name=new_list_data.public_plan_list_name,
@@ -488,6 +494,7 @@ def create_public_purchase_plan_list(
             fund_responsible_person=(
                 new_list_data.fund_responsible_person or funding.signing_person or ""
             ).strip() or None,
+            euro_exchange_rate=new_list_data.euro_exchange_rate,
             funding_id=funding.funding_id,
         )
 

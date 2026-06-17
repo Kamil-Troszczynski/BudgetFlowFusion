@@ -109,6 +109,21 @@ def migrate_project_budgets():
             )
         """))
         connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_request_settlement_line (
+                settlement_line_id SERIAL PRIMARY KEY,
+                purchase_request_id INTEGER NOT NULL REFERENCES purchase_request(purchase_request_id) ON DELETE CASCADE,
+                shop_purchase_list_id INTEGER REFERENCES shop_purchase_list(shop_purchase_list_id),
+                invoice_id INTEGER REFERENCES invoice(invoice_id),
+                shop_name VARCHAR NOT NULL,
+                purchase_description VARCHAR,
+                planned_gross_amount DOUBLE PRECISION DEFAULT 0,
+                actual_gross_amount DOUBLE PRECISION,
+                is_extra BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP
+            )
+        """))
+        connection.execute(text("""
             CREATE TABLE IF NOT EXISTS funding_task (
                 funding_task_id SERIAL PRIMARY KEY,
                 funding_id INTEGER NOT NULL REFERENCES funding(funding_id) ON DELETE CASCADE,
@@ -212,6 +227,8 @@ def migrate_project_budgets():
             connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN plan_number VARCHAR"))
         if "fund_responsible_person" not in plan_list_columns:
             connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN fund_responsible_person VARCHAR"))
+        if "euro_exchange_rate" not in plan_list_columns:
+            connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN euro_exchange_rate DOUBLE PRECISION"))
         if "cpv_code" not in plan_columns:
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan ADD COLUMN cpv_code VARCHAR"

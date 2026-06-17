@@ -113,6 +113,22 @@ class PurchaseRequestFinalizationSnapshot(SQLModel, table=True):
     created_at: datetime
 
 
+class PurchaseRequestSettlementLine(SQLModel, table=True):
+    __tablename__ = "purchase_request_settlement_line"
+
+    settlement_line_id: Optional[int] = Field(default=None, primary_key=True)
+    purchase_request_id: int = Field(foreign_key="purchase_request.purchase_request_id")
+    shop_purchase_list_id: Optional[int] = Field(default=None, foreign_key="shop_purchase_list.shop_purchase_list_id")
+    invoice_id: Optional[int] = Field(default=None, foreign_key="invoice.invoice_id")
+    shop_name: str
+    purchase_description: Optional[str] = Field(default=None)
+    planned_gross_amount: float = 0.0
+    actual_gross_amount: Optional[float] = Field(default=None)
+    is_extra: bool = Field(default=False)
+    created_at: datetime
+    updated_at: Optional[datetime] = Field(default=None)
+
+
 class PurchaseRequestFundingAllocation(SQLModel, table=True):
     __tablename__ = "purchase_request_funding_allocation"
 
@@ -139,6 +155,7 @@ class PublicPurchasePlanList(SQLModel, table=True):
     plan_year: int
     plan_number: Optional[str] = Field(default=None)
     fund_responsible_person: Optional[str] = Field(default=None)
+    euro_exchange_rate: Optional[float] = Field(default=None)
     funding_id: int = Field(foreign_key="funding.funding_id", unique=True)
 
     funding: Optional["Funding"] = Relationship(back_populates="public_purchase_plan_list")
