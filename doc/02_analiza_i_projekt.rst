@@ -1,317 +1,168 @@
 Dokumentacja analityczno-projektowa
 ===================================
 
-Cel analizy
------------
+Problem
+-------
 
-W projekcie najważniejsze było uchwycenie zależności, które przy
-zakupach w kole naukowym często są rozproszone. Przedmiot na liście to
-tylko początek. Trzeba jeszcze wiedzieć, z jakiego finansowania będzie
-opłacony, czy pasuje do planu zamówień publicznych, jaką część planu
-zużywa i czy później da się go rozliczyć fakturą.
+Koło naukowe prowadzi zakupy z wielu źródeł finansowania. Każdy zakup
+musi być przypisany do sekcji/projektu, dofinansowania, pozycji planu
+zamówień publicznych oraz późniejszego rozliczenia. Bez systemu dane są
+rozproszone między listami zakupów, arkuszami budżetowymi, wnioskami i
+fakturami.
 
-Z tego powodu model aplikacji został ułożony wokół kilku prostych zasad:
+Cel projektowy
+--------------
 
-* pieniądz w systemie pochodzi z dofinansowania,
-* dofinansowanie należy do jednej sekcji/projektu,
-* sekcje składają się na budżet koła,
-* każde dofinansowanie może mieć własny plan zamówień publicznych,
-* pozycja planu opisuje kod CPV i kwotę zaplanowaną na przyszły zakup,
-* wniosek o zamówienie zużywa środki z dofinansowania i pozycje planu,
-* rozliczenie potwierdza zakup fakturą i kwotą rzeczywistą.
-
-Kontekst organizacyjny
-----------------------
+Celem systemu jest utrzymanie spójnego przebiegu:
 
 .. code-block:: text
 
-   Koło naukowe
-      |
-      +-- członkowie
-      |
-      +-- skarbnicy
-      |
-      +-- sekcje/projekty
-            |
-            +-- budżety sekcji
-                  |
-                  +-- dofinansowania
-                        |
-                        +-- plany zamówień publicznych
-                        |
-                        +-- listy zakupów
-                        |
-                        +-- wnioski
-                              |
-                              +-- finalizacja
-                              |
-                              +-- rozliczenie
-                                    |
-                                    +-- faktury
+   dofinansowanie
+      -> plan zamówień publicznych
+      -> lista zakupów
+      -> wniosek
+      -> finalizacja
+      -> rozliczenie
+      -> faktura
 
-System nie modeluje pełnego obiegu dokumentów uczelni. Modeluje tę
-część procesu, którą skarbnik koła musi mieć pod kontrolą: dostępne
-środki, uzasadnienie wydatku, zgodność z planem CPV, historię wniosku i
-stan rozliczenia.
+Aplikacja ma pilnować:
+
+* dostępności środków,
+* zgodności wniosku z pozycją CPV,
+* wykorzystania planu publicznego,
+* powiązania koszyków z wnioskiem,
+* historii finalizacji,
+* statusów faktur i rozliczeń.
 
 Aktorzy
 -------
 
-Zwykły członek koła
-~~~~~~~~~~~~~~~~~~~
+.. code-block:: text
 
-Zwykły członek pracuje przede wszystkim na katalogu i otwartych listach
-zakupów. Może dodać przedmiot do wspólnego katalogu, dopisać swoją
-ilość do listy zakupów oraz usunąć wkład, który sam dodał.
+   +-------------------+----------------------------------------------+
+   | Aktor             | Odpowiedzialność                             |
+   +===================+==============================================+
+   | Członek koła      | przedmioty, sklepy, wkład do list zakupów    |
+   | Skarbnik          | budżety, finansowania, plany, wnioski        |
+   | Obsługa rozliczeń | faktury, statusy, kwoty rzeczywiste          |
+   +-------------------+----------------------------------------------+
 
-W modelu danych jest to rekord ``Student`` bez
-``project_finance_manager_id``.
+Obsługa rozliczeń nie jest osobnym typem konta w modelu. Jej czynności
+są realizowane przez moduł ``Settlement`` i ``Invoice``.
 
-Skarbnik
-~~~~~~~~
-
-Skarbnik odpowiada za finanse koła. Tworzy dofinansowania, plany
-publiczne, listy zakupów, wnioski, finalizuje wnioski i prowadzi
-rozliczenia.
-
-W modelu danych jest to ``Student`` połączony z
-``ProjectFinanceManager`` przez ``Student.project_finance_manager_id``.
-
-Osoba rozliczająca
-~~~~~~~~~~~~~~~~~~
-
-W aplikacji nie jest osobną rolą logowania. Jej praca jest
-reprezentowana przez moduł rozliczeń: faktury, linie rozliczenia,
-statusy faktur i status ``settled`` na wniosku.
-
-Główne obiekty dziedziny
-------------------------
+Model ról
+---------
 
 .. code-block:: text
 
-   Association
-     Koło naukowe. Granica danych użytkowników, projektów i budżetów.
+   Student
+      |
+      | project_finance_manager_id IS NULL
+      v
+   zwykły członek
 
    Student
-     Użytkownik aplikacji. Może być zwykłym członkiem albo skarbnikiem.
+      |
+      | project_finance_manager_id -> ProjectFinanceManager
+      v
+   skarbnik
 
-   Project
-     Sekcja lub projekt działający w ramach koła.
+Frontend ukrywa funkcje zależnie od roli. Backend dodatkowo sprawdza
+część operacji skarbnika, np. zarządzanie kategoriami, sklepami i
+finansami.
 
-   ProjectBudget
-     Budżet sekcji. Kwota wynika z dofinansowań przypiętych do sekcji.
+Wymagania funkcjonalne
+----------------------
 
-   AssociationBudget
-     Budżet całego koła. Jest sumą budżetów sekcji.
+RF-01. Użytkownik może się zarejestrować i zalogować.
 
-   Funding
-     Konkretne dofinansowanie. Jest źródłem pieniędzy dla zakupów.
+RF-02. System rozróżnia zwykłego członka i skarbnika.
 
-   PublicPurchasePlanList
-     Roczny plan zamówień publicznych dla jednego dofinansowania.
+RF-03. Członek może dodać przedmiot do katalogu.
 
-   PublicPurchasePlan
-     Pozycja planu: kod CPV, numer pozycji, opis i planowana kwota.
+RF-04. Członek może zgłosić sklep. Skarbnik może sklep zaakceptować,
+edytować albo odrzucić.
 
-   ShopPurchaseList
-     Lista zakupów dla jednego sklepu w ramach grupy zakupowej.
+RF-05. Skarbnik może tworzyć dofinansowania wraz z zadaniami
+budżetowymi.
 
-   Item
-     Przedmiot w katalogu zakupowym.
+RF-06. Skarbnik może utworzyć plan zamówień publicznych dla
+dofinansowania.
 
-   PurchaseRequest
-     Wniosek o zamówienie. Łączy środki, CPV, listy zakupów i statusy.
+RF-07. Skarbnik może tworzyć listy zakupów i przypisywać je do sklepu,
+dofinansowania oraz grupy zakupowej.
 
-   Settlement
-     Rozliczenie wniosku lub zamkniętej listy.
+RF-08. Użytkownicy mogą dodawać wkład do otwartych list zakupów.
 
-   Invoice
-     Faktura przypisana do rozliczenia.
+RF-09. Skarbnik może zamknąć listę i użyć jej przy wniosku.
+
+RF-10. Skarbnik może utworzyć wniosek o zamówienie z alokacją środków.
+
+RF-11. Wniosek może korzystać z jednej lub wielu pozycji planu.
+
+RF-12. Przekroczenie pozycji planu wymaga uzasadnienia.
+
+RF-13. Finalizacja wniosku zapisuje dane historyczne w snapshotach.
+
+RF-14. Rozliczenie wymaga obsługi faktur i kwot rzeczywistych.
+
+Wymagania niefunkcjonalne
+-------------------------
+
+* Backend udostępnia API REST w formacie JSON.
+* Frontend działa jako SPA w Vue 3.
+* Dane trwałe są przechowywane w PostgreSQL.
+* Modele bazodanowe są definiowane w SQLModel.
+* Testy backendu używają SQLite in-memory.
+* Dokumentacja jest generowana z plików ``doc/*.rst`` przez
+  ``doc_gen.py``.
 
 Decyzje projektowe
 ------------------
 
-Budżet jest liczony od dofinansowań
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Budżet wynika z dofinansowań
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Budżet sekcji nie jest niezależną kwotą wpisaną ręcznie. Sekcja ma tyle
-środków, ile wynosi suma jej dofinansowań.
+``ProjectBudget.total_budget`` i ``AssociationBudget.total_budget`` nie
+powinny być traktowane jako niezależne źródło prawdy. W raportowaniu
+kwoty są liczone z tabeli ``Funding`` i rezerwacji wniosków.
 
-.. code-block:: text
+Plan jest przy dofinansowaniu
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Funding 1  10 000 PLN
-   Funding 2   5 000 PLN
-      |
-      v
-   ProjectBudget 15 000 PLN
+``PublicPurchasePlanList`` ma relację 1:1 z ``Funding``. Dzięki temu
+pozycje CPV są kontrolowane w kontekście konkretnego źródła pieniędzy.
 
-Analogicznie budżet koła jest sumą budżetów sekcji.
+Wniosek rezerwuje środki
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Plan publiczny należy do dofinansowania
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tabela ``PurchaseRequestFundingAllocation`` przechowuje kwoty
+zarezerwowane na wniosek. Jeżeli wniosek nie ma rekordów alokacji,
+backend używa pola legacy
+``PurchaseRequest.budget_allocated_for_the_order`` jako fallback.
 
-Plan zamówień publicznych nie jest wspólny dla całego koła. Jest
-powiązany z dofinansowaniem, ponieważ to dofinansowanie określa, z
-jakiej puli pieniędzy zakup będzie finansowany.
+Finalizacja zapisuje snapshot
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: text
+``PurchaseRequestFinalizationSnapshot`` przechowuje skopiowane dane
+planu i finansowania: CPV, numer planu, nazwę finansowania, kwoty netto,
+brutto i EUR. Snapshot jest potrzebny, ponieważ plan albo finansowanie
+mogą zostać później zmienione.
 
-   Funding
-      |
-      | 1 : 0..1
-      v
-   PublicPurchasePlanList
-      |
-      | 1 : *
-      v
-   PublicPurchasePlan
-
-Pozycja planu nie jest konkretnym koszykiem zakupowym. Opisuje zamiar:
-kod CPV i kwotę planowaną na zakupy w danym kodzie.
-
-Wniosek zużywa plan i rezerwuje środki
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Wniosek o zamówienie jest dokumentem operacyjnym: skarbnik chce
-zrealizować zakup teraz. Wniosek wskazuje dofinansowanie i pozycje planu,
-z których korzysta. Kwota wniosku zmniejsza dostępny budżet już na
-etapie złożenia, ponieważ pieniądze są traktowane jako zarezerwowane.
-
-.. code-block:: text
-
-   Funding.funding_price
-      - Funding.spent_money
-      - SUM(PurchaseRequestFundingAllocation.allocated_amount)
-      = available_after_purchase_requests
-
-Koszyk jest roboczą listą zakupów
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Lista zakupów jest roboczym koszykiem dla jednego sklepu. Do jednej
-grupy zakupowej może należeć wiele koszyków, np. gdy wniosek obejmuje
-zakupy z kilku sklepów.
-
-.. code-block:: text
-
-   GroupedShopsListByCpvCategoryAndFunding
-      |
-      +-- ShopPurchaseList: sklep A
-      +-- ShopPurchaseList: sklep B
-      +-- ShopPurchaseList: sklep C
-
-Użytkownicy dopisują do koszyka swoje ilości. Łączna ilość jest w
-``ShopPurchaseListItem``, a informacja kto ile dodał jest w
-``ShopPurchaseListItemContribution``.
-
-Finalizacja zapisuje stan historyczny
+Koszyk przechowuje wkład użytkowników
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Plan, dofinansowanie i koszyk mogą później zostać zmienione. Dlatego
-finalizacja tworzy ``PurchaseRequestFinalizationSnapshot``. Snapshot
-zapisuje dane potrzebne do dokumentu: CPV, numer planu, osobę
-odpowiedzialną, finansowanie i kwoty.
+``ShopPurchaseListItem`` przechowuje łączną ilość przedmiotu na liście.
+``ShopPurchaseListItemContribution`` przechowuje ile dodał konkretny
+student. To pozwala zwykłemu członkowi usuwać tylko własny wkład.
 
-.. code-block:: text
+Zakres ryzyka
+-------------
 
-   PurchaseRequest
-      |
-      | finalize
-      v
-   PurchaseRequestFinalizationSnapshot
-      |
-      +-- dane CPV
-      +-- dane planu
-      +-- dane dofinansowania
-      +-- kwoty netto, brutto i EUR
+Największe ryzyka projektowe:
 
-Granice systemu
----------------
-
-System obejmuje:
-
-* użytkowników koła,
-* katalog przedmiotów i sklepów,
-* listy zakupów,
-* dofinansowania i zadania budżetowe,
-* plany zamówień publicznych,
-* wnioski o zamówienie,
-* finalizację wniosku,
-* rozliczenia i faktury.
-
-System nie obejmuje w pełni:
-
-* podpisu elektronicznego,
-* integracji z SAP,
-* automatycznego pobierania faktur,
-* oficjalnego obiegu akceptacji uczelnianej,
-* wersjonowanych migracji bazodanowych typu Alembic,
-* pełnej autoryzacji tokenowej.
-
-Mapa odpowiedzialności modułów
-------------------------------
-
-.. code-block:: text
-
-   Moduł frontendowy                        Odpowiedzialność
-
-   HomePage.vue                             pulpit, budżet, nawigacja
-   AddedItems.vue                           katalog przedmiotów
-   AddedShopPurchaseLists.vue               listy zakupów
-   ShopPurchaseListDetails.vue              pozycje listy i wkłady studentów
-   PublicPurchasePlans.vue                  dofinansowania i plany CPV
-   PurchaseRequest.vue                      wnioski i finalizacja
-   Settlement.vue                           rozliczenia i faktury
-   Shops.vue                                sklepy
-
-.. code-block:: text
-
-   Moduł backendowy                         Odpowiedzialność
-
-   relations.py                             model relacyjny
-   public_purchase_plans_routes.py          budżety, dofinansowania, plany
-   lists_routes.py                          koszyki i wkłady użytkowników
-   purchase_request_routes.py               wnioski, alokacje, finalizacja
-   settlements_routes.py                    rozliczenia, faktury, historia
-   items_routes.py                          katalog przedmiotów
-   shops_routes.py                          sklepy
-   login_register_routes.py                 logowanie i rejestracja
-
-Stany najważniejszych obiektów
-------------------------------
-
-.. code-block:: text
-
-   Shop.status
-     pending -> approved
-     pending -> rejected
-
-   Item.status
-     approved
-     pending -> approved
-     pending -> rejected
-
-   ShopPurchaseList
-     settlement_id = NULL       lista otwarta
-     settlement_id != NULL      lista zamknięta
-
-   PurchaseRequest.finalization_status
-     draft -> prepared -> accounting_pending -> settlement -> settled
-
-   PurchaseRequest.plan_compliance_status
-     draft
-     compliant
-     requires_approval
-
-Najważniejsze reguły spójności
-------------------------------
-
-1. Dofinansowanie musi należeć do wybranego budżetu sekcji.
-2. Plan publiczny jest przypisany do dokładnie jednego dofinansowania.
-3. W ramach jednego planu nie powinno być dwóch pozycji z tym samym CPV.
-4. Wniosek nie może przekroczyć dostępnych środków dofinansowania.
-5. Wniosek nie może przekroczyć dostępnego budżetu sekcji.
-6. Przekroczenie pozycji planu wymaga uzasadnienia.
-7. Lista zamknięta nie przyjmuje nowych pozycji.
-8. Student może usunąć z listy tylko własny wkład.
-9. Zakończenie rozliczenia wymaga faktury na każdej linii rozliczenia.
-10. Finalizacja wniosku zapisuje snapshot danych historycznych.
+* podwójne liczenie kwot z dofinansowań i wniosków,
+* niespójność planu CPV po edycji lub usunięciu pozycji,
+* brak pełnej autoryzacji backendowej dla każdej operacji finansowej,
+* różnice między PostgreSQL runtime i SQLite w testach,
+* logika biznesowa umieszczona bezpośrednio w endpointach.

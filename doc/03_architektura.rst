@@ -1,116 +1,168 @@
 Architektura systemu
 ====================
 
-Widok logiczny
---------------
-
-System składa się z trzech głównych warstw:
-
-* frontend Vue,
-* backend FastAPI,
-* baza danych PostgreSQL.
-
-Diagram komponentów
--------------------
-
-.. code-block:: text
-
-   +--------------------------+
-   |      Przeglądarka        |
-   |  Vue 3 / Vite frontend   |
-   +------------+-------------+
-                |
-                | REST / JSON
-                v
-   +--------------------------+
-   |       Backend API        |
-   | FastAPI + SQLModel       |
-   |                          |
-   | - auth                   |
-   | - katalog przedmiotów    |
-   | - sklepy                 |
-   | - koszyki zakupowe       |
-   | - plany publiczne        |
-   | - wnioski                |
-   | - rozliczenia i faktury  |
-   +------------+-------------+
-                |
-                | SQLAlchemy / SQLModel
-                v
-   +--------------------------+
-   |       PostgreSQL         |
-   | Dane trwałe aplikacji    |
-   +--------------------------+
-
-Backend
--------
-
-Backend znajduje się w katalogu ``backend``. Główne pliki:
-
-* ``backend/run.py`` - punkt uruchomienia serwera Uvicorn,
-* ``backend/src/__init__.py`` - konfiguracja aplikacji FastAPI, CORS,
-  połączenie z bazą, inicjalizacja i migracje,
-* ``backend/src/relations.py`` - modele danych SQLModel,
-* ``backend/src/routes`` - endpointy API.
-
-Moduły tras:
-
-* ``login_register_routes.py`` - logowanie i rejestracja,
-* ``items_routes.py`` - przedmioty,
-* ``categories_subcategories_routes.py`` - kategorie i podkategorie,
-* ``shops_routes.py`` - sklepy,
-* ``lists_routes.py`` - koszyki/listy zakupów,
-* ``fundings_routes.py`` - dofinansowania i zadania,
-* ``public_purchase_plans_routes.py`` - budżety, plany publiczne i
-  dashboard budżetowy,
-* ``purchase_request_routes.py`` - wnioski, alokacje, finalizacja i
-  linie rozliczeń,
-* ``settlements_routes.py`` - rozliczenia i faktury.
-
-Frontend
---------
-
-Frontend znajduje się w katalogu ``frontend``. Najważniejsze pliki:
-
-* ``frontend/src/main.js`` - start aplikacji,
-* ``frontend/src/router/index.js`` - routing,
-* ``frontend/src/App.vue`` - kontener aplikacji,
-* ``frontend/src/components/home_page/HomePage.vue`` - główny panel
-  użytkownika,
-* ``frontend/src/composables/useAuth.js`` - stan logowania.
-
-Główne komponenty:
-
-* ``AddedItems.vue`` - katalog dodanych przedmiotów,
-* ``AddedShopPurchaseLists.vue`` - koszyki sklepowe,
-* ``PublicPurchasePlans.vue`` - dofinansowania i plany publiczne,
-* ``PurchaseRequest.vue`` - wnioski o zamówienie,
-* ``Settlement.vue`` - rozliczenia i faktury,
-* ``Shops.vue`` - sklepy.
-
-Przepływ danych
+Widok warstwowy
 ---------------
 
 .. code-block:: text
 
-   Użytkownik
+   +--------------------------------------------------+
+   | Przeglądarka                                     |
+   | Vue 3, Vue Router, komponenty .vue               |
+   +-------------------------+------------------------+
+                             |
+                             | HTTP REST / JSON
+                             v
+   +--------------------------------------------------+
+   | Backend FastAPI                                  |
+   | endpointy, walidacja Pydantic, logika domenowa   |
+   +-------------------------+------------------------+
+                             |
+                             | SQLModel / SQLAlchemy
+                             v
+   +--------------------------------------------------+
+   | PostgreSQL                                       |
+   | tabele tworzone z modeli SQLModel + migracja     |
+   +--------------------------------------------------+
+
+Backend
+-------
+
+Katalog: ``backend``.
+
+Najważniejsze pliki:
+
+* ``backend/run.py`` - uruchomienie Uvicorn na porcie ``8080``,
+* ``backend/src/__init__.py`` - konfiguracja FastAPI, CORS, silnik bazy,
+  lifecycle i migracja,
+* ``backend/src/relations.py`` - encje SQLModel,
+* ``backend/src/routes`` - moduły endpointów.
+
+Rejestracja tras
+----------------
+
+``backend/src/__init__.py`` tworzy globalny obiekt ``app``. Import
+``src.routes`` ładuje wszystkie moduły z katalogu tras i rejestruje
+dekoratory ``@app.get``, ``@app.post``, ``@app.patch``, ``@app.delete``.
+
+.. code-block:: text
+
+   src.__init__
       |
-      v
-   Vue component
+      +-- app = FastAPI(...)
+      +-- engine = create_engine(DATABASE_URL)
+      +-- get_session()
+      +-- prepare_database()
+      +-- import src.routes
+              |
+              +-- login_register_routes
+              +-- members_routes
+              +-- items_routes
+              +-- shops_routes
+              +-- lists_routes
+              +-- fundings_routes
+              +-- public_purchase_plans_routes
+              +-- purchase_request_routes
+              +-- settlements_routes
+
+Moduły backendu
+---------------
+
+``login_register_routes.py``
+  Rejestracja i logowanie.
+
+``members_routes.py``
+  Lista studentów.
+
+``items_routes.py``
+  Katalog przedmiotów, statusy pending/approved/rejected, grupowanie.
+
+``shops_routes.py``
+  Sklepy, zgłaszanie, akceptacja, edycja i odrzucenie.
+
+``categories_subcategories_routes.py``
+  Kategorie, podkategorie i przypisanie CPV.
+
+``lists_routes.py``
+  Listy zakupów, pozycje, wkład użytkowników, zamykanie i otwieranie.
+
+``fundings_routes.py``
+  Dofinansowania, zadania budżetowe i dostępne środki.
+
+``public_purchase_plans_routes.py``
+  Budżety, dashboard, listy planów i pozycje planu publicznego.
+
+``purchase_request_routes.py``
+  Wnioski, alokacje finansowania, pozycje planu, finalizacja i linie
+  rozliczeniowe.
+
+``settlements_routes.py``
+  Rozliczenia, faktury, historia i statusy.
+
+Frontend
+--------
+
+Katalog: ``frontend``.
+
+Najważniejsze pliki:
+
+* ``frontend/src/main.js`` - start aplikacji,
+* ``frontend/src/router/index.js`` - routing SPA,
+* ``frontend/src/App.vue`` - główny kontener,
+* ``frontend/src/composables/useAuth.js`` - stan zalogowanego
+  użytkownika,
+* ``frontend/src/composables/useToast.js`` - komunikaty UI.
+
+Główne widoki:
+
+* ``HomePage.vue`` - panel użytkownika i dashboard,
+* ``AddedItems.vue`` - katalog przedmiotów,
+* ``AddedShopPurchaseLists.vue`` i ``ShopPurchaseListDetails.vue`` -
+  listy zakupów,
+* ``PublicPurchasePlans.vue`` - dofinansowania, budżety i plany,
+* ``PurchaseRequest.vue`` - wnioski,
+* ``Settlement.vue`` - rozliczenia i faktury,
+* ``Shops.vue`` - sklepy.
+
+Przepływ requestu
+-----------------
+
+.. code-block:: text
+
+   komponent Vue
       |
       | fetch("http://localhost:8080/api/...")
       v
-   FastAPI route
+   endpoint FastAPI
       |
+      | Pydantic BaseModel / query params
       v
-   SQLModel Session
+   Session(engine)
       |
+      | select / get / add / delete / commit
       v
    PostgreSQL
+      |
+      | response_model albo dict
+      v
+   JSON w przeglądarce
 
-W projekcie nie ma oddzielnej warstwy serwisów. Logika biznesowa jest
-obecnie skupiona w endpointach i funkcjach pomocniczych modułów
-``routes``. Modele SQLModel pełnią rolę mapowania encji relacyjnych.
+Konfiguracja środowiska
+-----------------------
+
+Backend wymaga ``DATABASE_URL``. W ``docker-compose.yml`` baza jest
+dostępna dla backendu jako:
+
+.. code-block:: text
+
+   postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion
+
+Porty:
+
+.. code-block:: text
+
+   8080  backend FastAPI
+   5431  PostgreSQL wystawiony na hosta
 
 Inicjalizacja bazy
 ------------------
@@ -118,163 +170,20 @@ Inicjalizacja bazy
 Przy starcie backend:
 
 1. tworzy tabele przez ``SQLModel.metadata.create_all(engine)``,
-2. wykonuje funkcję migracyjną ``migrate_project_budgets()``,
-3. próbuje załadować dane z ``backend/scripts/mockup_data.sql``.
+2. wykonuje ``migrate_project_budgets()`` dla PostgreSQL,
+3. próbuje załadować ``backend/scripts/mockup_data.sql``.
 
-Funkcja migracyjna obsługuje ewolucję projektu: dodaje kolumny, tabele
-pomocnicze, statusy faktur i pola używane przez finalizację wniosków.
+Migracja w ``src.__init__`` dodaje brakujące kolumny i tabele używane
+przez nowsze funkcje: alokacje finansowania, pozycje planu wniosku,
+snapshot finalizacji, linie rozliczeniowe i zadania dofinansowań.
 
-Konfiguracja runtime
---------------------
-
-Backend korzysta z wartości ``DATABASE_URL``. W ``docker-compose.yml``
-zmienna wskazuje na kontener bazy:
-
-.. code-block:: text
-
-   postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion
-
-Porty lokalne:
-
-.. code-block:: text
-
-   8080  -> FastAPI backend
-   5431  -> PostgreSQL host port, wewnątrz kontenera 5432
-
-Kontener backendu montuje katalog ``./backend`` jako ``/backend``.
-Dzięki temu zmiany w kodzie backendu są widoczne w kontenerze po
-restarcie procesu.
-
-Zależności techniczne
----------------------
-
-Backend:
-
-* ``python:3.10-slim`` jako obraz bazowy,
-* ``fastapi[standard]`` jako framework HTTP,
-* ``sqlmodel`` jako ORM i deklaracja schematu,
-* ``psycopg2`` jako sterownik PostgreSQL,
-* ``uvicorn[standard]`` jako serwer ASGI,
-* ``pytest`` jako framework testowy.
-
-Frontend:
-
-* ``vue`` w wersji z gałęzi ``3.5``,
-* ``vue-router`` do routingu SPA,
-* ``vite`` jako dev server i bundler,
-* ``@vitejs/plugin-vue`` do obsługi komponentów ``.vue``.
-
-Rejestracja tras backendu
+Ograniczenia architektury
 -------------------------
 
-Plik ``backend/src/__init__.py`` tworzy globalną instancję ``app`` i na
-końcu importuje ``src.routes``. Import modułu ``routes`` powoduje
-załadowanie plików tras, które dekorują tę samą instancję ``app``.
-
-.. code-block:: text
-
-   app = FastAPI(lifespan=lifespan)
-   app.add_middleware(CORSMiddleware, ...)
-   import src.routes
-
-Konsekwencje:
-
-* endpointy są rejestrowane przez efekt uboczny importu,
-* trasy używają wspólnej zależności ``get_session()``,
-* testy mogą podmienić zależność ``get_session`` przez
-  ``app.dependency_overrides``.
-
-Cykl życia requestu
--------------------
-
-.. code-block:: text
-
-   HTTP request
-      |
-      v
-   FastAPI route function
-      |
-      +--> Pydantic BaseModel waliduje payload
-      |
-      +--> Depends(get_session) otwiera Session(engine)
-      |
-      +--> SQLModel select/session.get/session.add
-      |
-      +--> session.commit albo rollback przy wyjątku
-      |
-      v
-   Pydantic response_model / dict / SQLModel object
-
-Warstwa API zwraca mieszankę:
-
-* modeli SQLModel bezpośrednio, np. ``Shop`` albo ``ShopPurchaseList``,
-* dedykowanych modeli wyjściowych ``BaseModel``, np.
-  ``PurchaseRequestOut``,
-* prostych słowników statusu, np. ``{"status": "success"}``.
-
-Mapowanie frontend -> backend
------------------------------
-
-.. code-block:: text
-
-   HomePage.vue
-     /api/dashboard/budget_summary
-     /api/project_budgets
-     /api/fundings
-
-   PublicPurchasePlans.vue
-     /api/fundings
-     /api/project_budgets
-     /api/public_purchase_plan_lists
-     /api/public_purchase_plans
-
-   AddedShopPurchaseLists.vue + ShopPurchaseListDetails.vue
-     /api/lists
-     /api/lists/{id}/items
-     /api/lists/{id}/close
-     /api/lists/{id}/reopen
-     /api/lists/{id}/market_research
-
-   PurchaseRequest.vue
-     /api/purchase_requests
-     /api/create_purchase_requests
-     /api/purchase_requests/{id}/prepare_finalization
-     /api/purchase_requests/{id}/finalize
-     /api/purchase_requests/{id}/send_to_settlement
-     /api/purchase_requests/{id}/settlement_lines
-
-   Settlement.vue
-     /api/settlements
-     /api/settlements/history
-     /api/invoices
-     /api/settlements/{id}/invoices
-     /api/settlements/{id}/complete
-
-Stan sesji frontendu
---------------------
-
-Sesja użytkownika nie jest tokenem JWT. ``useAuth.js`` zapisuje obiekt
-użytkownika w ``localStorage``:
-
-.. code-block:: text
-
-   {
-     id,
-     association_id,
-     firstName,
-     lastName,
-     email,
-     circleName,
-     position,
-     inSAP,
-     projectFinanceManagerId,
-     role
-   }
-
-Router sprawdza tylko, czy obiekt istnieje. Przy odświeżeniu strony
-``restoreSession()`` odtwarza użytkownika z ``localStorage``.
-
-Konsekwencja bezpieczeństwa: aplikacja ma kontrolę dostępu głównie na
-poziomie interfejsu oraz wybranych walidacji backendowych. Pełna
-produkcyjna autoryzacja wymagałaby sesji serwerowej albo tokenów i
-spójnego middleware uprawnień.
+* Brak oddzielnej warstwy serwisowej: logika domenowa znajduje się w
+  trasach.
+* Autoryzacja jest uproszczona: frontend przechowuje użytkownika w
+  ``localStorage``, a backend często przyjmuje identyfikatory w payloadzie
+  lub query string.
+* Część endpointów zwraca modele SQLModel bez dedykowanego DTO.
+* Testy używają SQLite, a runtime używa PostgreSQL.
