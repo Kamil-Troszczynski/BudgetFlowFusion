@@ -141,6 +141,117 @@
         </div>
       </div>
 
+      <div class="requests-section">
+        <div class="requests-header">
+          <div class="requests-title-section">
+            <h2 class="requests-title">Rejestr faktur</h2>
+            <p class="requests-subtitle">Wszystkie faktury z możliwością filtrowania po statusie, skarbniku i wniosku</p>
+          </div>
+        </div>
+
+        <div class="invoice-filters">
+          <label>
+            <span>Status</span>
+            <select v-model="invoiceFilters.status" class="modal-form__input">
+              <option value="">Wszystkie statusy</option>
+              <option v-for="status in invoiceStatusOptions" :key="status.value" :value="status.value">
+                {{ status.label }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>Skarbnik</span>
+            <select v-model.number="invoiceFilters.project_finance_manager_id" class="modal-form__input">
+              <option :value="null">Wszyscy skarbnicy</option>
+              <option v-for="treasurer in treasurers" :key="treasurer.id" :value="treasurer.id">
+                {{ treasurer.name }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>Wniosek</span>
+            <select v-model.number="invoiceFilters.purchase_request_id" class="modal-form__input">
+              <option :value="null">Wszystkie wnioski</option>
+              <option v-for="request in invoiceRequestOptions" :key="request.id" :value="request.id">
+                {{ request.name }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div v-if="filteredInvoices.length === 0" class="requests-empty">
+          <p class="lists-empty-icon">🧾</p>
+          <p class="requests-empty-text">Brak faktur dla wybranych filtrów</p>
+          <p class="requests-empty-subtext">Zmień filtry albo dodaj fakturę w szczegółach rozliczenia</p>
+        </div>
+
+        <div v-else class="invoice-registry">
+          <article v-for="invoice in filteredInvoices" :key="invoice.invoice_id" class="invoice-registry-card">
+            <div>
+              <p class="invoice-title">{{ invoice.number || invoice.invoice_name || `Faktura #${invoice.invoice_id}` }}</p>
+              <p class="invoice-date">{{ invoice.seller_name || 'Brak sprzedawcy' }} · {{ formatDate(invoice.issue_date || invoice.created_at) }}</p>
+              <p class="invoice-date">Wniosek: {{ invoice.purchase_request_name || 'Brak powiązania' }}</p>
+              <p class="invoice-date">Skarbnik: {{ invoice.project_finance_manager_name || managerName(invoice.project_finance_manager_id) || 'Nieprzypisany' }}</p>
+            </div>
+            <strong class="invoice-price">{{ formatMoney(invoice.amount) }} PLN</strong>
+            <span class="invoice-status" :class="invoiceStatusClass(invoice)">
+              {{ invoiceStatusText(invoice.status) }}
+            </span>
+          </article>
+        </div>
+      </div>
+
+      <div class="requests-section">
+        <div class="requests-header">
+          <div class="requests-title-section">
+            <h2 class="requests-title">Historia rozliczeń</h2>
+            <p class="requests-subtitle">Zakończone wnioski przeniesione do historii</p>
+          </div>
+        </div>
+
+        <div v-if="historySettlements.length === 0" class="requests-empty">
+          <p class="lists-empty-icon">📚</p>
+          <p class="requests-empty-text">Brak zakończonych rozliczeń</p>
+          <p class="requests-empty-subtext">Po zamknięciu wniosku pojawi się tutaj</p>
+        </div>
+
+        <div v-else class="requests-grid">
+          <div
+            v-for="settlement in historySettlements"
+            :key="`history-${settlement.id}`"
+            class="request-card"
+          >
+            <div class="request-card__header">
+              <h3 class="request-card__title">
+                {{ settlement.purchaseRequest?.purchase_request_name ?? `Rozliczenie #${settlement.id}` }}
+              </h3>
+              <span class="request-card__badge completed">Historia</span>
+            </div>
+
+            <div class="request-card__content">
+              <p class="request-card__detail">
+                <span class="request-card__label">Wydano:</span>
+                <span class="request-card__value">{{ formatMoney(settlement.totalSpent) }} PLN</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Faktury:</span>
+                <span class="request-card__value">{{ settlement.invoices.length }}</span>
+              </p>
+              <p class="request-card__detail">
+                <span class="request-card__label">Pozycje:</span>
+                <span class="request-card__value">{{ settlement.settlementLines.length }}</span>
+              </p>
+            </div>
+
+            <div class="request-card__actions">
+              <button class="request-card__button view" @click="activeSettlement = settlement">
+                Podgląd
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </template>
     
     <div v-else class="requests-section">
@@ -156,9 +267,27 @@
             </h2>
             <p class="settlement-details__subtitle">Rozliczenie opłaconego wniosku</p>
           </div>
-          <span class="request-card__badge" :class="getStatusClass(activeSettlement)">
-            {{ formatStatus(activeSettlement) }}
-          </span>
+          <div class="settlement-details__actions">
+            <span class="request-card__badge" :class="getStatusClass(activeSettlement)">
+              {{ formatStatus(activeSettlement) }}
+            </span>
+            <button
+              v-if="!activeSettlement.isHistory"
+              class="request-card__button complete"
+              type="button"
+              @click="setSettlementStatus('settled')"
+            >
+              Oznacz jako rozliczony
+            </button>
+            <button
+              v-else
+              class="request-card__button complete"
+              type="button"
+              @click="setSettlementStatus('settlement')"
+            >
+              Przywróć do rozliczania
+            </button>
+          </div>
         </div>
 
         <div class="settlement-details__grid">
@@ -183,49 +312,66 @@
         <div class="settlement-details__invoices">
           <div class="invoice-section-header">
             <h3>Pozycje rozliczenia</h3>
-            <button class="request-card__button upload" type="button" @click="addExtraLine">
+            <button v-if="!activeSettlement.isHistory" class="request-card__button upload" type="button" @click="addExtraLine">
               + Dodaj pozycje
             </button>
           </div>
-          <div class="settlement-lines-table custom-scrollbar">
-            <table>
-              <thead>
-                <tr>
-                  <th>Sklep</th>
-                  <th>Opis</th>
-                  <th>Plan brutto</th>
-                  <th>Faktycznie</th>
-                  <th>Faktura</th>
-                  <th>Roznica</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="line in activeSettlement.settlementLines" :key="line.settlement_line_id">
-                  <td><input v-model="line.shop_name" class="modal-form__input" /></td>
-                  <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-description"></textarea></td>
-                  <td><input v-model.number="line.planned_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" /></td>
-                  <td><input v-model.number="line.actual_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" /></td>
-                  <td>
-                    <select v-model="line.invoice_id" class="modal-form__input">
-                      <option :value="null">Brak</option>
-                      <option v-for="invoice in activeSettlement.invoices" :key="invoice.invoice_id" :value="invoice.invoice_id">
-                        {{ invoice.number || invoice.invoice_name }}
-                      </option>
-                    </select>
-                  </td>
-                  <td>{{ formatMoney(Number(line.planned_gross_amount || 0) - Number(line.actual_gross_amount || 0)) }} PLN</td>
-                  <td><button class="request-card__button view" type="button" @click="saveSettlementLine(line)">Zapisz</button></td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="settlement-lines-grid">
+            <article
+              v-for="line in activeSettlement.settlementLines"
+              :key="line.settlement_line_id"
+              class="settlement-line-card"
+            >
+              <div class="settlement-line-card__header">
+                <div>
+                  <label class="modal-form__label">Sklep / pozycja</label>
+                  <input v-model="line.shop_name" class="modal-form__input" :disabled="activeSettlement.isHistory" />
+                </div>
+                <span class="invoice-status" :class="invoiceStatusClass(invoiceForLine(line))">
+                  {{ invoiceStatusLabel(invoiceForLine(line)) }}
+                </span>
+              </div>
+
+              <label class="settlement-line-card__field">
+                <span class="modal-form__label">Opis pozycji z wniosku</span>
+                <textarea v-model="line.purchase_description" class="modal-form__input settlement-line-description" :disabled="activeSettlement.isHistory"></textarea>
+              </label>
+
+              <div class="settlement-line-card__amounts">
+                <label>
+                  <span class="modal-form__label">Plan brutto</span>
+                  <input v-model.number="line.planned_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" :disabled="activeSettlement.isHistory" />
+                </label>
+                <label>
+                  <span class="modal-form__label">Faktycznie brutto</span>
+                  <input v-model.number="line.actual_gross_amount" class="modal-form__input" type="number" min="0" step="0.01" :disabled="activeSettlement.isHistory" />
+                </label>
+                <div class="settlement-line-card__difference">
+                  <span>Różnica</span>
+                  <strong>{{ formatMoney(Number(line.planned_gross_amount || 0) - Number(line.actual_gross_amount || 0)) }} PLN</strong>
+                </div>
+              </div>
+
+              <div class="settlement-line-card__footer">
+                <label>
+                  <span class="modal-form__label">Przypisana faktura</span>
+                  <select v-model="line.invoice_id" class="modal-form__input" :disabled="activeSettlement.isHistory">
+                    <option :value="null">Brak faktury</option>
+                    <option v-for="invoice in activeSettlement.invoices" :key="invoice.invoice_id" :value="invoice.invoice_id">
+                      {{ invoice.number || invoice.invoice_name }} · {{ invoiceStatusText(invoice.status) }}
+                    </option>
+                  </select>
+                </label>
+                <button v-if="!activeSettlement.isHistory" class="request-card__button view" type="button" @click="saveSettlementLine(line)">Zapisz pozycję</button>
+              </div>
+            </article>
           </div>
         </div>
 
         <div class="settlement-details__invoices">
           <div class="invoice-section-header">
             <h3>Załączone faktury</h3>
-            <button class="request-card__button upload" type="button" @click="showAddInvoiceModal = true">
+            <button v-if="!activeSettlement.isHistory" class="request-card__button upload" type="button" @click="openInvoiceModal()">
               + Dodaj fakturę
             </button>
           </div>
@@ -244,20 +390,29 @@
               <p class="invoice-date">
                 {{ invoice.seller_name || 'Brak sprzedawcy' }} · {{ formatDate(invoice.issue_date || invoice.created_at) }}
               </p>
+              <p class="invoice-date">
+                Skarbnik: {{ invoice.project_finance_manager_name || managerName(invoice.project_finance_manager_id) || 'Nieprzypisany' }}
+              </p>
             </div>
             <div class="invoice-price">{{ invoice.amount ?? '—' }} PLN</div>
+            <span class="invoice-status" :class="invoiceStatusClass(invoice)">
+              {{ invoiceStatusText(invoice.status) }}
+            </span>
+            <button v-if="!activeSettlement.isHistory" class="request-card__button view invoice-edit" type="button" @click="openInvoiceModal(invoice)">
+              Edytuj
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="showAddInvoiceModal" class="modal-overlay" @click="showAddInvoiceModal = false">
+    <div v-if="showAddInvoiceModal" class="modal-overlay" @click="closeInvoiceModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2 class="modal-title">Nowa faktura</h2>
-          <button class="modal-close" @click="showAddInvoiceModal = false">✕</button>
+          <h2 class="modal-title">{{ editingInvoiceId ? 'Edycja faktury' : 'Nowa faktura' }}</h2>
+          <button class="modal-close" @click="closeInvoiceModal">✕</button>
         </div>
-        <form class="modal-form" @submit.prevent="handleNewInvoice">
+        <form class="modal-form" @submit.prevent="saveInvoice">
           <div class="modal-form__group">
             <label class="modal-form__label">Numer faktury</label>
             <input
@@ -326,15 +481,23 @@
           <div class="modal-form__group">
             <label class="modal-form__label">Status</label>
             <select v-model="newInvoiceData.status" class="modal-form__input" required>
-              <option value="pending">Oczekująca</option>
-              <option value="accepted">Zaakceptowana</option>
-              <option value="rejected">Odrzucona</option>
-              <option value="paid">Opłacona</option>
+              <option v-for="status in invoiceStatusOptions" :key="status.value" :value="status.value">
+                {{ status.label }}
+              </option>
+            </select>
+          </div>
+          <div class="modal-form__group">
+            <label class="modal-form__label">Skarbnik odpowiedzialny za fakturę</label>
+            <select v-model.number="newInvoiceData.project_finance_manager_id" class="modal-form__input">
+              <option :value="null">Brak przypisania</option>
+              <option v-for="treasurer in treasurers" :key="treasurer.id" :value="treasurer.id">
+                {{ treasurer.name }}
+              </option>
             </select>
           </div>
           <div class="modal-actions">
-            <button type="button" class="modal-btn modal-btn-cancel" @click="showAddInvoiceModal = false">Anuluj</button>
-            <button type="submit" class="modal-btn modal-btn-save">Utwórz fakturę</button>
+            <button type="button" class="modal-btn modal-btn-cancel" @click="closeInvoiceModal">Anuluj</button>
+            <button type="submit" class="modal-btn modal-btn-save">{{ editingInvoiceId ? 'Zapisz fakturę' : 'Utwórz fakturę' }}</button>
           </div>
         </form>
       </div>
@@ -377,19 +540,28 @@ const API_URL = 'http://localhost:8080/api'
 const { user } = useAuth()
 
 const currentFinanceManagerId = computed(() => {
-  return user.value?.projectFinanceManagerId || user.value?.id
+  return user.value?.project_finance_manager_id || user.value?.projectFinanceManagerId || user.value?.id
 })
 
 const activeSettlement = ref(null)
 
 const userSettlements = ref([])
 const allSettlements = ref([])
+const historySettlements = ref([])
+const allInvoices = ref([])
+const treasurers = ref([])
+const invoiceFilters = ref({
+  status: '',
+  project_finance_manager_id: null,
+  purchase_request_id: null
+})
 
 const loading = ref(false)
 const error = ref(null)
 
 const showAddSettlementModal = ref(false)
 const showAddInvoiceModal = ref(false)
+const editingInvoiceId = ref(null)
 const newSettlementData = ref({
   purchase_request_id: null
 })
@@ -400,8 +572,18 @@ const newInvoiceData = ref({
   seller_nip: '',
   net_total: null,
   vat_total: null,
-  status: 'pending'
+  status: 'pending',
+  project_finance_manager_id: currentFinanceManagerId.value || null
 })
+
+const invoiceStatusOptions = [
+  { value: 'paid', label: 'Zamówione i opłacone' },
+  { value: 'arrived', label: 'Dostarczone do koła' },
+  { value: 'pending', label: 'W podpisach u opiekuna' },
+  { value: 'accepted', label: 'Przyjęta u księgowej' },
+  { value: 'returned', label: 'Pieniądze zwrócone' },
+  { value: 'rejected', label: 'Odrzucona' }
+]
 
 const mapSettlements = (data = []) =>
   data.map((req) => ({
@@ -420,6 +602,45 @@ const mapSettlements = (data = []) =>
 
     totalSpent: Number(req.total_spent ?? 0),
   }))
+
+const managerName = (projectFinanceManagerId) =>
+  treasurers.value.find(
+    treasurer => Number(treasurer.id) === Number(projectFinanceManagerId)
+  )?.name || null
+
+const invoiceRequestOptions = computed(() => {
+  const map = new Map()
+  for (const invoice of allInvoices.value) {
+    if (invoice.purchase_request_id && !map.has(invoice.purchase_request_id)) {
+      map.set(invoice.purchase_request_id, {
+        id: invoice.purchase_request_id,
+        name: invoice.purchase_request_name || `Wniosek #${invoice.purchase_request_id}`
+      })
+    }
+  }
+  return [...map.values()]
+})
+
+const filteredInvoices = computed(() =>
+  allInvoices.value.filter(invoice => {
+    if (invoiceFilters.value.status && invoice.status !== invoiceFilters.value.status) {
+      return false
+    }
+    if (
+      invoiceFilters.value.project_finance_manager_id
+      && Number(invoice.project_finance_manager_id) !== Number(invoiceFilters.value.project_finance_manager_id)
+    ) {
+      return false
+    }
+    if (
+      invoiceFilters.value.purchase_request_id
+      && Number(invoice.purchase_request_id) !== Number(invoiceFilters.value.purchase_request_id)
+    ) {
+      return false
+    }
+    return true
+  })
+)
 
 const replaceSettlement = (updatedSettlement) => {
   const mapped = mapSettlements([updatedSettlement])[0]
@@ -462,14 +683,60 @@ const fetchUserSettlements = async () => {
   userSettlements.value = mapSettlements(data)
 }
 
+const fetchHistorySettlements = async () => {
+  const response = await fetch(`${API_URL}/settlements/history`)
+
+  if (!response.ok) {
+    throw new Error('Nie udało się pobrać historii rozliczeń')
+  }
+
+  const data = await response.json()
+  historySettlements.value = mapSettlements(data).map(settlement => ({
+    ...settlement,
+    isHistory: true
+  }))
+}
+
+const fetchTreasurers = async () => {
+  const response = await fetch(`${API_URL}/students`, { cache: 'no-store' })
+  if (!response.ok) {
+    throw new Error('Nie udało się pobrać listy skarbników')
+  }
+  const students = await response.json()
+  treasurers.value = students
+    .filter(student =>
+      student.project_finance_manager_id
+      && (!user.value?.association_id || Number(student.association_id) === Number(user.value.association_id))
+    )
+    .map(student => ({
+      id: student.project_finance_manager_id,
+      name: `${student.name || ''} ${student.surname || ''}`.trim() || `Skarbnik #${student.project_finance_manager_id}`
+    }))
+}
+
+const fetchInvoices = async () => {
+  const params = new URLSearchParams()
+  if (user.value?.association_id) {
+    params.set('association_id', user.value.association_id)
+  }
+  const response = await fetch(`${API_URL}/invoices?${params.toString()}`, { cache: 'no-store' })
+  if (!response.ok) {
+    throw new Error('Nie udało się pobrać faktur')
+  }
+  allInvoices.value = await response.json()
+}
+
 const loadData = async () => {
   try {
     loading.value = true
     error.value = null
 
     await Promise.all([
+      fetchTreasurers(),
       fetchAllSettlements(),
       fetchUserSettlements(),
+      fetchHistorySettlements(),
+      fetchInvoices(),
     ])
   } catch (err) {
     console.error(err)
@@ -516,6 +783,7 @@ const handleNewSettlement = async () => {
 }
 
 const resetInvoiceForm = () => {
+  editingInvoiceId.value = null
   newInvoiceData.value = {
     number: '',
     issue_date: new Date().toISOString().slice(0, 10),
@@ -523,16 +791,46 @@ const resetInvoiceForm = () => {
     seller_nip: '',
     net_total: null,
     vat_total: null,
-    status: 'pending'
+    status: 'pending',
+    project_finance_manager_id: currentFinanceManagerId.value || null
   }
 }
 
-const handleNewInvoice = async () => {
+const openInvoiceModal = (invoice = null) => {
+  if (invoice) {
+    editingInvoiceId.value = invoice.invoice_id
+    newInvoiceData.value = {
+      number: invoice.number || '',
+      issue_date: invoice.issue_date || new Date().toISOString().slice(0, 10),
+      seller_name: invoice.seller_name || '',
+      seller_nip: invoice.seller_nip || '',
+      net_total: invoice.net_total ?? null,
+      vat_total: invoice.vat_total ?? null,
+      status: invoice.status || 'pending',
+      project_finance_manager_id: invoice.project_finance_manager_id || null
+    }
+  } else {
+    resetInvoiceForm()
+  }
+  showAddInvoiceModal.value = true
+}
+
+const closeInvoiceModal = () => {
+  showAddInvoiceModal.value = false
+  resetInvoiceForm()
+}
+
+const saveInvoice = async () => {
   if (!activeSettlement.value?.id) return
 
   try {
-    const response = await fetch(`${API_URL}/settlements/${activeSettlement.value.id}/invoices`, {
-      method: 'POST',
+    const isEditing = Boolean(editingInvoiceId.value)
+    const response = await fetch(
+      isEditing
+        ? `${API_URL}/invoices/${editingInvoiceId.value}`
+        : `${API_URL}/settlements/${activeSettlement.value.id}/invoices`,
+      {
+      method: isEditing ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         number: newInvoiceData.value.number,
@@ -541,20 +839,21 @@ const handleNewInvoice = async () => {
         seller_nip: newInvoiceData.value.seller_nip,
         net_total: Number(newInvoiceData.value.net_total),
         vat_total: Number(newInvoiceData.value.vat_total),
-        status: newInvoiceData.value.status
+        status: newInvoiceData.value.status,
+        project_finance_manager_id: newInvoiceData.value.project_finance_manager_id || null
       })
     })
 
     if (!response.ok) {
       const err = await response.json()
-      alert(`Błąd przy tworzeniu faktury: ${err.detail || 'Nieznany błąd'}`)
+      alert(`Błąd przy zapisie faktury: ${err.detail || 'Nieznany błąd'}`)
       return
     }
 
     const updatedSettlement = await response.json()
     replaceSettlement(updatedSettlement)
-    resetInvoiceForm()
-    showAddInvoiceModal.value = false
+    await fetchInvoices()
+    closeInvoiceModal()
   } catch (err) {
     console.error('Błąd zapisu faktury:', err)
   }
@@ -621,18 +920,29 @@ const addExtraLine = () => {
   })
 }
 
-const calcProgress = (settlement) => {
-  const invoices = settlement?.invoices?.length ?? 0
-  const lists = settlement?.shopPurchaseLists?.length ?? 0
+const invoiceForLine = (line) =>
+  activeSettlement.value?.invoices?.find(invoice =>
+    Number(invoice.invoice_id) === Number(line.invoice_id)
+  ) || null
 
-  if (lists === 0) {
-    return invoices > 0 ? 100 : 0
+const invoiceStatusText = (status) =>
+  invoiceStatusOptions.find(option => option.value === status)?.label || 'Brak statusu'
+
+const invoiceStatusLabel = (invoice) =>
+  invoice ? invoiceStatusText(invoice.status) : 'Brak faktury'
+
+const invoiceStatusClass = (invoice) =>
+  invoice ? `invoice-status--${invoice.status || 'pending'}` : 'invoice-status--missing'
+
+const calcProgress = (settlement) => {
+  const lines = settlement?.settlementLines ?? []
+
+  if (lines.length === 0) {
+    return 0
   }
 
-  return Math.min(
-    Math.round((invoices / lists) * 100),
-    100
-  )
+  const settledLines = lines.filter(line => line.invoice_id).length
+  return Math.min(Math.round((settledLines / lines.length) * 100), 100)
 }
 
 const getStatusClass = (settlement) => {
@@ -653,6 +963,24 @@ const formatStatus = (settlement) => {
   return 'Oczekuje'
 }
 
+const setSettlementStatus = async (status) => {
+  if (!activeSettlement.value?.id) return
+  try {
+    const response = await fetch(`${API_URL}/settlements/${activeSettlement.value.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udalo sie zmienic statusu rozliczenia')
+    activeSettlement.value = null
+    await loadData()
+  } catch (err) {
+    console.error(err)
+    alert(err.message || 'Nie udalo sie zmienic statusu rozliczenia.')
+  }
+}
+
 const formatDate = (date) => {
   if (!date) return '—'
 
@@ -667,7 +995,7 @@ const formatMoney = (value) => Number(value || 0).toLocaleString('pl-PL', {
 })
 
 onMounted(() => {
-  fetchAllSettlements()
+  loadData()
 })
 
 watch(
@@ -915,6 +1243,21 @@ watch(
   background: rgba(34, 197, 94, 0.35);
 }
 
+.request-card__button.complete {
+  flex: 0 0 auto;
+  background: rgba(20, 184, 166, 0.2);
+  color: #99f6e4;
+}
+
+.request-card__button.complete:hover:not(:disabled) {
+  background: rgba(20, 184, 166, 0.35);
+}
+
+.request-card__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .settlement-details__back {
   margin-bottom: 2vh;
   background: none;
@@ -936,7 +1279,16 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 1.2vw;
   margin-bottom: 2vw;
+}
+
+.settlement-details__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .settlement-details__title {
@@ -990,9 +1342,10 @@ watch(
 }
 
 .invoice-card {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
+  gap: 1vw;
   background: rgba(30, 41, 59, 0.5);
   padding: 1vw;
   border-radius: 0.8vw;
@@ -1015,33 +1368,149 @@ watch(
   color: #86efac;
   font-weight: 700;
   font-size: 1vw;
+  white-space: nowrap;
 }
 
-.settlement-lines-table {
-  width: 100%;
-  overflow-x: auto;
+.invoice-edit {
+  flex: 0 0 auto;
+  min-width: 5vw;
+}
+
+.invoice-status {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.35vw 0.7vw;
+  border-radius: 999px;
+  font-size: 0.78vw;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.invoice-status--pending {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.17);
+}
+
+.invoice-status--accepted,
+.invoice-status--paid,
+.invoice-status--arrived {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.16);
+}
+
+.invoice-status--returned {
+  color: #bae6fd;
+  background: rgba(14, 165, 233, 0.16);
+}
+
+.invoice-status--rejected {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.invoice-status--missing {
+  color: rgba(226, 232, 240, 0.62);
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.settlement-lines-grid {
+  display: grid;
+  gap: 1vw;
   margin-bottom: 2vh;
 }
 
-.settlement-lines-table table {
-  width: 100%;
-  min-width: 980px;
-  border-collapse: collapse;
+.invoice-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1vw;
+  margin-bottom: 1.5vw;
+  padding: 1vw;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.9vw;
+  background: rgba(15, 23, 42, 0.55);
 }
 
-.settlement-lines-table th,
-.settlement-lines-table td {
-  padding: 0.75vw;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  color: #e2e8f0;
-  vertical-align: top;
+.invoice-filters label {
+  display: grid;
+  gap: 0.45vw;
 }
 
-.settlement-lines-table th {
-  color: #94a3b8;
-  font-size: 0.78vw;
+.invoice-filters span {
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 0.82vw;
+  font-weight: 800;
   text-transform: uppercase;
-  background: rgba(30, 41, 59, 0.55);
+}
+
+.invoice-registry {
+  display: grid;
+  gap: 0.9vw;
+}
+
+.invoice-registry-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1vw;
+  align-items: center;
+  padding: 1vw;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 0.85vw;
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.settlement-line-card {
+  display: grid;
+  gap: 1vw;
+  padding: 1.1vw;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.9vw;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.78));
+}
+
+.settlement-line-card__header,
+.settlement-line-card__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1vw;
+  align-items: end;
+}
+
+.settlement-line-card__field {
+  display: grid;
+  gap: 0.4vw;
+}
+
+.settlement-line-card__amounts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1vw;
+  align-items: end;
+}
+
+.settlement-line-card__amounts label,
+.settlement-line-card__footer label {
+  display: grid;
+  gap: 0.4vw;
+}
+
+.settlement-line-card__difference {
+  display: grid;
+  gap: 0.25vw;
+  padding: 0.75vw;
+  border-radius: 0.7vw;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.settlement-line-card__difference span {
+  color: rgba(226, 232, 240, 0.56);
+  font-size: 0.78vw;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.settlement-line-card__difference strong {
+  color: #bfdbfe;
 }
 
 .settlement-line-description {
@@ -1152,5 +1621,46 @@ watch(
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
+}
+
+@media (max-width: 980px) {
+  .settlement-details__top,
+  .invoice-section-header {
+    display: grid;
+  }
+
+  .settlement-details__grid,
+  .settlement-line-card__amounts,
+  .invoice-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .settlement-line-card__header,
+  .settlement-line-card__footer,
+  .invoice-card,
+  .invoice-registry-card {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-details__actions {
+    justify-content: flex-start;
+  }
+
+  .invoice-edit {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .requests-grid,
+  .settlement-details__grid,
+  .settlement-line-card__amounts,
+  .invoice-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    max-width: calc(100vw - 24px);
+  }
 }
 </style>

@@ -73,6 +73,19 @@ def migrate_project_budgets():
         if "purchase_request_plan_position" in table_names
         else set()
     )
+    invoice_columns = (
+        {column["name"] for column in inspector.get_columns("invoice")}
+        if "invoice" in table_names
+        else set()
+    )
+    if "invoice" in table_names:
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
+            connection.execute(text(
+                "ALTER TYPE invoicestatus ADD VALUE IF NOT EXISTS 'returned'"
+            ))
+            connection.execute(text(
+                "ALTER TYPE invoicestatus ADD VALUE IF NOT EXISTS 'arrived'"
+            ))
     with engine.begin() as connection:
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS purchase_request_funding_allocation (
@@ -222,6 +235,11 @@ def migrate_project_budgets():
             connection.execute(text("ALTER TABLE funding ADD COLUMN signing_person VARCHAR"))
         if "spending_deadline" not in funding_columns:
             connection.execute(text("ALTER TABLE funding ADD COLUMN spending_deadline DATE"))
+        if "project_finance_manager_id" not in invoice_columns:
+            connection.execute(text(
+                "ALTER TABLE invoice ADD COLUMN project_finance_manager_id INTEGER "
+                "REFERENCES project_finance_manager(project_finance_manager_id)"
+            ))
         if "funding_id" not in plan_list_columns:
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan_list ADD COLUMN funding_id INTEGER"

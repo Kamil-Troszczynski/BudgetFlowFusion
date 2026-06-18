@@ -1309,7 +1309,7 @@ const isOwner = (request) => {
 const canFinalizeRequest = request =>
   isOwner(request)
   && ['pending', 'prepared', 'approved', 'accounting'].includes(request.status)
-  && request.finalizationStatus !== 'settlement'
+  && !['settlement', 'settled'].includes(request.finalizationStatus)
   && Number(request.sourceList__shopCount || 0) > 0
 
 const canReturnToOpen = request =>
@@ -1321,7 +1321,7 @@ const finalizationActionLabel = (request, short = false) =>
     : (short ? 'Stwórz' : 'Stwórz wniosek')
 
 const workflowActionLabel = (request, short = false) => {
-  if (request.finalizationStatus === 'settlement') return short ? 'Historia' : 'Podglad historii'
+  if (['settlement', 'settled'].includes(request.finalizationStatus)) return short ? 'Historia' : 'Podglad historii'
   if (request.finalizationStatus === 'finalized') return short ? 'Rozlicz' : 'Przekaz do rozliczen'
   if (request.finalizationStatus === 'prepared') return short ? 'Dokoncz' : 'Dokoncz wniosek'
   return short ? 'Edytuj' : 'Edytuj / finalizuj'

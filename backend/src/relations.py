@@ -10,6 +10,8 @@ class InvoiceStatus(str, Enum):
     accepted = "accepted"
     rejected = "rejected"
     paid = "paid"
+    returned = "returned"
+    arrived = "arrived"
 
 
 class Currency(str, Enum):
@@ -283,6 +285,7 @@ class Invoice(SQLModel, table=True):
     status: InvoiceStatus = Field(sa_column=Column(SQLEnum(InvoiceStatus), nullable=False))
     created_at: datetime
     settlement_id: Optional[int] = Field(default=None, foreign_key="settlement.settlement_id")
+    project_finance_manager_id: Optional[int] = Field(default=None, foreign_key="project_finance_manager.project_finance_manager_id")
 
     settlement: Optional[Settlement] = Relationship(back_populates="invoices")
 
