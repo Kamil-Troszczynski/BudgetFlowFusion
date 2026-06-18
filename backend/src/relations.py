@@ -402,6 +402,8 @@ class ShopPurchaseList(SQLModel, table=True):
     name: str | None = Field(default=None)
     cost: float
     created_at: datetime
+    market_research_comment: str | None = Field(default=None)
+    market_research_file_name: str | None = Field(default=None)
 
     gslbccf_id: Optional[int] = Field(default=None, foreign_key="grouped_shops_list_by_cpv_category_and_funding.gslbccf_id")
     settlement_id: Optional[int] = Field(default=None, foreign_key="settlement.settlement_id")

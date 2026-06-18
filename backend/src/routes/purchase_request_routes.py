@@ -160,6 +160,7 @@ class PurchaseRequestFinalizationDraftIn(BaseModel):
 
 class FinalizationCpvRowOut(BaseModel):
     cpv_code: str
+    plan_number: Optional[str] = None
     allocated_net_amount: float
     allocated_eur_amount: float = 0.0
     is_main_cpv: bool = False
@@ -231,6 +232,10 @@ class PurchaseRequestSettlementLineOut(BaseModel):
     shop_name: str
     purchase_description: Optional[str] = None
     planned_gross_amount: float = 0.0
+    calculated_gross_amount: float = 0.0
+    market_research_required: bool = False
+    market_research_comment: Optional[str] = None
+    market_research_file_name: Optional[str] = None
     actual_gross_amount: Optional[float] = None
     difference_amount: float = 0.0
     is_extra: bool = False
@@ -282,6 +287,13 @@ def _settlement_line_out(
     invoice = session.get(Invoice, line.invoice_id) if line.invoice_id else None
     actual = line.actual_gross_amount
     planned = float(line.planned_gross_amount or 0)
+    purchase_list = (
+        session.get(ShopPurchaseList, line.shop_purchase_list_id)
+        if line.shop_purchase_list_id
+        else None
+    )
+    list_total = _shop_purchase_list_total(purchase_list, session) if purchase_list else planned
+    market_research_required = list_total > 500
     return PurchaseRequestSettlementLineOut(
         settlement_line_id=line.settlement_line_id,
         purchase_request_id=line.purchase_request_id,
@@ -291,6 +303,18 @@ def _settlement_line_out(
         shop_name=line.shop_name,
         purchase_description=line.purchase_description,
         planned_gross_amount=planned,
+        calculated_gross_amount=list_total,
+        market_research_required=market_research_required,
+        market_research_comment=(
+            purchase_list.market_research_comment
+            if purchase_list and market_research_required
+            else None
+        ),
+        market_research_file_name=(
+            purchase_list.market_research_file_name
+            if purchase_list and market_research_required
+            else None
+        ),
         actual_gross_amount=actual,
         difference_amount=planned - float(actual or 0),
         is_extra=line.is_extra,
@@ -952,9 +976,12 @@ def _finalization_summary(
     euro_rate = euro_rate or _default_euro_rate_for_request(request, session)
     rows = _finalization_row_dicts(request, session, euro_rate)
     cpv_totals: dict[str, float] = {}
+    cpv_plan_numbers: dict[str, set[str]] = {}
     for row in rows:
         cpv_code = row["cpv_code"] or ""
         cpv_totals[cpv_code] = cpv_totals.get(cpv_code, 0.0) + row["allocated_net_amount"]
+        if row["plan_number"]:
+            cpv_plan_numbers.setdefault(cpv_code, set()).add(row["plan_number"])
     main_cpv = (
         max(cpv_totals.items(), key=lambda item: item[1])[0]
         if cpv_totals
@@ -963,6 +990,7 @@ def _finalization_summary(
     cpv_rows = [
         FinalizationCpvRowOut(
             cpv_code=cpv_code,
+            plan_number=", ".join(sorted(cpv_plan_numbers.get(cpv_code, set()))) or None,
             allocated_net_amount=net_amount,
             allocated_eur_amount=(
                 net_amount / euro_rate if euro_rate and euro_rate > 0 else 0.0

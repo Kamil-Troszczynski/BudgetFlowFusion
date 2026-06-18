@@ -240,9 +240,6 @@
             <PublicPurchasePlans />
           </section>
 
-          <section class="dashboard__section" v-if="navLinks[activeNavIndex] === 'Akceptacja CPV'">
-            <TreasurerValidation />
-          </section>
         </div>
       </div>
     </main>
@@ -397,7 +394,6 @@ import PurchaseRequest from '@/components/purchase_request/PurchaseRequest.vue'
 import Settlement from '@/components/settlement/Settlement.vue'
 import PublicPurchasePlans from '@/components/public_purchase_plans/PublicPurchasePlans.vue'
 import { useToast } from '@/composables/useToast'
-import TreasurerValidation from '@/components/items_shop_purchase_lists/TreasurerValidation.vue'
 import Shops from '@/components/shops/Shops.vue'
 
 const router = useRouter()
@@ -435,7 +431,7 @@ const baseNavLinks = computed(() => {
   if (user.value?.role === 'member') {
     return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów']
   }
-  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Podsumowanie budżetu', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia', 'Akceptacja CPV']
+  return ['Pulpit', 'Dodane przedmioty', 'Listy zakupów', 'Podsumowanie budżetu', 'Plany publiczne', 'Wnioski o zamówienie publiczne', 'Rozliczenia']
 })
 
 const navLinks = computed(() => {

@@ -38,6 +38,12 @@ class ListItemCreate(BaseModel):
 class ListClose(BaseModel):
     student_id: int
 
+
+class ListMarketResearchUpdate(BaseModel):
+    market_research_comment: Optional[str] = None
+    market_research_file_name: Optional[str] = None
+
+
 class ClosedPurchaseListForRequestOut(BaseModel):
     shop_purchase_list_id: int
     name: Optional[str] = None
@@ -518,6 +524,28 @@ def get_single_list(list_id: int, session: Session = Depends(get_session)):
     if not single_list:
         raise HTTPException(status_code=404, detail="Lista nie znaleziona")
     return single_list
+
+
+@app.patch("/api/lists/{list_id}/market_research", response_model=ShopPurchaseList)
+def update_list_market_research(
+    list_id: int,
+    payload: ListMarketResearchUpdate,
+    session: Session = Depends(get_session),
+):
+    purchase_list = session.get(ShopPurchaseList, list_id)
+    if not purchase_list:
+        raise HTTPException(status_code=404, detail="Lista nie znaleziona")
+
+    purchase_list.market_research_comment = (
+        payload.market_research_comment or ""
+    ).strip() or None
+    purchase_list.market_research_file_name = (
+        payload.market_research_file_name or ""
+    ).strip() or None
+    session.add(purchase_list)
+    session.commit()
+    session.refresh(purchase_list)
+    return purchase_list
 
 
 @app.delete("/api/lists/{list_id}")

@@ -100,7 +100,7 @@
                 </div>
                 <div class="request-card__actions">
                   <button class="request-card__button view" @click="emit('open-shopping', request)">Otwórz koszyk</button>
-                  <button v-if="isOwner(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
+                  <button v-if="isOwner(request) && !canFinalizeRequest(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
                   <button v-if="canFinalizeRequest(request)" class="request-card__button finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request) }}</button>
                   <button v-if="canReturnToOpen(request)" class="request-card__button reopen" @click="returnToOpen(request)">Przywróć do otwartych</button>
                   <button class="request-card__button view" @click="activeRequest = request">Podsumowanie</button>
@@ -139,7 +139,7 @@
                     <td>
                       <div class="table-row-actions">
                         <button class="table-btn view" @click="emit('open-shopping', request)">Lista</button>
-                        <button v-if="isOwner(request)" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
+                        <button v-if="isOwner(request) && !canFinalizeRequest(request)" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
                         <button v-if="canFinalizeRequest(request)" class="table-btn finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request, true) }}</button>
                         <button v-if="canReturnToOpen(request)" class="table-btn reopen" @click="returnToOpen(request)">Otwórz</button>
                         <button class="table-btn view" @click="activeRequest = request">Podsumowanie</button>
@@ -368,14 +368,6 @@
                 </option>
               </select>
             </div>
-            <div v-if="editingRequestId && requiresPlanException" class="modal-form__group">
-              <label class="modal-form__label">Uzasadnienie odstępstwa od planu</label>
-              <textarea
-                v-model="newRequestData.plan_exception_justification"
-                class="modal-form__input modal-form__textarea"
-                placeholder="Wyjaśnij brak pozycji w planie lub przekroczenie zaplanowanej kwoty"
-              ></textarea>
-            </div>
           </div>
           <section v-if="false" class="finalization-section">
             <h3>Podsumowanie sklepów do rozliczeń</h3>
@@ -385,6 +377,8 @@
                   <tr>
                     <th>Sklep</th>
                     <th>Opis zakupów</th>
+                    <th>Rozeznanie rynku</th>
+                    <th>Komentarz</th>
                     <th>Kwota brutto</th>
                   </tr>
                 </thead>
@@ -392,6 +386,21 @@
                   <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
                     <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
                     <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td>
+                      <span v-if="line.market_research_required" class="market-research-file">
+                        {{ line.market_research_file_name || 'Brak załącznika' }}
+                      </span>
+                      <span v-else>-</span>
+                    </td>
+                    <td>
+                      <textarea
+                        v-if="line.market_research_required"
+                        :value="line.market_research_comment || 'Brak komentarza'"
+                        class="modal-form__input settlement-line-textarea"
+                        readonly
+                      ></textarea>
+                      <span v-else>-</span>
+                    </td>
                     <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
                   </tr>
                 </tbody>
@@ -613,7 +622,7 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-btn-cancel" @click="showCpvEditorModal = false">Zamknij</button>
-          <button type="button" class="modal-btn modal-btn-save" @click="applyBasketCpvAssignments">Zapisz CPV</button>
+          <button type="button" class="modal-btn modal-btn-save" :disabled="finalizationSaving" @click="saveCpvEditorChanges">Zapisz CPV</button>
         </div>
       </div>
     </div>
@@ -641,32 +650,52 @@
               <span class="modal-form__label">Data ustalenia wartości</span>
               <input v-model="finalizationForm.contract_value_date" class="modal-form__input" type="date" required />
             </label>
+            <div class="modal-form__group finalization-cpv-shortcut">
+              <span class="modal-form__label">CPV koszyków</span>
+              <button type="button" class="modal-btn modal-btn-save-add" @click="openCpvEditorModal">
+                Edytuj CPV koszyków
+              </button>
+              <small>{{ basketSummaryRows.length }} pozycji, {{ formatMoney(basketGrossTotal) }} PLN brutto</small>
+            </div>
           </div>
-
-          <section class="finalization-section">
-            <h3>Kody CPV</h3>
+<section class="finalization-section">
+            <h3>Podsumowanie sklepów na wniosku</h3>
             <div class="excel-table-wrapper custom-scrollbar">
               <table class="excel-list-table finalization-table">
                 <thead>
                   <tr>
-                    <th>CPV</th>
-                    <th>Kwota netto</th>
-                    <th>Kwota euro</th>
-                    <th>Główny</th>
+                    <th>Sklep</th>
+                    <th>Opis zakupów</th>
+                    <th>Badanie rynku</th>
+                    <th>Komentarz</th>
+                    <th>Ostateczna kwota brutto</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in finalizationCpvRows" :key="row.cpv_code">
-                    <td class="font-mono">{{ row.cpv_code }}</td>
-                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
-                    <td class="font-mono text-blue">{{ formatMoney(row.allocated_eur_amount) }} EUR</td>
-                    <td>{{ row.is_main_cpv ? 'Tak' : '-' }}</td>
+                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
+                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
+                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
+                    <td>
+                      <span v-if="line.market_research_required" class="market-research-file">
+                        {{ line.market_research_file_name || 'Brak załącznika' }}
+                      </span>
+                      <span v-else>-</span>
+                    </td>
+                    <td>
+                      <textarea
+                        v-if="line.market_research_required"
+                        :value="line.market_research_comment || 'Brak komentarza'"
+                        class="modal-form__input settlement-line-textarea"
+                        readonly
+                      ></textarea>
+                      <span v-else>-</span>
+                    </td>
+                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </section>
-
           <section class="finalization-section">
             <h3>Plany i pozycje</h3>
             <div class="excel-table-wrapper custom-scrollbar">
@@ -700,6 +729,34 @@
           </section>
 
           <section class="finalization-section">
+            <h3>Kody CPV</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>CPV</th>
+                    <th>Numer planu</th>
+                    <th>Kwota netto</th>
+                    <th>Kwota euro</th>
+                    <th>Główny</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in finalizationCpvRows" :key="row.cpv_code">
+                    <td class="font-mono">{{ row.cpv_code }}</td>
+                    <td>{{ row.plan_number || '-' }}</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.allocated_eur_amount) }} EUR</td>
+                    <td>{{ row.is_main_cpv ? 'Tak' : '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+         
+
+          <section class="finalization-section">
             <h3>Kwoty brutto według finansowania</h3>
             <div class="finalization-totals">
               <div>
@@ -713,22 +770,146 @@
             </div>
           </section>
 
-          <section class="finalization-section">
-            <h3>Podsumowanie sklepow do ksiegowosci</h3>
-            <div class="excel-table-wrapper custom-scrollbar">
-              <table class="excel-list-table finalization-table">
+          
+
+ <section class="finalization-section finalization-plan-summary">
+            <div class="finalization-section__header">
+              <div>
+                <h3>Podsumowanie planu</h3>
+                <p>Koszyki, CPV, finansowanie i ręcznie poprawione kwoty w jednym miejscu.</p>
+              </div>
+              <div class="plan-summary-toggle">
+                <button
+                  type="button"
+                  :class="{ active: finalizationPlanSummaryLayout === 'cards' }"
+                  @click="finalizationPlanSummaryLayout = 'cards'"
+                >
+                  Kafelki
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: finalizationPlanSummaryLayout === 'list' }"
+                  @click="finalizationPlanSummaryLayout = 'list'"
+                >
+                  Lista
+                </button>
+              </div>
+            </div>
+            <div class="plan-summary-metrics">
+              <div>
+                <span>Brutto z planu</span>
+                <strong>{{ formatMoney(finalizationSummary?.gross_total) }} PLN</strong>
+              </div>
+              <div>
+                <span>Brutto po korektach</span>
+                <strong>{{ formatMoney(finalizationCorrectedGrossTotal) }} PLN</strong>
+              </div>
+              <div>
+                <span>Netto CPV</span>
+                <strong>{{ formatMoney(finalizationSummary?.net_total) }} PLN</strong>
+              </div>
+              <div>
+                <span>Główny CPV</span>
+                <strong class="font-mono">{{ finalizationSummary?.main_cpv_code || '-' }}</strong>
+              </div>
+            </div>
+            <div v-if="finalizationPlanSummaryLayout === 'cards'" class="plan-summary-list">
+              <article
+                v-for="basket in finalizationPlanSummaryRows"
+                :key="basket.key"
+                class="plan-summary-card"
+              >
+                <div class="plan-summary-card__top">
+                  <div>
+                    <h4>{{ basket.shopName }}</h4>
+                    <p>{{ basket.purchaseDescription || 'Brak opisu zakupów' }}</p>
+                  </div>
+                  <span
+                    class="plan-summary-card__badge"
+                    :class="{ 'plan-summary-card__badge--changed': basket.hasManualCorrection }"
+                  >
+                    {{ basket.hasManualCorrection ? 'Kwota poprawiona' : 'Kwota z koszyka' }}
+                  </span>
+                </div>
+
+                <div class="plan-summary-card__amounts">
+                  <div>
+                    <span>Z koszyka</span>
+                    <strong>{{ formatMoney(basket.calculatedGrossAmount) }} PLN</strong>
+                  </div>
+                  <div>
+                    <span>W finalizacji</span>
+                    <strong>{{ formatMoney(basket.plannedGrossAmount) }} PLN</strong>
+                  </div>
+                  <div>
+                    <span>Różnica</span>
+                    <strong :class="basket.correctionAmount === 0 ? 'text-muted' : (basket.correctionAmount > 0 ? 'text-blue' : 'text-amber')">
+                      {{ formatMoney(basket.correctionAmount) }} PLN
+                    </strong>
+                  </div>
+                </div>
+
+                <div class="plan-summary-cpv-list">
+                  <div v-for="row in basket.cpvRows" :key="row.key" class="plan-summary-cpv">
+                    <span class="font-mono">{{ row.cpvCode || '-' }}</span>
+                    <span>{{ row.planNumber || 'Brak nr planu' }}</span>
+                    <span>{{ row.fundingName || 'Brak finansowania' }}</span>
+                    <strong>{{ formatMoney(row.netAmount) }} PLN netto</strong>
+                  </div>
+                  <div v-if="basket.cpvRows.length === 0" class="plan-summary-empty">
+                    Brak przypisanych pozycji CPV.
+                  </div>
+                </div>
+
+                <div v-if="basket.marketResearchRequired" class="plan-summary-research">
+                  <span>Rozeznanie: {{ basket.marketResearchFileName || 'brak załącznika' }}</span>
+                  <p>{{ basket.marketResearchComment || 'Brak komentarza rozeznania.' }}</p>
+                </div>
+              </article>
+            </div>
+            <div v-else class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table plan-summary-table">
                 <thead>
                   <tr>
-                    <th>Sklep</th>
-                    <th>Opis zakupow</th>
-                    <th>Kwota brutto</th>
+                    <th>Koszyk</th>
+                    <th>CPV / plan / finansowanie</th>
+                    <th>Kwota z koszyka</th>
+                    <th>Kwota finalna</th>
+                    <th>Różnica</th>
+                    <th>Rozeznanie</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="line in settlementLines" :key="line.settlement_line_id || line.shop_purchase_list_id">
-                    <td><input v-model="line.shop_name" class="modal-form__input settlement-line-input" type="text" /></td>
-                    <td><textarea v-model="line.purchase_description" class="modal-form__input settlement-line-textarea"></textarea></td>
-                    <td><input v-model.number="line.planned_gross_amount" class="modal-form__input settlement-line-input" type="number" min="0" step="0.01" /></td>
+                  <tr v-for="basket in finalizationPlanSummaryRows" :key="basket.key">
+                    <td>
+                      <strong>{{ basket.shopName }}</strong>
+                      <small>{{ basket.purchaseDescription || 'Brak opisu zakupów' }}</small>
+                    </td>
+                    <td>
+                      <div v-if="basket.cpvRows.length" class="plan-summary-table-cpv">
+                        <span v-for="row in basket.cpvRows" :key="row.key">
+                          <strong class="font-mono">{{ row.cpvCode || '-' }}</strong>
+                          {{ row.planNumber || 'Brak nr planu' }} · {{ row.fundingName || 'Brak finansowania' }} · {{ formatMoney(row.netAmount) }} PLN netto
+                        </span>
+                      </div>
+                      <span v-else class="text-muted">Brak przypisanych pozycji CPV</span>
+                    </td>
+                    <td class="font-mono text-blue">{{ formatMoney(basket.calculatedGrossAmount) }} PLN</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(basket.plannedGrossAmount) }} PLN</td>
+                    <td>
+                      <span
+                        class="plan-summary-diff"
+                        :class="{ changed: basket.hasManualCorrection }"
+                      >
+                        {{ formatMoney(basket.correctionAmount) }} PLN
+                      </span>
+                    </td>
+                    <td>
+                      <span v-if="basket.marketResearchRequired">
+                        {{ basket.marketResearchFileName || 'Brak załącznika' }}
+                      </span>
+                      <span v-else>-</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -777,6 +958,7 @@ const finalizationLoading = ref(false)
 const finalizationSaving = ref(false)
 const finalizationRequest = ref(null)
 const finalizationSummary = ref(null)
+const finalizationPlanSummaryLayout = ref('cards')
 const settlementLines = ref([])
 const finalizationForm = ref({
   document_request_name: '',
@@ -813,8 +995,7 @@ const newRequestData = ref({
   project_budget_id: null,
   funding_allocations: [],
   public_purchase_plan_id: null,
-  plan_positions: [],
-  plan_exception_justification: ''
+  plan_positions: []
 })
 
 const uniqueSections = computed(() => {
@@ -943,6 +1124,43 @@ const finalizationCpvRows = computed(() => {
   }))
 })
 
+const finalizationCorrectedGrossTotal = computed(() =>
+  settlementLines.value.reduce(
+    (sum, line) => sum + Number(line.planned_gross_amount || 0),
+    0
+  )
+)
+
+const finalizationPlanSummaryRows = computed(() => {
+  const snapshotRows = finalizationSummary.value?.snapshot_rows || []
+  return settlementLines.value.map(line => {
+    const cpvRows = snapshotRows
+      .filter(row => Number(row.shop_purchase_list_id) === Number(line.shop_purchase_list_id))
+      .map((row, index) => ({
+        key: `${line.shop_purchase_list_id || 'extra'}-${row.public_purchase_plan_id || index}-${row.cpv_code || index}`,
+        cpvCode: row.cpv_code,
+        planNumber: row.plan_number,
+        fundingName: row.funding_name,
+        netAmount: Number(row.allocated_net_amount || 0)
+      }))
+    const calculatedGrossAmount = Number(line.calculated_gross_amount ?? line.planned_gross_amount ?? 0)
+    const plannedGrossAmount = Number(line.planned_gross_amount || 0)
+    return {
+      key: line.settlement_line_id || line.shop_purchase_list_id || line.shop_name,
+      shopName: line.shop_name || 'Koszyk',
+      purchaseDescription: line.purchase_description,
+      calculatedGrossAmount,
+      plannedGrossAmount,
+      correctionAmount: plannedGrossAmount - calculatedGrossAmount,
+      hasManualCorrection: Math.abs(plannedGrossAmount - calculatedGrossAmount) >= 0.01,
+      marketResearchRequired: line.market_research_required,
+      marketResearchComment: line.market_research_comment,
+      marketResearchFileName: line.market_research_file_name,
+      cpvRows
+    }
+  })
+})
+
 const allPlanPositions = computed(() =>
   fundingPlans.value.flatMap(plan =>
     (plan.public_purchase_plans || []).map(position => ({
@@ -963,21 +1181,6 @@ const selectedPlanPosition = computed(() =>
     position => Number(position.public_purchase_plan_id) === Number(newRequestData.value.public_purchase_plan_id)
   ) || null
 )
-
-const requiresPlanException = computed(() => {
-  const positions = basketPlanRows.value.length
-    ? basketPlanRows.value.map(row => ({
-        public_purchase_plan_id: row.public_purchase_plan_id,
-        allocated_amount: row.allocated_amount
-      }))
-    : newRequestData.value.plan_positions
-  return positions.some(position => {
-    const planPosition = allPlanPositions.value.find(
-      item => Number(item.public_purchase_plan_id) === Number(position.public_purchase_plan_id)
-    )
-    return planPosition && Number(position.allocated_amount || 0) > Number(planPosition.remaining_amount || 0)
-  })
-})
 
 const isOwner = (request) => {
   return Number(request.project_finance_manager_id) === Number(currentFinanceManagerId.value)
@@ -1074,7 +1277,6 @@ const mapRequest = (req) => {
     sourceList__totalPrice: req.source_shop_purchase_list?.total_price,
     planPosition: req.plan_position,
     planPositions: req.plan_positions || [],
-    planExceptionJustification: req.plan_exception_justification,
     planComplianceStatus: req.plan_compliance_status,
     documentRequestName: req.document_request_name,
     contractValueDate: req.contract_value_date,
@@ -1297,6 +1499,58 @@ const applyBasketCpvAssignments = () => {
   showCpvEditorModal.value = false
 }
 
+const requestEditPayload = () => ({
+  purchase_request_name: newRequestData.value.purchase_request_name,
+  section_name: newRequestData.value.section_name,
+  budget_allocated_for_the_order: basketGrossTotal.value || allocationTotal.value || newRequestData.value.budget_allocated_for_the_order || 0,
+  if_service: newRequestData.value.if_service,
+  used_cpv_id: newRequestData.value.used_cpv_id,
+  created_at: new Date().toISOString(),
+  can_add: newRequestData.value.can_add,
+  project_finance_manager_id: currentFinanceManagerId.value,
+  funding_allocations: newRequestData.value.funding_allocations.map(allocation => ({
+    funding_id: allocation.funding_id,
+    allocated_amount: allocation.allocated_amount
+  })),
+  public_purchase_plan_id: newRequestData.value.plan_positions[0]?.public_purchase_plan_id || null,
+  plan_positions: newRequestData.value.plan_positions
+})
+
+const saveCpvEditorChanges = async () => {
+  applyBasketCpvAssignments()
+  if (!showFinalizationModal.value || !editingRequestId.value) return
+  finalizationSaving.value = true
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${editingRequestId.value}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestEditPayload())
+    })
+    const savedRequest = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(savedRequest.detail || 'Nie udało się zapisać CPV.')
+
+    const summaryResponse = await fetch(`${API_URL}/purchase_requests/${editingRequestId.value}/prepare_finalization`, {
+      method: 'POST'
+    })
+    const summary = await summaryResponse.json()
+    if (!summaryResponse.ok) throw new Error(summary.detail || 'Nie udało się odświeżyć finalizacji.')
+    finalizationSummary.value = summary
+    finalizationForm.value = {
+      ...finalizationForm.value,
+      euro_exchange_rate: summary.euro_exchange_rate || finalizationForm.value.euro_exchange_rate,
+      contract_value_date: summary.contract_value_date || finalizationForm.value.contract_value_date
+    }
+    await fetchSettlementLines(editingRequestId.value)
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udało się zapisać zmian CPV.')
+  } finally {
+    finalizationSaving.value = false
+  }
+}
+
 const addPlanPositionForFunding = allocation => {
   const planPositionId = Number(allocation.plan_position_draft_id)
   const amount = Number(allocation.plan_position_draft_amount || 0)
@@ -1375,7 +1629,6 @@ const resetRequestForm = () => {
   newRequestData.value.funding_allocations = []
   newRequestData.value.public_purchase_plan_id = null
   newRequestData.value.plan_positions = []
-  newRequestData.value.plan_exception_justification = ''
   allocationDraft.value = { funding_id: '', allocated_amount: null }
   fundingPlans.value = []
   requestBaskets.value = []
@@ -1386,6 +1639,7 @@ const prepareFinalization = async request => {
   finalizationLoading.value = true
   showFinalizationModal.value = true
   try {
+    await hydrateRequestEditorState(request)
     const response = await fetch(`${API_URL}/purchase_requests/${request.id}/prepare_finalization`, {
       method: 'POST'
     })
@@ -1551,23 +1805,7 @@ const handleNewRequest = async () => {
     applyBasketCpvAssignments()
   }
   try {
-    const payload = editingRequestId.value ? {
-      purchase_request_name: newRequestData.value.purchase_request_name,
-      section_name: newRequestData.value.section_name,
-      budget_allocated_for_the_order: basketGrossTotal.value || allocationTotal.value || newRequestData.value.budget_allocated_for_the_order || 0,
-      if_service: newRequestData.value.if_service,
-      used_cpv_id: newRequestData.value.used_cpv_id,
-      created_at: new Date().toISOString(),
-      can_add: newRequestData.value.can_add,
-      project_finance_manager_id: currentFinanceManagerId.value,
-      funding_allocations: newRequestData.value.funding_allocations.map(allocation => ({
-        funding_id: allocation.funding_id,
-        allocated_amount: allocation.allocated_amount
-      })),
-      public_purchase_plan_id: newRequestData.value.plan_positions[0]?.public_purchase_plan_id || null,
-      plan_positions: newRequestData.value.plan_positions,
-      plan_exception_justification: newRequestData.value.plan_exception_justification
-    } : {
+    const payload = editingRequestId.value ? requestEditPayload() : {
       purchase_request_name: newRequestData.value.purchase_request_name,
       section_name: newRequestData.value.section_name,
       budget_allocated_for_the_order: 0,
@@ -1620,7 +1858,7 @@ const openAddRequestModal = async () => {
   fetchFundings()
 }
 
-const openEditRequestModal = async (request) => {
+const hydrateRequestEditorState = async (request) => {
   await fetchFundings()
   editingRequestId.value = request.id
   newRequestData.value.purchase_request_name = request.name
@@ -1656,9 +1894,12 @@ const openEditRequestModal = async (request) => {
         public_purchase_plan_id: request.planPosition.public_purchase_plan_id,
         allocated_amount: request.planPosition.allocated_amount || request.budget
       }] : [])
-  newRequestData.value.plan_exception_justification = request.planExceptionJustification || ''
   await fetchFundingPlansForIds(fundings.value.map(funding => funding.funding_id))
   await fetchRequestBaskets(request.id)
+}
+
+const openEditRequestModal = async (request) => {
+  await hydrateRequestEditorState(request)
   showAddRequestModal.value = true
 }
 
@@ -1795,7 +2036,14 @@ onMounted(async () => {
 .modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); overflow: hidden; }
 .modal-content { width: 90%; max-width: 35vw; max-height: 85vh; background: #0f172a; border: 0.08vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.2vw; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
 .cpv-modal-content { max-width: 78vw; }
-.finalization-modal-content { max-width: min(92vw, 1280px); }
+.finalization-modal-content {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  padding: 1.5vw;
+}
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5vh; flex-shrink: 0; }
 .modal-title { font-size: 1.5vw; color: #fff; font-weight: 800; }
 .modal-close { background: transparent; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.4vw; cursor: pointer; transition: color 0.2s; }
@@ -1833,14 +2081,51 @@ onMounted(async () => {
 .cpv-summary-table { min-width: 900px; }
 .cpv-summary-table tfoot td { font-weight: 800; background: rgba(59, 130, 246, 0.1); }
 .finalization-editor { display: grid; gap: 1vw; overflow-y: auto; padding-right: 0.5vw; min-height: 0; }
-.finalization-grid { display: grid; grid-template-columns: 1.6fr 0.7fr 0.8fr; gap: 0.9vw; }
+.finalization-grid { display: grid; grid-template-columns: 1.4fr 0.7fr 0.8fr auto; gap: 0.9vw; align-items: end; }
+.finalization-cpv-shortcut { min-width: 11vw; }
+.finalization-cpv-shortcut small { color: #94a3b8; font-size: 0.76vw; line-height: 1.35; }
 .finalization-section { display: grid; gap: 0.75vw; padding: 1vw; border-radius: 0.7vw; background: rgba(30, 41, 59, 0.48); border: 1px solid rgba(148, 163, 184, 0.16); }
 .finalization-section h3 { margin: 0; color: #bfdbfe; font-size: 1vw; }
+.finalization-section__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1vw; }
+.finalization-section__header p { margin: 0.3vw 0 0 0; color: #94a3b8; font-size: 0.82vw; }
+.finalization-plan-summary { gap: 1vw; background: rgba(15, 23, 42, 0.58); border-color: rgba(96, 165, 250, 0.2); }
+.plan-summary-toggle { display: flex; padding: 0.16vw; border-radius: 0.5vw; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(148, 163, 184, 0.2); }
+.plan-summary-toggle button { border: 0; border-radius: 0.36vw; background: transparent; color: #94a3b8; padding: 0.42vw 0.75vw; font-weight: 800; cursor: pointer; }
+.plan-summary-toggle button.active { background: rgba(59, 130, 246, 0.22); color: #bfdbfe; }
+.plan-summary-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7vw; }
+.plan-summary-metrics div, .plan-summary-card__amounts div { display: grid; gap: 0.28vw; padding: 0.75vw; border-radius: 0.55vw; background: rgba(30, 41, 59, 0.62); border: 1px solid rgba(148, 163, 184, 0.12); }
+.plan-summary-metrics span, .plan-summary-card__amounts span { color: #94a3b8; font-size: 0.74vw; font-weight: 800; text-transform: uppercase; }
+.plan-summary-metrics strong, .plan-summary-card__amounts strong { color: #e2e8f0; font-size: 0.95vw; }
+.plan-summary-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 0.8vw; }
+.plan-summary-card { display: grid; gap: 0.8vw; padding: 0.9vw; border-radius: 0.65vw; background: rgba(30, 41, 59, 0.52); border: 1px solid rgba(148, 163, 184, 0.14); }
+.plan-summary-card__top { display: flex; justify-content: space-between; gap: 0.8vw; align-items: flex-start; }
+.plan-summary-card__top h4 { margin: 0; color: #ffffff; font-size: 0.98vw; }
+.plan-summary-card__top p { margin: 0.25vw 0 0 0; color: #94a3b8; font-size: 0.8vw; }
+.plan-summary-card__badge { flex-shrink: 0; padding: 0.32vw 0.55vw; border-radius: 999px; color: #a7f3d0; background: rgba(16, 185, 129, 0.13); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.72vw; font-weight: 800; }
+.plan-summary-card__badge--changed { color: #fcd34d; background: rgba(245, 158, 11, 0.13); border-color: rgba(245, 158, 11, 0.24); }
+.plan-summary-card__amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6vw; }
+.plan-summary-cpv-list { display: grid; gap: 0.45vw; }
+.plan-summary-cpv { display: grid; grid-template-columns: 1fr 1fr 1.3fr auto; gap: 0.6vw; align-items: center; padding: 0.55vw 0.65vw; border-radius: 0.5vw; background: rgba(15, 23, 42, 0.58); color: #cbd5e1; font-size: 0.8vw; }
+.plan-summary-cpv strong { color: #34d399; }
+.plan-summary-empty { padding: 0.7vw; border-radius: 0.5vw; background: rgba(15, 23, 42, 0.45); color: #94a3b8; font-size: 0.82vw; }
+.plan-summary-research { display: grid; gap: 0.35vw; padding: 0.7vw; border-radius: 0.55vw; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.18); }
+.plan-summary-research span { color: #bfdbfe; font-weight: 800; font-size: 0.78vw; }
+.plan-summary-research p { margin: 0; color: #dbeafe; font-size: 0.82vw; line-height: 1.35; }
+.plan-summary-table { min-width: 1100px; }
+.plan-summary-table td { vertical-align: top; }
+.plan-summary-table td strong { display: block; color: #ffffff; }
+.plan-summary-table td small { display: block; margin-top: 0.25vw; color: #94a3b8; max-width: 280px; }
+.plan-summary-table-cpv { display: grid; gap: 0.35vw; min-width: 360px; }
+.plan-summary-table-cpv span { color: #cbd5e1; }
+.plan-summary-table-cpv strong { display: inline !important; color: #bfdbfe !important; }
+.plan-summary-diff { display: inline-flex; padding: 0.28vw 0.52vw; border-radius: 999px; color: #94a3b8; background: rgba(148, 163, 184, 0.12); font-weight: 800; }
+.plan-summary-diff.changed { color: #fcd34d; background: rgba(245, 158, 11, 0.14); }
 .finalization-table { min-width: 760px; }
 .finalization-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8vw; }
 .finalization-totals div { display: grid; gap: 0.35vw; padding: 0.85vw; border-radius: 0.6vw; background: rgba(15, 23, 42, 0.58); border: 1px solid rgba(148, 163, 184, 0.12); }
 .finalization-totals span { color: #94a3b8; font-size: 0.82vw; font-weight: 700; text-transform: uppercase; }
 .finalization-totals strong { color: #e2e8f0; font-size: 1vw; }
+.market-research-file { color: #bfdbfe; font-weight: 700; }
 .delete-inline-btn { border: 0; background: transparent; color: #fca5a5; cursor: pointer; font-weight: 700; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 1.5vh; border-top: 0.08vw solid rgba(148,163,184,0.15); flex-shrink: 0; margin-top: auto; }

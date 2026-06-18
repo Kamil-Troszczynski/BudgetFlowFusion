@@ -12,9 +12,9 @@
 
     <div class="lists-filter-bar">
       <div class="lists-filter">
-        <label class="lists-filter__label">Zamowienie publiczne</label>
+        <label class="lists-filter__label">Wniosek</label>
         <select v-model="selectedPublicPurchasePlanId" class="lists-filter__select lists-filter__select--wide" @change="fetchLists">
-          <option value="">{{ isTreasurer ? 'Wszystkie zamowienia publiczne' : 'Wybierz zamowienie publiczne...' }}</option>
+          <option value="">{{ isTreasurer ? 'Wszystkie zamowienia publiczne' : 'Wybierz wniosek' }}</option>
           <option
             v-for="plan in publicPurchasePlans"
             :key="plan.purchase_request_id"
@@ -25,6 +25,23 @@
         </select>
       </div>
      
+      
+      <div class="lists-filter">
+        <label class="lists-filter__label">Status wniosku</label>
+        <select v-model="selectedStatus" class="lists-filter__select" @change="fetchLists">
+          <option value="open">Otwarte</option>
+          <option value="closed">Zamknięte</option>
+          <option value="all">Wszystkie</option>
+        </select>
+      </div>
+
+      <div class="lists-filter">
+        <label class="lists-filter__label">Projekt</label>
+        <select v-model="selectedProjectId" class="lists-filter__select" @change="fetchLists">
+          <option value="">Wszystkie projekty</option>
+          <option v-for="f in fundings" :key="f.funding_id" :value="f.funding_id">{{ f.funding_name }}</option>
+        </select>
+      </div>
 
       <div class="view-toggle-container">
         <button 
@@ -171,6 +188,7 @@
     @back="activeList = null"
     @close-list="promptCloseList(activeList)"
     @reopen-list="reopenList(activeList)"
+    @market-research-saved="updateListMarketResearch"
   />
 
   <div v-if="showDeleteModal" class="confirm-modal-overlay" @click="showDeleteModal = false">
@@ -237,6 +255,9 @@ const listToCloseId = ref(null)
 const selectedShopId = ref('')
 const selectedPublicPurchasePlanId = ref('')
 const currentLayout = ref('list')
+const fundings = ref([])
+const selectedStatus = ref('open')
+const selectedProjectId = ref('')
 
 const isTreasurer = computed(() => user.value?.role === 'treasurer')
 const currentStudentId = computed(() => Number(user.value?.id))
@@ -245,9 +266,19 @@ const selectedPublicPurchasePlan = computed(() =>
 )
 const canCreateList = computed(() => !!selectedPublicPurchasePlan.value?.can_add)
 
-const userLists = computed(() => allLists.value)
-const ownLists = computed(() => allLists.value.filter(list => Number(list.student_id) === currentStudentId.value))
-const otherTreasurerLists = computed(() => allLists.value.filter(list => Number(list.student_id) !== currentStudentId.value))
+const filteredLists = computed(() => {
+  let lists = Array.isArray(allLists.value) ? allLists.value.slice() : []
+  if (selectedStatus.value === 'open') lists = lists.filter(l => l.isOpen)
+  else if (selectedStatus.value === 'closed') lists = lists.filter(l => !l.isOpen)
+  if (selectedProjectId.value) {
+    lists = lists.filter(l => String(l.funding_id) === String(selectedProjectId.value))
+  }
+  return lists
+})
+
+const userLists = computed(() => filteredLists.value)
+const ownLists = computed(() => filteredLists.value.filter(list => Number(list.student_id) === currentStudentId.value))
+const otherTreasurerLists = computed(() => filteredLists.value.filter(list => Number(list.student_id) !== currentStudentId.value))
 
 const listSections = computed(() => {
   if (!isTreasurer.value) {
@@ -358,19 +389,15 @@ const fetchLists = async () => {
     await fetchStudents()
     await fetchPublicPurchasePlans()
 
-    if (!selectedPublicPurchasePlan.value) {
-      allLists.value = []
-      return
-    }
-
-    let fundings = []
+    let fundingsLocal = []
     if (isTreasurer.value || user.value?.association_id) {
       const fundingsUrl = `http://localhost:8080/api/fundings?association_id=${user.value.association_id}`
       const fundingsResponse = await fetch(fundingsUrl)
       if (fundingsResponse.ok) {
-        fundings = await fundingsResponse.json()
+        fundingsLocal = await fundingsResponse.json()
       }
     }
+    fundings.value = fundingsLocal
 
     const timestamp = new Date().getTime()
     const params = new URLSearchParams({ t: String(timestamp) })
@@ -402,7 +429,7 @@ const fetchLists = async () => {
       }
 
       const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
-      const foundFunding = Array.isArray(fundings) ? fundings.find(f => f.funding_id === list.funding_id) : null
+      const foundFunding = Array.isArray(fundingsLocal) ? fundingsLocal.find(f => f.funding_id === list.funding_id) : null
       const maxBudget = foundFunding ? (foundFunding.funding_price - foundFunding.spent_money) : 0
       const creator = list.student || students.value.find(student => Number(student.student_id) === Number(list.student_id))
       const itemTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
@@ -498,6 +525,20 @@ const formatMoney = (value) => {
 
 const openList = (list) => {
   activeList.value = list
+}
+
+const updateListMarketResearch = (updatedList) => {
+  if (!updatedList) return
+  const listId = updatedList.shop_purchase_list_id
+  const applyUpdate = list => (
+    Number(list.shop_purchase_list_id) === Number(listId)
+      ? { ...list, ...updatedList }
+      : list
+  )
+  allLists.value = allLists.value.map(applyUpdate)
+  if (activeList.value?.shop_purchase_list_id === listId) {
+    activeList.value = { ...activeList.value, ...updatedList }
+  }
 }
 
 const handleNewList = async (listData) => {
@@ -691,9 +732,10 @@ const reopenList = async (list) => {
 
 .lists-filter-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
-  gap: 2vw;
+  align-items: stretch;
+  gap: 1rem;
   margin-bottom: 2vw;
   padding: 1vw;
   background: rgba(15, 23, 42, 0.5);
@@ -703,8 +745,11 @@ const reopenList = async (list) => {
 
 .lists-filter {
   display: flex;
+  flex: 1 1 220px;
   align-items: center;
-  gap: 1vw;
+  gap: 0.8rem;
+  min-width: 180px;
+  max-width: 400px;
 }
 
 .search-placeholder-block {
@@ -715,10 +760,12 @@ const reopenList = async (list) => {
   color: rgba(226, 232, 240, 0.75);
   font-size: 0.95vw;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .lists-filter__select {
-  min-width: 18vw;
+  flex: 1 1 0;
+  min-width: 0;
   padding: 0.8vw 1vw;
   background: rgba(30, 41, 59, 0.65);
   border: 0.08vw solid rgba(148, 163, 184, 0.2);
@@ -734,7 +781,32 @@ const reopenList = async (list) => {
 }
 
 .lists-filter__select--wide {
-  min-width: 50vw;
+  max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .lists-filter-bar {
+    padding: 0.9rem;
+  }
+  .lists-filter {
+    max-width: 100%;
+  }
+  .lists-filter__label {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .lists-filter-bar {
+    gap: 0.75rem;
+  }
+  .lists-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lists-filter__label {
+    white-space: normal;
+  }
 }
 
 .view-toggle-container {

@@ -70,17 +70,34 @@
             <span>Osoba odpowiedzialna</span>
             <input v-model="fundResponsiblePerson" type="text" :placeholder="selectedFunding.signing_person || 'Imie i nazwisko'" />
           </label>
+          <label>
+            <span>Roczny kurs euro dla zamówień publicznych</span>
+            <input v-model.number="planEuroExchangeRate" type="number" min="0.0001" step="0.0001" placeholder="np. 4.6371" />
+          </label>
           <button class="button" type="submit">Utwórz plan</button>
         </form>
 
         <template v-else>
-          <form class="plan-rate-form" @submit.prevent="savePlanListSettings">
-            <label>
-              <span>Roczny kurs euro</span>
-              <input v-model.number="selectedPlan.euro_exchange_rate" type="number" min="0.0001" step="0.0001" placeholder="np. 4.6371" />
-            </label>
-            <button class="button button--secondary" type="submit">Zapisz kurs</button>
-          </form>
+          <section class="plan-rate-card">
+            <div>
+              <h3>Roczny kurs euro dla zamówień publicznych oraz numer planu ZP</h3>
+              <p>
+                Te wartości zmieniają się raz w roku i będą automatycznie
+                podstawiane podczas finalizacji wniosków przypisanych do tego planu.
+              </p>
+            </div>
+            <form class="plan-rate-form" @submit.prevent="savePlanListSettings">
+              <label>
+                <span>Numer planu</span>
+                <input v-model="selectedPlan.plan_number" type="text" placeholder="np. ZP/2026/01" />
+              </label>
+              <label>
+                <span>Kurs euro</span>
+                <input v-model.number="selectedPlan.euro_exchange_rate" type="number" min="0.0001" step="0.0001" placeholder="np. 4.6371" />
+              </label>
+              <button class="button button--secondary" type="submit">Zapisz ustawienia</button>
+            </form>
+          </section>
           <div class="table-header">
             <div>
               <h3>{{ selectedPlan.public_plan_list_name }}</h3>
@@ -323,6 +340,9 @@ const loadData = async () => {
     if (!fundings.value.some(funding => funding.funding_id === activeFundingId.value)) {
       activeFundingId.value = fundings.value[0]?.funding_id || null
     }
+    if (!selectedPlan.value) {
+      planEuroExchangeRate.value = null
+    }
   } catch (err) {
     error.value = err.message
   } finally {
@@ -366,8 +386,8 @@ const savePlanListSettings = async () => {
     })
   })
   const data = await response.json()
-  if (!response.ok) return toast.error(data.detail || 'Nie udalo sie zapisac kursu euro.')
-  toast.success('Kurs euro zostal zapisany.')
+  if (!response.ok) return toast.error(data.detail || 'Nie udalo sie zapisac ustawien planu.')
+  toast.success('Ustawienia planu zostaly zapisane.')
   await loadData()
 }
 
@@ -531,7 +551,19 @@ dt { font-size: 12px; } dd { margin: 3px 0 0; font-weight: 700; }
 .task-chip { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 7px; background: rgba(30, 41, 59, .6); border: 1px solid rgba(148, 163, 184, .14); color: #cbd5e1; }
 .task-chip strong { color: #bfdbfe; }
 .create-plan { margin-top: 20px; padding: 18px; background: rgba(30, 41, 59, .62); border-radius: 8px; }
-.plan-rate-form { display: grid; grid-template-columns: minmax(180px, 260px) auto; gap: 12px; align-items: end; margin-top: 18px; padding: 14px; background: rgba(30, 41, 59, .45); border: 1px solid rgba(148, 163, 184, .14); border-radius: 8px; }
+.plan-rate-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  margin-top: 18px;
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, .72), rgba(15, 23, 42, .92));
+  border: 1px solid rgba(96, 165, 250, .18);
+  border-radius: 10px;
+}
+.plan-rate-card p { margin-top: 8px; max-width: 62ch; }
+.plan-rate-form { display: grid; grid-template-columns: repeat(2, minmax(180px, 260px)) auto; gap: 12px; align-items: end; }
 .table-header { margin: 22px 0 14px; }
 .button {
   padding: 10px 16px; border: 0; border-radius: 7px; background: #2563eb; color: #fff;
@@ -559,6 +591,7 @@ select, textarea { padding: 11px; border: 1px solid #475569; border-radius: 7px;
 @media (max-width: 850px) {
   .plans__layout { grid-template-columns: 1fr; }
   .plans__header, .workspace__header, .create-plan, .header-actions { align-items: flex-start; flex-direction: column; }
+  .plan-rate-card, .plan-rate-form { grid-template-columns: 1fr; }
   .task-row { grid-template-columns: 1fr; }
   dl { flex-wrap: wrap; }
 }

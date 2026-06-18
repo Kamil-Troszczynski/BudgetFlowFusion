@@ -60,6 +60,11 @@ def migrate_project_budgets():
         if "shop" in table_names
         else set()
     )
+    shop_purchase_list_columns = (
+        {column["name"] for column in inspector.get_columns("shop_purchase_list")}
+        if "shop_purchase_list" in table_names
+        else set()
+    )
     plan_position_columns = (
         {
             column["name"]
@@ -229,6 +234,10 @@ def migrate_project_budgets():
             connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN fund_responsible_person VARCHAR"))
         if "euro_exchange_rate" not in plan_list_columns:
             connection.execute(text("ALTER TABLE public_purchase_plan_list ADD COLUMN euro_exchange_rate DOUBLE PRECISION"))
+        if "market_research_comment" not in shop_purchase_list_columns:
+            connection.execute(text("ALTER TABLE shop_purchase_list ADD COLUMN market_research_comment VARCHAR"))
+        if "market_research_file_name" not in shop_purchase_list_columns:
+            connection.execute(text("ALTER TABLE shop_purchase_list ADD COLUMN market_research_file_name VARCHAR"))
         if "cpv_code" not in plan_columns:
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan ADD COLUMN cpv_code VARCHAR"

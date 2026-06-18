@@ -438,7 +438,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AddItemToListModal from './AddItemToListModal.vue'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
@@ -467,7 +467,7 @@ const props = defineProps({
   canReopenList: { type: Boolean, default: false }
 })
 
-defineEmits(['back', 'close-list', 'reopen-list'])
+const emit = defineEmits(['back', 'close-list', 'reopen-list', 'market-research-saved'])
 
 const showModal = ref(false)
 const listItems = ref([])
@@ -598,11 +598,35 @@ const handleProcurementFileChange = (e) => {
   }
 }
 
-const saveProcurementData = () => {
+const hydrateProcurementData = () => {
+  procurementComment.value = props.list?.market_research_comment || ''
+  const fileName = props.list?.market_research_file_name
+  procurementFile.value = fileName ? { name: fileName } : null
+  hasSavedProcurement.value = Boolean(procurementComment.value || fileName)
+}
+
+const saveProcurementData = async () => {
   if (!isProcurementValid.value) return
-  hasSavedProcurement.value = true
-  showProcurementModal.value = false
-  toast.success('Uproszczone rozeznanie rynkowe zostało zatwierdzone.')
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${props.list.shop_purchase_list_id}/market_research`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        market_research_comment: procurementComment.value,
+        market_research_file_name: procurementFile.value?.name || null
+      })
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.detail || 'Nie udało się zapisać rozeznania.')
+
+    hasSavedProcurement.value = true
+    showProcurementModal.value = false
+    emit('market-research-saved', data)
+    toast.success('Uproszczone rozeznanie rynkowe zostało zatwierdzone.')
+  } catch (error) {
+    console.error(error)
+    toast.error(error.message || 'Nie udało się zapisać rozeznania.')
+  }
 }
 
 const formatTimeAgo = (dateInput) => {
@@ -794,12 +818,18 @@ const saveItemEdit = async (item) => {
 }
 
 onMounted(async () => {
+  hydrateProcurementData()
   await fetchStudents()
   await fetchListItems()
   if (props.list?.shippingCost) {
     shippingCostInput.value = props.list.shippingCost
   }
 })
+
+watch(
+  () => props.list?.shop_purchase_list_id,
+  () => hydrateProcurementData()
+)
 </script>
 
 <style scoped>
