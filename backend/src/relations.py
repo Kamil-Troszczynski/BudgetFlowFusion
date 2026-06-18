@@ -169,6 +169,7 @@ class Funding(SQLModel, table=True):
     funding_name: str
     organizer: Optional[str] = Field(default=None)
     signing_person: Optional[str] = Field(default=None)
+    spending_deadline: Optional[date] = Field(default=None)
     funding_price: float
     spent_money: float
 

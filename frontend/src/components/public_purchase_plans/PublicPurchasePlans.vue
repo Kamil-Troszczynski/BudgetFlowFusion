@@ -28,6 +28,7 @@
           <strong>{{ funding.funding_name }}</strong>
           <span>{{ funding.project_budget_name }}</span>
           <span v-if="funding.organizer">Organizator: {{ funding.organizer }}</span>
+          <span v-if="funding.spending_deadline">Do: {{ formatDate(funding.spending_deadline) }}</span>
           <span>{{ formatMoney(funding.funding_price) }} PLN</span>
         </button>
       </nav>
@@ -41,6 +42,7 @@
           <dl>
             <div><dt>Dofinansowanie</dt><dd>{{ formatMoney(selectedFunding.funding_price) }} PLN</dd></div>
             <div><dt>Zaplanowano</dt><dd>{{ formatMoney(selectedPlan?.total_cost) }} PLN</dd></div>
+            <div><dt>Termin</dt><dd>{{ selectedFunding.spending_deadline ? formatDate(selectedFunding.spending_deadline) : '-' }}</dd></div>
             <div><dt>Podpisuje</dt><dd>{{ selectedFunding.signing_person || '-' }}</dd></div>
           </dl>
           <button type="button" class="button button--secondary" @click="openFundingModal(selectedFunding)">Edytuj dofinansowanie</button>
@@ -240,6 +242,10 @@
             <span>Kwota dofinansowania</span>
             <input v-model.number="newFunding.funding_price" type="number" min="0.01" step="0.01" required />
           </label>
+          <label>
+            <span>Data zakończenia wydatkowania</span>
+            <input v-model="newFunding.spending_deadline" type="date" />
+          </label>
 
           <div class="funding-tasks">
             <div class="tasks-header">
@@ -295,6 +301,7 @@ const newFunding = ref({
   funding_name: '',
   organizer: '',
   signing_person: '',
+  spending_deadline: '',
   funding_price: null,
   tasks: []
 })
@@ -320,6 +327,11 @@ const formatMoney = value => Number(value || 0).toLocaleString('pl-PL', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })
+
+const formatDate = value => {
+  if (!value) return ''
+  return new Date(`${value}T00:00:00`).toLocaleDateString('pl-PL')
+}
 
 const loadData = async () => {
   if (!user.value?.association_id) return
@@ -398,6 +410,7 @@ const resetFundingForm = () => {
     funding_name: '',
     organizer: '',
     signing_person: '',
+    spending_deadline: '',
     funding_price: null,
     tasks: []
   }
@@ -411,6 +424,7 @@ const openFundingModal = (funding = null) => {
       funding_name: funding.funding_name || '',
       organizer: funding.organizer || '',
       signing_person: funding.signing_person || '',
+      spending_deadline: funding.spending_deadline || '',
       funding_price: funding.funding_price || null,
       tasks: (funding.tasks || []).map(task => ({
         task_name: task.task_name || '',
@@ -449,6 +463,7 @@ const saveFunding = async () => {
       funding_name: newFunding.value.funding_name.trim(),
       organizer: newFunding.value.organizer.trim(),
       signing_person: newFunding.value.signing_person.trim(),
+      spending_deadline: newFunding.value.spending_deadline || null,
       funding_price: Number(newFunding.value.funding_price),
       tasks: newFunding.value.tasks
         .filter(task => task.task_name || task.task_budget)

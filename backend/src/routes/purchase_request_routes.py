@@ -885,6 +885,24 @@ def _finalization_row_dicts(
             == request.purchase_request_id
         )
     ).all()
+    settlement_lines = session.exec(
+        select(PurchaseRequestSettlementLine).where(
+            PurchaseRequestSettlementLine.purchase_request_id
+            == request.purchase_request_id
+        )
+    ).all()
+    final_gross_by_list = {
+        line.shop_purchase_list_id: float(line.planned_gross_amount or 0)
+        for line in settlement_lines
+        if line.shop_purchase_list_id
+    }
+    original_net_by_list: dict[Optional[int], float] = {}
+    for row in rows:
+        original_net_by_list[row.shop_purchase_list_id] = (
+            original_net_by_list.get(row.shop_purchase_list_id, 0.0)
+            + float(row.allocated_amount or 0)
+        )
+
     result = []
     for row in rows:
         plan = session.get(PublicPurchasePlan, row.public_purchase_plan_id)
@@ -900,7 +918,14 @@ def _finalization_row_dicts(
             else None
         )
         shop = session.get(Shop, purchase_list.shop_id) if purchase_list else None
-        net_amount = float(row.allocated_amount or 0)
+        original_net_amount = float(row.allocated_amount or 0)
+        original_list_net = original_net_by_list.get(row.shop_purchase_list_id, 0.0)
+        final_list_gross = final_gross_by_list.get(row.shop_purchase_list_id)
+        if final_list_gross is not None and original_list_net > 0:
+            final_list_net = final_list_gross / 1.23
+            net_amount = final_list_net * (original_net_amount / original_list_net)
+        else:
+            net_amount = original_net_amount
         gross_amount = net_amount * 1.23
         result.append({
             "shop_purchase_list_id": row.shop_purchase_list_id,
@@ -1239,6 +1264,18 @@ def finalize_purchase_request(
         session.delete(snapshot)
 
     for row in summary.snapshot_rows:
+        plan_position = session.get(
+            PurchaseRequestPlanPosition,
+            (
+                request.purchase_request_id,
+                row.shop_purchase_list_id,
+                row.public_purchase_plan_id,
+            ),
+        )
+        if plan_position:
+            plan_position.allocated_amount = row.allocated_net_amount
+            session.add(plan_position)
+
         session.add(PurchaseRequestFinalizationSnapshot(
             purchase_request_id=request.purchase_request_id,
             shop_purchase_list_id=row.shop_purchase_list_id,

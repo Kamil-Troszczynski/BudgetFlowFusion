@@ -187,6 +187,7 @@
                           <th>Wydane</th>
                           <th>Zarezerwowane</th>
                           <th>Pozostało</th>
+                          <th>Termin</th>
                           <th>Wykorzystanie</th>
                         </tr>
                       </thead>
@@ -198,6 +199,14 @@
                           <td>{{ formatBudgetMoney(funding.purchase_requests_total_allocated) }}</td>
                           <td class="success">{{ formatBudgetMoney(funding.available_after_purchase_requests) }}</td>
                           <td>
+                            <span
+                              class="budget-deadline"
+                              :class="fundingDeadlineStatus(funding.spending_deadline)"
+                            >
+                              {{ fundingDeadlineLabel(funding.spending_deadline) }}
+                            </span>
+                          </td>
+                          <td>
                             <div class="budget-table-usage">
                               <div class="budget-progress__bar">
                                 <div class="budget-progress__fill" :style="{ width: `${fundingUsagePercent(funding)}%` }"></div>
@@ -207,7 +216,7 @@
                           </td>
                         </tr>
                         <tr v-if="!activeProjectFundings.length">
-                          <td colspan="6" class="budget-table-empty">Brak dofinansowań w tym projekcie.</td>
+                          <td colspan="7" class="budget-table-empty">Brak dofinansowań w tym projekcie.</td>
                         </tr>
                       </tbody>
                     </table>
@@ -545,6 +554,32 @@ const formatBudgetMoney = (value) => `${Number(value || 0).toLocaleString('pl-PL
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })} PLN`
+
+const daysUntilDate = (value) => {
+  if (!value) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const deadline = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(deadline.getTime())) return null
+  return Math.ceil((deadline.getTime() - today.getTime()) / 86_400_000)
+}
+
+const fundingDeadlineLabel = (value) => {
+  const daysLeft = daysUntilDate(value)
+  if (daysLeft === null) return 'Brak daty'
+  if (daysLeft < 0) return `Po terminie: ${Math.abs(daysLeft)} dni`
+  if (daysLeft === 0) return 'Ostatni dzień'
+  if (daysLeft === 1) return 'Został 1 dzień'
+  return `Zostało ${daysLeft} dni`
+}
+
+const fundingDeadlineStatus = (value) => {
+  const daysLeft = daysUntilDate(value)
+  if (daysLeft === null) return 'budget-deadline--muted'
+  if (daysLeft < 0) return 'budget-deadline--overdue'
+  if (daysLeft <= 14) return 'budget-deadline--soon'
+  return 'budget-deadline--ok'
+}
 
 const usedAndReserved = computed(() => (
   Number(budgetSummary.value.spent_money || 0)
@@ -1326,6 +1361,35 @@ const handleLogout = () => {
   grid-template-columns: minmax(8vw, 1fr) 4vw;
   gap: 0.7vw;
   align-items: center;
+}
+
+.budget-deadline {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28vw 0.55vw;
+  border-radius: 999px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.budget-deadline--ok {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.budget-deadline--soon {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.budget-deadline--overdue {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.budget-deadline--muted {
+  color: rgba(226, 232, 240, 0.62);
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .budget-table-empty {

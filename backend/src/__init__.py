@@ -220,6 +220,8 @@ def migrate_project_budgets():
             connection.execute(text("ALTER TABLE funding ADD COLUMN organizer VARCHAR"))
         if "signing_person" not in funding_columns:
             connection.execute(text("ALTER TABLE funding ADD COLUMN signing_person VARCHAR"))
+        if "spending_deadline" not in funding_columns:
+            connection.execute(text("ALTER TABLE funding ADD COLUMN spending_deadline DATE"))
         if "funding_id" not in plan_list_columns:
             connection.execute(text(
                 "ALTER TABLE public_purchase_plan_list ADD COLUMN funding_id INTEGER"

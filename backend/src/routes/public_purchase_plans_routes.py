@@ -3,6 +3,7 @@ from src import get_session, app
 from sqlmodel import Session, select
 from fastapi import Depends, HTTPException
 from typing import List, Optional
+from datetime import date
 from pydantic import BaseModel, Field as PydanticField
 
 
@@ -10,6 +11,7 @@ class FundingOut(BaseModel):
     funding_id: int
     funding_name: str
     funding_price: float
+    spending_deadline: Optional[date] = None
     spent_money: float
     available_money: float
     purchase_requests_total_allocated: float = 0.0
@@ -225,6 +227,7 @@ def _funding_out(funding: Funding, session: Session) -> FundingOut:
         funding_id=funding.funding_id,
         funding_name=funding.funding_name,
         funding_price=funding.funding_price,
+        spending_deadline=funding.spending_deadline,
         spent_money=funding.spent_money,
         available_money=funding.funding_price - funding.spent_money,
         purchase_requests_total_allocated=allocated,

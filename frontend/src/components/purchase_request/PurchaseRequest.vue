@@ -655,7 +655,7 @@
               <button type="button" class="modal-btn modal-btn-save-add" @click="openCpvEditorModal">
                 Edytuj CPV koszyków
               </button>
-              <small>{{ basketSummaryRows.length }} pozycji, {{ formatMoney(basketGrossTotal) }} PLN brutto</small>
+            
             </div>
           </div>
 <section class="finalization-section">
@@ -696,83 +696,9 @@
               </table>
             </div>
           </section>
-          <section class="finalization-section">
-            <h3>Plany i pozycje</h3>
-            <div class="excel-table-wrapper custom-scrollbar">
-              <table class="excel-list-table finalization-table">
-                <thead>
-                  <tr>
-                    <th>Plan</th>
-                    <th>Kod planu</th>
-                    <th>Odpowiedzialny</th>
-                    <th>Organizator</th>
-                    <th>Pozycja</th>
-                    <th>CPV</th>
-                    <th>Plan netto</th>
-                    <th>Wydajemy netto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in finalizationSummary?.plan_rows || []" :key="row.public_purchase_plan_id">
-                    <td>{{ row.public_plan_list_name || row.plan_name || '-' }}</td>
-                    <td>{{ row.plan_number || '-' }}</td>
-                    <td>{{ row.fund_responsible_person || row.funding_signing_person || '-' }}</td>
-                    <td>{{ row.funding_organizer || '-' }}</td>
-                    <td>{{ row.plan_position_number || '-' }}</td>
-                    <td class="font-mono">{{ row.cpv_code || '-' }}</td>
-                    <td class="font-mono text-blue">{{ formatMoney(row.planned_net_amount) }} PLN</td>
-                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
 
-          <section class="finalization-section">
-            <h3>Kody CPV</h3>
-            <div class="excel-table-wrapper custom-scrollbar">
-              <table class="excel-list-table finalization-table">
-                <thead>
-                  <tr>
-                    <th>CPV</th>
-                    <th>Numer planu</th>
-                    <th>Kwota netto</th>
-                    <th>Kwota euro</th>
-                    <th>Główny</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in finalizationCpvRows" :key="row.cpv_code">
-                    <td class="font-mono">{{ row.cpv_code }}</td>
-                    <td>{{ row.plan_number || '-' }}</td>
-                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
-                    <td class="font-mono text-blue">{{ formatMoney(row.allocated_eur_amount) }} EUR</td>
-                    <td>{{ row.is_main_cpv ? 'Tak' : '-' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
 
-         
-
-          <section class="finalization-section">
-            <h3>Kwoty brutto według finansowania</h3>
-            <div class="finalization-totals">
-              <div>
-                <span>Kwota brutto razem</span>
-                <strong>{{ formatMoney(finalizationSummary?.gross_total) }} PLN</strong>
-              </div>
-              <div v-for="row in finalizationSummary?.funding_gross_rows || []" :key="row.funding_id || row.funding_name">
-                <span>{{ row.funding_name || 'Brak finansowania' }}</span>
-                <strong>{{ formatMoney(row.gross_amount) }} PLN</strong>
-              </div>
-            </div>
-          </section>
-
-          
-
- <section class="finalization-section finalization-plan-summary">
+<section class="finalization-section finalization-plan-summary">
             <div class="finalization-section__header">
               <div>
                 <h3>Podsumowanie planu</h3>
@@ -806,7 +732,7 @@
               </div>
               <div>
                 <span>Netto CPV</span>
-                <strong>{{ formatMoney(finalizationSummary?.net_total) }} PLN</strong>
+                <strong>{{ formatMoney(finalizationCorrectedNetTotal) }} PLN</strong>
               </div>
               <div>
                 <span>Główny CPV</span>
@@ -873,9 +799,9 @@
                   <tr>
                     <th>Koszyk</th>
                     <th>CPV / plan / finansowanie</th>
-                    <th>Kwota z koszyka</th>
-                    <th>Kwota finalna</th>
-                    <th>Różnica</th>
+                    <th>Kwota brutto z koszyka</th>
+                    <th>Kwota brutto finalna</th>
+                    <th>Różnica brutto</th>
                     <th>Rozeznanie</th>
                   </tr>
                 </thead>
@@ -913,6 +839,79 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </section>
+
+          <section class="finalization-section">
+            <h3>CPV i pozycje planu</h3>
+            <div class="excel-table-wrapper custom-scrollbar">
+              <table class="excel-list-table finalization-table">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Numer planu</th>
+                    <th>Odpowiedzialny</th>
+                    <th>Organizator</th>
+                    <th>Pozycja</th>
+                    <th>CPV</th>
+                    <th>Plan netto</th>
+                    <th>Finalnie netto</th>
+                    <th>Finalnie EUR</th>
+                    <th>Główny</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in finalizationPlanPositionRows" :key="row.public_purchase_plan_id">
+                    <td>{{ row.public_plan_list_name || row.plan_name || '-' }}</td>
+                    <td>{{ row.plan_number || '-' }}</td>
+                    <td>{{ row.fund_responsible_person || row.funding_signing_person || '-' }}</td>
+                    <td>{{ row.funding_organizer || '-' }}</td>
+                    <td>{{ row.plan_position_number || '-' }}</td>
+                    <td class="font-mono">{{ row.cpv_code || '-' }}</td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.planned_net_amount) }} PLN</td>
+                    <td class="font-mono text-emerald">{{ formatMoney(row.allocated_net_amount) }} PLN</td>
+                    <td class="font-mono text-blue">{{ formatMoney(row.allocated_eur_amount) }} EUR</td>
+                    <td>{{ row.is_main_cpv ? 'Tak' : '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="finalization-section">
+            <h3>Kwoty brutto według finansowania</h3>
+            <div class="finalization-totals">
+              <div>
+                <span>Kwota brutto razem</span>
+                <strong>{{ formatMoney(finalizationCorrectedGrossTotal) }} PLN</strong>
+              </div>
+              <div v-for="row in finalizationFundingGrossRows" :key="row.funding_id || row.funding_name">
+                <span>{{ row.funding_name ? `Pobrane z: ${row.funding_name}` : 'Brak wybranego finansowania' }}</span>
+                <strong>{{ formatMoney(row.gross_amount) }} PLN</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="finalization-section finalization-remaining-tab">
+            <div class="finalization-section__header">
+              <div>
+                <h3>Pozostanie po wniosku</h3>
+                <p>Mały podgląd tego, ile pieniędzy zostanie w każdym finansowaniu po zapisie tego wniosku.</p>
+              </div>
+            </div>
+            <div class="remaining-funding-list">
+              <article v-for="row in finalizationFundingRemainingRows" :key="row.funding_id || row.funding_name" class="remaining-funding-card">
+                <div>
+                  <h4>{{ row.funding_name || 'Brak finansowania' }}</h4>
+                  <p>Obecnie dostępne: {{ formatMoney(row.current_available) }} PLN</p>
+                </div>
+                <strong :class="row.remaining_after < 0 ? 'text-amber' : 'text-emerald'">
+                  {{ formatMoney(row.remaining_after) }} PLN
+                </strong>
+              </article>
+              <div v-if="finalizationFundingRemainingRows.length === 0" class="plan-summary-empty">
+                Brak danych finansowania do wyświetlenia.
+              </div>
             </div>
           </section>
 
@@ -1116,13 +1115,101 @@ const basketSummaryRows = computed(() => {
   return rows
 })
 
+const finalizationAdjustedSnapshotRows = computed(() => {
+  const snapshotRows = finalizationSummary.value?.snapshot_rows || []
+  const listNetTotals = snapshotRows.reduce((totals, row) => {
+    const listId = row.shop_purchase_list_id || 'none'
+    totals[listId] = (totals[listId] || 0) + Number(row.allocated_net_amount || 0)
+    return totals
+  }, {})
+  const finalGrossByList = settlementLines.value.reduce((totals, line) => {
+    if (line.shop_purchase_list_id) {
+      totals[line.shop_purchase_list_id] = Number(line.planned_gross_amount || 0)
+    }
+    return totals
+  }, {})
+
+  return snapshotRows.map(row => {
+    const listId = row.shop_purchase_list_id || 'none'
+    const originalListNet = Number(listNetTotals[listId] || 0)
+    const originalNet = Number(row.allocated_net_amount || 0)
+    const finalGross = finalGrossByList[row.shop_purchase_list_id]
+    const adjustedNet = finalGross !== undefined && originalListNet > 0
+      ? (finalGross / 1.23) * (originalNet / originalListNet)
+      : originalNet
+    return {
+      ...row,
+      allocated_net_amount: adjustedNet,
+      allocated_gross_amount: adjustedNet * 1.23
+    }
+  })
+})
+
 const finalizationCpvRows = computed(() => {
   const rate = Number(finalizationForm.value.euro_exchange_rate || 0)
-  return (finalizationSummary.value?.cpv_rows || []).map(row => ({
+  const totals = finalizationAdjustedSnapshotRows.value.reduce((grouped, row) => {
+    const cpv = row.cpv_code || ''
+    if (!grouped[cpv]) {
+      grouped[cpv] = {
+        cpv_code: cpv,
+        plan_number: row.plan_number || null,
+        allocated_net_amount: 0
+      }
+    } else if (row.plan_number && !String(grouped[cpv].plan_number || '').includes(row.plan_number)) {
+      grouped[cpv].plan_number = [grouped[cpv].plan_number, row.plan_number].filter(Boolean).join(', ')
+    }
+    grouped[cpv].allocated_net_amount += Number(row.allocated_net_amount || 0)
+    return grouped
+  }, {})
+  const rows = Object.values(totals)
+  const mainCpv = rows.length
+    ? rows.reduce((max, row) => Number(row.allocated_net_amount || 0) > Number(max.allocated_net_amount || 0) ? row : max, rows[0]).cpv_code
+    : null
+  return rows.map(row => ({
     ...row,
-    allocated_eur_amount: rate > 0 ? Number(row.allocated_net_amount || 0) / rate : 0
+    allocated_eur_amount: rate > 0 ? Number(row.allocated_net_amount || 0) / rate : 0,
+    is_main_cpv: Boolean(mainCpv && row.cpv_code === mainCpv)
   }))
 })
+
+const finalizationPlanPositionRows = computed(() => {
+  const rate = Number(finalizationForm.value.euro_exchange_rate || 0)
+  const cpvRows = finalizationCpvRows.value
+  const mainCpv = cpvRows.find(row => row.is_main_cpv)?.cpv_code
+  const grouped = finalizationAdjustedSnapshotRows.value.reduce((plans, row) => {
+    const planId = row.public_purchase_plan_id
+    if (!plans[planId]) {
+      plans[planId] = {
+        ...row,
+        allocated_net_amount: 0
+      }
+    }
+    plans[planId].allocated_net_amount += Number(row.allocated_net_amount || 0)
+    return plans
+  }, {})
+  return Object.values(grouped).map(row => ({
+    public_purchase_plan_id: row.public_purchase_plan_id,
+    plan_name: row.plan_name,
+    public_plan_list_name: row.public_plan_list_name,
+    plan_number: row.plan_number,
+    fund_responsible_person: row.fund_responsible_person,
+    funding_organizer: row.funding_organizer,
+    funding_signing_person: row.funding_signing_person,
+    plan_position_number: row.plan_position_number,
+    cpv_code: row.cpv_code,
+    planned_net_amount: row.planned_net_amount,
+    allocated_net_amount: row.allocated_net_amount,
+    allocated_eur_amount: rate > 0 ? Number(row.allocated_net_amount || 0) / rate : 0,
+    is_main_cpv: Boolean(mainCpv && row.cpv_code === mainCpv)
+  }))
+})
+
+const finalizationCorrectedNetTotal = computed(() =>
+  finalizationAdjustedSnapshotRows.value.reduce(
+    (sum, row) => sum + Number(row.allocated_net_amount || 0),
+    0
+  )
+)
 
 const finalizationCorrectedGrossTotal = computed(() =>
   settlementLines.value.reduce(
@@ -1131,8 +1218,41 @@ const finalizationCorrectedGrossTotal = computed(() =>
   )
 )
 
+const finalizationFundingGrossRows = computed(() => {
+  const grouped = finalizationAdjustedSnapshotRows.value.reduce((rows, row) => {
+    const key = row.funding_id || 'none'
+    if (!rows[key]) {
+      rows[key] = {
+        funding_id: row.funding_id,
+        funding_name: row.funding_name,
+        gross_amount: 0
+      }
+    }
+    rows[key].gross_amount += Number(row.allocated_gross_amount || 0)
+    return rows
+  }, {})
+  return Object.values(grouped)
+})
+
+const finalizationFundingRemainingRows = computed(() => {
+  const fundingMap = new Map(
+    fundings.value.map(funding => [Number(funding.funding_id), funding])
+  )
+  return finalizationFundingGrossRows.value.map(row => {
+    const funding = fundingMap.get(Number(row.funding_id))
+    const currentAvailable = Number(funding?.available_after_purchase_requests ?? 0)
+    return {
+      funding_id: row.funding_id,
+      funding_name: row.funding_name,
+      current_available: currentAvailable,
+      request_gross: Number(row.gross_amount || 0),
+      remaining_after: currentAvailable - Number(row.gross_amount || 0)
+    }
+  })
+})
+
 const finalizationPlanSummaryRows = computed(() => {
-  const snapshotRows = finalizationSummary.value?.snapshot_rows || []
+  const snapshotRows = finalizationAdjustedSnapshotRows.value
   return settlementLines.value.map(line => {
     const cpvRows = snapshotRows
       .filter(row => Number(row.shop_purchase_list_id) === Number(line.shop_purchase_list_id))
@@ -2125,6 +2245,12 @@ onMounted(async () => {
 .finalization-totals div { display: grid; gap: 0.35vw; padding: 0.85vw; border-radius: 0.6vw; background: rgba(15, 23, 42, 0.58); border: 1px solid rgba(148, 163, 184, 0.12); }
 .finalization-totals span { color: #94a3b8; font-size: 0.82vw; font-weight: 700; text-transform: uppercase; }
 .finalization-totals strong { color: #e2e8f0; font-size: 1vw; }
+.finalization-remaining-tab { gap: 0.8vw; }
+.remaining-funding-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7vw; }
+.remaining-funding-card { display: flex; justify-content: space-between; gap: 0.8vw; align-items: flex-start; padding: 0.8vw 0.9vw; border-radius: 0.6vw; background: rgba(15, 23, 42, 0.62); border: 1px solid rgba(148, 163, 184, 0.14); }
+.remaining-funding-card h4 { margin: 0; color: #ffffff; font-size: 0.92vw; }
+.remaining-funding-card p { margin: 0.25vw 0 0 0; color: #94a3b8; font-size: 0.78vw; }
+.remaining-funding-card strong { font-size: 1vw; }
 .market-research-file { color: #bfdbfe; font-weight: 700; }
 .delete-inline-btn { border: 0; background: transparent; color: #fca5a5; cursor: pointer; font-weight: 700; }
 
@@ -2132,7 +2258,7 @@ onMounted(async () => {
 .modal-btn { padding: 0.8vw 1.6vw; border-radius: 0.6vw; border: none; cursor: pointer; font-weight: 700; font-family: inherit; }
 .modal-btn-cancel { background: rgba(148, 163, 184, 0.12); color: #e2e8f0; }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.25); color: #ffffff; }
-.modal-btn-save-add { padding: 0.8vw 1.2vw; border-radius: 0.6vw; background: #1e293b; border: 1px solid #3b82f6; color: #60a5fa; font-weight: 700; cursor: pointer; }
+.modal-btn-save-add { padding: 0.8vw 1.2vw; border-radius: 0.6vw; background: #1e293b; border: 1px solid #3b82f6; color: #60a5fa; font-weight: 700; cursor: pointer; min-width: 15vw; }
 .modal-btn-finish { background: #1e293b; border: 1px solid #e2e8f0; color: #e2e8f0; margin-right: auto; }
 .modal-btn-finish:hover { background: rgba(226, 232, 240, 0.1); color: #ffffff; }
 .modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }

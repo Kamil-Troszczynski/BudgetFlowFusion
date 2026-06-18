@@ -3,6 +3,7 @@ from src import get_session, app
 from sqlmodel import Session, select
 from fastapi import Depends, HTTPException
 from typing import List, Optional
+from datetime import date
 from pydantic import BaseModel, Field as PydanticField
 
 
@@ -15,6 +16,7 @@ class FundingCreate(BaseModel):
     funding_name: str
     organizer: str
     signing_person: str
+    spending_deadline: Optional[date] = None
     funding_price: float
     project_budget_id: int
     tasks: List[FundingTaskIn] = PydanticField(default_factory=list)
@@ -35,6 +37,7 @@ class FundingOut(BaseModel):
     funding_name: str
     organizer: Optional[str] = None
     signing_person: Optional[str] = None
+    spending_deadline: Optional[date] = None
     funding_price: float
     spent_money: float
     available_money: float
@@ -71,6 +74,7 @@ def _funding_out(funding: Funding, session: Session) -> FundingOut:
         funding_name=funding.funding_name,
         organizer=funding.organizer,
         signing_person=funding.signing_person,
+        spending_deadline=funding.spending_deadline,
         funding_price=funding.funding_price,
         spent_money=funding.spent_money,
         available_money=funding.funding_price - funding.spent_money,
@@ -147,6 +151,7 @@ def create_funding(
         funding_name=funding_name,
         organizer=organizer,
         signing_person=signing_person,
+        spending_deadline=funding_data.spending_deadline,
         funding_price=funding_data.funding_price,
         spent_money=0.0,
         project_id=project_budget.project_id,
@@ -209,6 +214,7 @@ def update_funding(
     funding.funding_name = funding_name
     funding.organizer = organizer
     funding.signing_person = signing_person
+    funding.spending_deadline = funding_data.spending_deadline
     funding.funding_price = funding_data.funding_price
     funding.project_id = project_budget.project_id
     funding.project_budget_id = project_budget.project_budget_id
