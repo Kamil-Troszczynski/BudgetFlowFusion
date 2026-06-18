@@ -179,20 +179,24 @@ def test_create_public_purchase_plan_position(client, session, public_plan_seed)
         "/api/public_purchase_plans",
         json={
             "public_purchase_plan_list_id": plan_list.public_purchase_plan_list_id,
-            "cpv_code": 42000000,
+            "cpv_code": "42000000",
+            "plan_position_number": "1.1",
+            "description": "Napędy i mechanika",
             "cost": 1200.0,
         },
     )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["cpv_code"] == 42000000
+    assert data["cpv_code"] == "42000000"
+    assert data["plan_position_number"] == "1.1"
+    assert data["description"] == "Napędy i mechanika"
     assert data["funding_id"] == funding.funding_id
     assert data["remaining_amount"] == 1200.0
 
     db_plan = session.exec(
         select(PublicPurchasePlan).where(
-            PublicPurchasePlan.cpv_code == 42000000
+            PublicPurchasePlan.cpv_code == "42000000"
         )
     ).first()
     assert db_plan is not None
@@ -211,7 +215,7 @@ def test_create_public_purchase_plan_rejects_duplicate_cpv(client, session, publ
     session.refresh(plan_list)
     session.add(PublicPurchasePlan(
         public_purchase_plan_name="CPV 42000000",
-        cpv_code=42000000,
+        cpv_code="42000000",
         cost=1000.0,
         funding_id=funding.funding_id,
         public_purchase_plan_list_id=plan_list.public_purchase_plan_list_id,
@@ -222,10 +226,73 @@ def test_create_public_purchase_plan_rejects_duplicate_cpv(client, session, publ
         "/api/public_purchase_plans",
         json={
             "public_purchase_plan_list_id": plan_list.public_purchase_plan_list_id,
-            "cpv_code": 42000000,
+            "cpv_code": "42000000",
             "cost": 100.0,
         },
     )
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Ten kod CPV już istnieje w planie dofinansowania"
+
+
+def test_public_purchase_plan_list_update_keeps_single_plan_per_funding(client, public_plan_seed):
+    funding = public_plan_seed["funding"]
+
+    first_response = client.post(
+        "/api/public_purchase_plan_lists",
+        json={
+            "funding_id": funding.funding_id,
+            "public_plan_list_name": "Plan pierwotny",
+            "plan_year": 2026,
+            "plan_number": "ZP/2026/01",
+            "fund_responsible_person": "Jan Testowy",
+            "euro_exchange_rate": 4.5,
+        },
+    )
+    assert first_response.status_code == 200
+    plan_id = first_response.json()["public_purchase_plan_list_id"]
+
+    second_response = client.post(
+        "/api/public_purchase_plan_lists",
+        json={
+            "funding_id": funding.funding_id,
+            "public_plan_list_name": "Plan zaktualizowany",
+            "plan_year": 2027,
+            "plan_number": "ZP/2027/01",
+            "fund_responsible_person": "Anna Testowa",
+            "euro_exchange_rate": 4.7,
+        },
+    )
+
+    assert second_response.status_code == 200
+    data = second_response.json()
+    assert data["public_purchase_plan_list_id"] == plan_id
+    assert data["public_plan_list_name"] == "Plan zaktualizowany"
+    assert data["plan_year"] == 2027
+    assert data["plan_number"] == "ZP/2027/01"
+    assert data["fund_responsible_person"] == "Anna Testowa"
+    assert data["euro_exchange_rate"] == 4.7
+
+
+def test_create_public_purchase_plan_rejects_non_positive_cost(client, session, public_plan_seed):
+    funding = public_plan_seed["funding"]
+    plan_list = PublicPurchasePlanList(
+        public_plan_list_name="Lista testowa",
+        plan_year=2026,
+        funding_id=funding.funding_id,
+    )
+    session.add(plan_list)
+    session.commit()
+    session.refresh(plan_list)
+
+    response = client.post(
+        "/api/public_purchase_plans",
+        json={
+            "public_purchase_plan_list_id": plan_list.public_purchase_plan_list_id,
+            "cpv_code": "31700000",
+            "cost": 0,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Kwota planowana musi być większa od zera"

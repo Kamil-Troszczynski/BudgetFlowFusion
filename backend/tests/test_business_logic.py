@@ -4,11 +4,12 @@ from datetime import datetime
 from sqlmodel import select
 
 
-def test_add_category_and_subcategory(client, session):
+def test_add_category_and_subcategory(client, session, mock_db):
     """Test sprawdza, czy kody CPV i kategorie poprawnie zapisują się w bazie"""
     response_cat = client.post("/api/categories", json={
         "name": "Narzędzia",
-        "cpv": "43800000-1"
+        "cpv": "43800000-1",
+        "student_id": mock_db["treasurer"].student_id,
     })
     assert response_cat.status_code == 200
     cat_data = response_cat.json()
@@ -16,7 +17,8 @@ def test_add_category_and_subcategory(client, session):
 
     response_sub = client.post("/api/subcategories", json={
         "name": "Wiertarki",
-        "product_category_id": cat_data["product_category_id"]
+        "product_category_id": cat_data["product_category_id"],
+        "student_id": mock_db["treasurer"].student_id,
     })
     assert response_sub.status_code == 200
 
@@ -24,8 +26,8 @@ def test_add_category_and_subcategory(client, session):
     assert db_subcat is not None
     assert db_subcat.product_category_id == cat_data["product_category_id"]
 
-def test_normal_student_adds_item_is_pending(client, session, mock_db):
-    """Test: Przedmiot dodany przez zwykłego studenta musi czekać na akceptację (pending)"""
+def test_normal_student_adds_item_is_visible_in_catalog(client, session, mock_db):
+    """Test: katalog przedmiotów jest wspólny, więc nowy przedmiot trafia do widocznych."""
     payload = {
         "name": "Bateria testowa",
         "link": "https://test.pl",
@@ -39,7 +41,12 @@ def test_normal_student_adds_item_is_pending(client, session, mock_db):
     assert response.status_code == 200
 
     item_data = response.json()
-    assert item_data["status"] == "pending"
+    assert item_data["status"] == "approved"
+
+    items_response = client.get("/api/items")
+    assert items_response.status_code == 200
+    item_names = [item["name"] for item in items_response.json()]
+    assert "Bateria testowa" in item_names
 
 def test_treasurer_adds_item_is_approved(client, session, mock_db):
     """Test (Fast-Track): Przedmiot dodany przez Skarbnika jest z automatu zaakceptowany"""
