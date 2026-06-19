@@ -2,7 +2,7 @@
   <div class="requests-container">
     <template v-if="!activeRequest">
       <div class="requests-section">
-        
+
         <div class="requests-filter-bar">
           <div class="filter-group-item">
             <label class="sort-label">Sekcja Koła:</label>
@@ -28,15 +28,15 @@
           </div>
 
           <div class="view-toggle-container">
-            <button 
-              class="toggle-view-btn" 
+            <button
+              class="toggle-view-btn"
               :class="{ 'toggle-view-btn--active': currentLayout === 'grid' }"
               @click="currentLayout = 'grid'"
             >
               Kafelki
             </button>
-            <button 
-              class="toggle-view-btn" 
+            <button
+              class="toggle-view-btn"
               :class="{ 'toggle-view-btn--active': currentLayout === 'list' }"
               @click="currentLayout = 'list'"
             >
@@ -55,7 +55,7 @@
 
         <div v-for="group in aggregatedRequestGroups" :key="group.key" class="request-status-group">
           <h3 class="status-group-title">{{ group.title }} ({{ group.items.length }})</h3>
-          
+
           <div v-if="group.items.length === 0" class="requests-empty requests-empty--compact">
             <p class="requests-empty-subtext">Brak wniosków w tej sekcji statusu</p>
           </div>
@@ -200,9 +200,14 @@
             <h2 class="request-details__title">{{ activeRequest.name }}</h2>
             <p class="request-details__subtitle">Wniosek o zamówienie #{{ activeRequest.id }}</p>
           </div>
-          <span class="request-card__badge" :class="activeRequest.status">
-            {{ formatStatus(activeRequest.status) }}
-          </span>
+          <div style="display: flex; align-items: center; gap: 1vw;">
+            <button class="modal-btn modal-btn-export" @click="showExportModal = true">
+              Pobierz dane
+            </button>
+            <span class="request-card__badge" :class="activeRequest.status">
+              {{ formatStatus(activeRequest.status) }}
+            </span>
+          </div>
         </div>
 
         <div class="request-details__grid">
@@ -689,7 +694,7 @@
               <button type="button" class="modal-btn modal-btn-save-add" @click="openCpvEditorModal">
                 Edytuj CPV koszyków
               </button>
-            
+
             </div>
           </div>
 <section class="finalization-section">
@@ -972,6 +977,41 @@
           </div>
         </form>
       </div>
+    </div> <div v-if="showExportModal" class="modal-overlay" @click="showExportModal = false">
+      <div class="modal-content" style="max-width: 34vw;" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Eksport podsumowania</h2>
+          <button class="modal-close" @click="showExportModal = false">✕</button>
+        </div>
+
+        <div class="modal-form__group" style="margin-bottom: 2vh;">
+          <label class="modal-form__label">Wybierz co chcesz wyeksportować:</label>
+          <div style="display: flex; flex-direction: column; gap: 0.8vw; margin-top: 0.5vw;">
+            <label class="export-checkbox">
+              <input type="checkbox" v-model="exportOptions.summary" />
+              <span>Ogólne informacje o wniosku (Budżet, Status, CPV itp.)</span>
+            </label>
+            <label class="export-checkbox">
+              <input type="checkbox" v-model="exportOptions.items" />
+              <span>Pełna lista przedmiotów ze wszystkich koszyków wniosku</span>
+            </label>
+          </div>
+          <p class="modal-form__hint" style="color: #94a3b8; font-size: 0.8vw; margin-top: 1vw; line-height: 1.4;">
+            Dla formatu <strong>Excel</strong> wszystkie dane zostaną połączone w jednym pliku (w osobnych zakładkach).<br/>
+            Dla formatu <strong>CSV</strong> każda opcja pobierze się jako oddzielny plik.
+          </p>
+        </div>
+
+        <div v-if="exportLoading" class="requests-empty requests-empty--compact" style="margin-bottom: 2vh;">
+          <p class="requests-empty-subtext">Pobieranie i łączenie danych z koszyków...</p>
+        </div>
+
+        <div v-else class="modal-actions">
+          <button type="button" class="modal-btn modal-btn-cancel" @click="showExportModal = false">Anuluj</button>
+          <button type="button" class="modal-btn modal-btn-export-csv" @click="executeExport('csv')">Pobierz CSV</button>
+          <button type="button" class="modal-btn modal-btn-export" @click="executeExport('excel')">Pobierz Excel</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -979,6 +1019,143 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import * as XLSX from 'xlsx'
+import { useToast } from '@/composables/useToast'
+
+const toast = useToast()
+const showExportModal = ref(false)
+const exportLoading = ref(false)
+const exportOptions = ref({ summary: true, items: true })
+
+const downloadFileUrl = (url, filename) => {
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", filename)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const executeExport = async (format) => {
+  if (!exportOptions.value.summary && !exportOptions.value.items) {
+    toast.error('Wybierz co najmniej jedną opcję do eksportu.')
+    return
+  }
+
+  exportLoading.value = true
+  try {
+    const wb = XLSX.utils.book_new()
+    const safeFilename = `${activeRequest.value.name}_Wniosek`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
+
+    let summaryCsvContent = ""
+    if (exportOptions.value.summary) {
+      const summaryRows = [
+        { 'Atrybut': 'Nazwa wniosku', 'Wartość': activeRequest.value.name },
+        { 'Atrybut': 'ID wniosku', 'Wartość': activeRequest.value.id },
+        { 'Atrybut': 'Status', 'Wartość': formatStatus(activeRequest.value.status) },
+        { 'Atrybut': 'Kwota wniosku (PLN)', 'Wartość': formatMoney(activeRequest.value.budget) },
+        { 'Atrybut': 'Suma z koszyków (PLN)', 'Wartość': formatMoney(activeRequest.value.sourceList__totalPrice ?? activeRequest.value.budget) },
+        { 'Atrybut': 'Dofinansowanie', 'Wartość': activeRequest.value.fundingName || 'Brak' },
+        { 'Atrybut': 'Sekcja Koła', 'Wartość': activeRequest.value.sectionName || 'Brak przypisania' },
+        { 'Atrybut': 'Utworzył (Skarbnik)', 'Wartość': activeRequest.value.creatorName || 'Nieznany' },
+        { 'Atrybut': 'Data utworzenia', 'Wartość': formatDate(activeRequest.value.created_at) }
+      ]
+
+      if (activeRequest.value.finalizationStatus === 'finalized') {
+        summaryRows.push(
+          { 'Atrybut': 'Nazwa na dokumencie', 'Wartość': activeRequest.value.documentRequestName || activeRequest.value.name },
+          { 'Atrybut': 'Data ustalenia wartości', 'Wartość': formatDate(activeRequest.value.contractValueDate) },
+          { 'Atrybut': 'Kurs euro', 'Wartość': formatMoney(activeRequest.value.euroExchangeRate) },
+          { 'Atrybut': 'Główny CPV', 'Wartość': activeRequest.value.mainCpvCode || '-' },
+          { 'Atrybut': 'Suma netto CPV', 'Wartość': formatMoney(activeRequest.value.finalNetTotal) },
+          { 'Atrybut': 'Suma brutto finalna', 'Wartość': formatMoney(activeRequest.value.finalGrossTotal) }
+        )
+      }
+
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows)
+      wsSummary['!cols'] = [{ wch: 30 }, { wch: 45 }]
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Podsumowanie')
+      summaryCsvContent = XLSX.utils.sheet_to_csv(wsSummary, { FS: ";" })
+    }
+
+    let itemsCsvContent = ""
+    if (exportOptions.value.items) {
+      let allShops = []
+      try {
+        const shRes = await fetch(`${API_URL}/shops`)
+        if (shRes.ok) allShops = await shRes.json()
+      } catch(e){}
+
+      const responseLists = await fetch(`${API_URL}/lists?purchase_request_id=${activeRequest.value.id}`)
+      const listsData = responseLists.ok ? await responseLists.json() : []
+
+      const allItemsRows = []
+      let itemCounter = 1
+      let grossTotalAll = 0
+
+      for (const list of listsData) {
+        const listId = list.shop_purchase_list_id
+        const shopName = allShops.find(s => s.shop_id === list.shop_id)?.shop_name || `Sklep ID: ${list.shop_id}`
+
+        const itemsRes = await fetch(`${API_URL}/lists/${listId}/items`)
+        const itemsData = itemsRes.ok ? await itemsRes.json() : []
+
+        for (const item of itemsData) {
+          const priceBrutto = Number(item.price || 0)
+          const amount = Number(item.amount || 0)
+          const totalBrutto = Number(item.total_price || 0)
+          grossTotalAll += totalBrutto
+
+          allItemsRows.push({
+            'Lp.': itemCounter++,
+            'Koszyk (Sklep)': shopName,
+            'Nazwa przedmiotu': item.name,
+            'Ilość (szt.)': amount,
+            'Cena jednostkowa brutto (PLN)': priceBrutto.toFixed(2),
+            'Suma brutto (PLN)': totalBrutto.toFixed(2)
+          })
+        }
+      }
+
+      if (allItemsRows.length === 0) {
+        allItemsRows.push({ 'Lp.': '-', 'Koszyk (Sklep)': 'Brak przedmiotów', 'Nazwa przedmiotu': '-', 'Ilość (szt.)': '-', 'Cena jednostkowa brutto (PLN)': '-', 'Suma brutto (PLN)': '-' })
+      } else {
+        allItemsRows.push({
+          'Lp.': '', 'Koszyk (Sklep)': '', 'Nazwa przedmiotu': 'SUMA CAŁKOWITA', 'Ilość (szt.)': '', 'Cena jednostkowa brutto (PLN)': '', 'Suma brutto (PLN)': grossTotalAll.toFixed(2)
+        })
+      }
+
+      const wsItems = XLSX.utils.json_to_sheet(allItemsRows)
+      wsItems['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 45 }, { wch: 10 }, { wch: 25 }, { wch: 20 }]
+      XLSX.utils.book_append_sheet(wb, wsItems, 'Przedmioty')
+      itemsCsvContent = XLSX.utils.sheet_to_csv(wsItems, { FS: ";" })
+    }
+
+    if (format === 'excel') {
+      XLSX.writeFile(wb, `${safeFilename}.xlsx`)
+    } else if (format === 'csv') {
+      if (exportOptions.value.summary) {
+        const blobSummary = new Blob(["\uFEFF" + summaryCsvContent], { type: 'text/csv;charset=utf-8;' })
+        const urlSummary = URL.createObjectURL(blobSummary)
+        downloadFileUrl(urlSummary, `${safeFilename}_Podsumowanie.csv`)
+      }
+      if (exportOptions.value.items) {
+        const blobItems = new Blob(["\uFEFF" + itemsCsvContent], { type: 'text/csv;charset=utf-8;' })
+        const urlItems = URL.createObjectURL(blobItems)
+        downloadFileUrl(urlItems, `${safeFilename}_WszystkiePrzedmioty.csv`)
+      }
+    }
+
+    toast.success('Pobieranie zakończone pomyślnie.')
+  } catch (error) {
+    console.error("Błąd eksportu:", error)
+    toast.error('Wystąpił błąd podczas generowania pliku.')
+  } finally {
+    exportLoading.value = false
+    showExportModal.value = false
+  }
+}
 
 const API_URL = 'http://localhost:8080/api'
 const { user } = useAuth()
@@ -1366,7 +1543,7 @@ const filterAndSortList = (itemsList) => {
   if (selectedSectionFilter.value) {
     filtered = filtered.filter(item => item.sectionName === selectedSectionFilter.value)
   }
-  
+
   if (sortBy.value === 'date-created-desc') return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   if (sortBy.value === 'date-created-asc') return filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
   if (sortBy.value === 'date-modified-desc') return filtered.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime())
@@ -1747,7 +1924,7 @@ const addFundingAllocation = () => {
   const amount = Number(allocationDraft.value.allocated_amount || 0)
   if (!fundingId || amount <= 0) return
   const existing = newRequestData.value.funding_allocations.find(a => Number(a.funding_id) === fundingId)
-  if (existing) { existing.allocated_amount = Number(existing.allocated_amount) + amount } 
+  if (existing) { existing.allocated_amount = Number(existing.allocated_amount) + amount }
   else { newRequestData.value.funding_allocations.push({ funding_id: fundingId, allocated_amount: amount, plan_position_draft_id: '', plan_position_draft_amount: null }) }
   if (!newRequestData.value.funding_id) {
     newRequestData.value.funding_id = fundingId
@@ -2259,6 +2436,15 @@ onMounted(async () => {
 .modal-form__label { color: #94a3b8; font-size: 0.8vw; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
 .modal-form__input { box-sizing: border-box; padding: 0.8vw 1vw; border-radius: 0.6vw; border: 0.08vw solid rgba(148,163,184,0.2); background: rgba(15,23,42,0.7); color: rgb(var(--rgb-text)); font-size: 0.95vw; outline: none; transition: border-color 0.2s; width: 100%; }
 .modal-form__input:focus { border-color: #3b82f6; }
+
+.export-checkbox { display: flex; align-items: center; gap: 0.6vw; color: rgb(var(--rgb-text)); font-size: 0.95vw; cursor: pointer; transition: opacity 0.2s; }
+.export-checkbox:hover { opacity: 0.8; }
+.export-checkbox input { width: 1.1vw; height: 1.1vw; cursor: pointer; accent-color: #3b82f6; }
+
+.modal-btn-export { background: linear-gradient(135deg, #059669, #047857); color: rgb(var(--rgb-text)); box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2); }
+.modal-btn-export:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35); }
+.modal-btn-export-csv { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: rgb(var(--rgb-text)); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2); }
+.modal-btn-export-csv:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(14, 165, 233, 0.35); }
 
 .funding-allocation-row { display: grid; grid-template-columns: 1fr 8vw auto; gap: 0.7vw; align-items: center; }
 .funding-allocation-list { display: grid; gap: 0.5vw; margin-top: 0.8vw; }
