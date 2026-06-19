@@ -24,8 +24,8 @@
           </option>
         </select>
       </div>
-     
-      
+
+
       <div class="lists-filter">
         <label class="lists-filter__label">Status wniosku</label>
         <select v-model="selectedStatus" class="lists-filter__select" @change="fetchLists">
@@ -44,15 +44,15 @@
       </div>
 
       <div class="view-toggle-container">
-        <button 
-          class="toggle-view-btn" 
+        <button
+          class="toggle-view-btn"
           :class="{ 'toggle-view-btn--active': currentLayout === 'grid' }"
           @click="currentLayout = 'grid'"
         >
           Kafelki
         </button>
-        <button 
-          class="toggle-view-btn" 
+        <button
+          class="toggle-view-btn"
           :class="{ 'toggle-view-btn--active': currentLayout === 'list' }"
           @click="currentLayout = 'list'"
         >
@@ -167,7 +167,7 @@
                 <td>
                   <div class="table-row-actions">
                     <button class="table-btn view" @click="openList(list)">Otwórz</button>
-                    <button class="table-btn export" @click.stop="openExportModal(list)">Excel</button>
+                    <button class="table-btn export" @click.stop="openExportModal(list)">Pobierz</button>
                     <button v-if="canCloseList(list)" class="table-btn close" @click.stop="promptCloseList(list)">Zamknij i zablokuj</button>
                     <button v-if="canReopenList(list)" class="table-btn reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
                     <button v-if="canDeleteList(list)" class="table-btn delete" @click.stop="promptDeleteList(list)">Usuń</button>
@@ -184,7 +184,7 @@
   <ShopPurchaseListDetails
     v-else-if="activeList"
     :list="activeList"
-    :can-manage-items="true" 
+    :can-manage-items="true"
     :can-close-list="canCloseList(activeList)"
     :can-reopen-list="canReopenList(activeList)"
     @back="activeList = null"
@@ -284,11 +284,18 @@
 
       <div class="export-modal-actions">
         <button class="confirm-btn confirm-btn-cancel" @click="showExportModal = false">Anuluj</button>
+
+        <button
+          class="confirm-btn confirm-btn-export-csv"
+          :disabled="exportLoading || exportItems.length === 0"
+          @click="downloadCSV"
+        >Pobierz CSV</button>
+
         <button
           class="confirm-btn confirm-btn-export"
           :disabled="exportLoading || exportItems.length === 0"
           @click="downloadExcel"
-        >⬇ Pobierz Excel</button>
+        >Pobierz Excel</button>
       </div>
     </div>
   </div>
@@ -389,6 +396,45 @@ const downloadExcel = () => {
 
   const safeFilename = `${listName}_${shopName}`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
   XLSX.writeFile(wb, `${safeFilename}.xlsx`)
+}
+
+const downloadCSV = () => {
+  const listName = exportList.value?.name || 'koszyk'
+  const shopName = exportList.value?.shopName || ''
+
+  const rows = exportItems.value.map((item, idx) => ({
+    'Lp.': idx + 1,
+    'Nazwa produktu': item.name,
+    'Ilość (szt.)': item.amount,
+    'Cena brutto (PLN)': Number(item.totalPrice).toFixed(2),
+    'Cena buforowa (PLN)': item.bufferPrice != null ? Number(item.bufferPrice).toFixed(2) : ''
+  }))
+
+  const grossSum = exportItems.value.reduce((s, i) => s + i.totalPrice, 0)
+  const bufferSum = exportItems.value.reduce((s, i) => s + (i.bufferPrice || 0), 0)
+  rows.push({
+    'Lp.': '',
+    'Nazwa produktu': 'SUMA',
+    'Ilość (szt.)': '',
+    'Cena brutto (PLN)': grossSum.toFixed(2),
+    'Cena buforowa (PLN)': bufferSum.toFixed(2)
+  })
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const csvContent = XLSX.utils.sheet_to_csv(ws, { FS: ";" })
+
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+
+  const safeFilename = `${listName}_${shopName}`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
+
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", `${safeFilename}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 // ─────────────────────────────────────────────────────────
 const listToDeleteId = ref(null)
@@ -1067,16 +1113,16 @@ const reopenList = async (list) => {
 
 .list-card__actions { display: flex; flex-wrap: wrap; gap: 0.8vw; }
 
-.list-card__button { 
-  flex: 1; 
-  min-width: 7vw; 
-  padding: 0.8vw; 
-  border: none; 
-  border-radius: 0.6vw; 
-  font-size: 0.9vw; 
-  font-weight: 700; 
-  cursor: pointer; 
-  transition: all 0.2s ease; 
+.list-card__button {
+  flex: 1;
+  min-width: 7vw;
+  padding: 0.8vw;
+  border: none;
+  border-radius: 0.6vw;
+  font-size: 0.9vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 .list-card__button.view { background: rgba(59, 130, 246, 0.18); color: var(--color-link); border: 1px solid rgba(59, 130, 246, 0.3); }
@@ -1101,14 +1147,14 @@ const reopenList = async (list) => {
 .max-cell-width { max-width: 14vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .table-row-actions { display: flex; gap: 0.4vw; }
-.table-btn { 
-  padding: 0.5vw 0.9vw; 
-  border: none; 
-  border-radius: 0.5vw; 
-  font-size: 0.8vw; 
-  font-weight: 700; 
-  cursor: pointer; 
-  transition: all 0.2s ease; 
+.table-btn {
+  padding: 0.5vw 0.9vw;
+  border: none;
+  border-radius: 0.5vw;
+  font-size: 0.8vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 .table-btn.view { background: rgba(59, 130, 246, 0.15); color: var(--color-link); border: 1px solid rgba(59, 130, 246, 0.25); }
@@ -1163,6 +1209,10 @@ const reopenList = async (list) => {
 .export-buffer-input { width: 100%; padding: 0.4vw 0.6vw; border: 1px solid rgba(var(--rgb-border-soft), 0.2); border-radius: 0.4vw; background: rgba(var(--rgb-raised), 0.8); color: rgb(var(--rgb-text)); font-size: 0.9vw; font-family: inherit; outline: none; transition: border-color 0.2s; }
 .export-buffer-input:focus { border-color: rgba(59, 130, 246, 0.6); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15); }
 .export-modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 0.5vw; border-top: 1px solid rgba(var(--rgb-border-soft), 0.1); }
+
+.confirm-btn-export-csv { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3); }
+.confirm-btn-export-csv:hover:not(:disabled) { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(14, 165, 233, 0.45); }
+.confirm-btn-export-csv:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .font-bold { font-weight: 700; }
 .font-mono { font-family: monospace; }
