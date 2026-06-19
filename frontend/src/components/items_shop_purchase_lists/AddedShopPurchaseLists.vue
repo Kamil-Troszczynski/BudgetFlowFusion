@@ -125,6 +125,7 @@
             </div>
             <div class="list-card__actions">
               <button class="list-card__button view" @click="openList(list)">Otwórz listę</button>
+              <button class="list-card__button export" @click.stop="openExportModal(list)">Eksport Excel</button>
               <button v-if="canCloseList(list)" class="list-card__button close" @click.stop="promptCloseList(list)">Zamknij</button>
               <button v-if="canReopenList(list)" class="list-card__button reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
               <button v-if="canDeleteList(list)" class="list-card__button delete" @click.stop="promptDeleteList(list)">Usuń</button>
@@ -166,6 +167,7 @@
                 <td>
                   <div class="table-row-actions">
                     <button class="table-btn view" @click="openList(list)">Otwórz</button>
+                    <button class="table-btn export" @click.stop="openExportModal(list)">Excel</button>
                     <button v-if="canCloseList(list)" class="table-btn close" @click.stop="promptCloseList(list)">Zamknij i zablokuj</button>
                     <button v-if="canReopenList(list)" class="table-btn reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
                     <button v-if="canDeleteList(list)" class="table-btn delete" @click.stop="promptDeleteList(list)">Usuń</button>
@@ -225,6 +227,71 @@
     @close="showAddListModal = false"
     @submit-list="handleNewList"
   />
+
+  <!-- Modal eksportu Excel -->
+  <div v-if="showExportModal" class="confirm-modal-overlay" @click="showExportModal = false">
+    <div class="export-modal-content" @click.stop>
+      <div class="export-modal-header">
+        <div>
+          <h2 class="export-modal-title">Eksport do Excel</h2>
+          <p class="export-modal-subtitle">{{ exportList?.name }} — {{ exportList?.shopName }}</p>
+        </div>
+        <button class="export-modal-close" @click="showExportModal = false">✕</button>
+      </div>
+
+      <div v-if="exportLoading" class="export-loading">Ładowanie pozycji…</div>
+
+      <div v-else-if="exportItems.length === 0" class="export-loading">Brak pozycji w tym koszyku.</div>
+
+      <div v-else class="export-table-wrapper custom-scrollbar">
+        <table class="export-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nazwa produktu</th>
+              <th>Ilość</th>
+              <th>Cena brutto (PLN)</th>
+              <th>Cena buforowa (PLN)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, idx) in exportItems" :key="item.id">
+              <td class="export-idx">{{ idx + 1 }}</td>
+              <td class="export-name">{{ item.name }}</td>
+              <td class="export-qty">{{ item.amount }} szt.</td>
+              <td class="export-price">{{ formatMoney(item.totalPrice) }}</td>
+              <td class="export-buffer">
+                <input
+                  v-model.number="item.bufferPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="export-buffer-input"
+                  placeholder="0.00"
+                />
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="export-summary-label">Suma</td>
+              <td class="export-price export-summary-value">{{ formatMoney(exportItems.reduce((s, i) => s + i.totalPrice, 0)) }}</td>
+              <td class="export-price export-summary-value">{{ formatMoney(exportItems.reduce((s, i) => s + (i.bufferPrice || 0), 0)) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="export-modal-actions">
+        <button class="confirm-btn confirm-btn-cancel" @click="showExportModal = false">Anuluj</button>
+        <button
+          class="confirm-btn confirm-btn-export"
+          :disabled="exportLoading || exportItems.length === 0"
+          @click="downloadExcel"
+        >⬇ Pobierz Excel</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -233,6 +300,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
 import AddListModal from './AddListModal.vue'
+import * as XLSX from 'xlsx'
 
 const { user } = useAuth()
 const props = defineProps({
@@ -250,6 +318,79 @@ const students = ref([])
 const publicPurchasePlans = ref([])
 const showDeleteModal = ref(false)
 const showCloseModal = ref(false)
+
+// ── Excel export ──────────────────────────────────────────
+const showExportModal = ref(false)
+const exportList = ref(null)
+const exportItems = ref([])
+const exportLoading = ref(false)
+
+const openExportModal = async (list) => {
+  exportList.value = list
+  exportItems.value = []
+  exportLoading.value = true
+  showExportModal.value = true
+  try {
+    const res = await fetch(`http://localhost:8080/api/lists/${list.id}/items?t=${Date.now()}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error('Błąd pobierania pozycji')
+    const data = await res.json()
+    exportItems.value = data.map(item => ({
+      id: item.line_item_id ?? item.item_id,
+      name: item.name,
+      amount: item.amount,
+      totalPrice: Number(item.total_price || 0),
+      bufferPrice: null
+    }))
+  } catch (e) {
+    console.error(e)
+    toast.error('Nie udało się załadować pozycji koszyka.')
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+const downloadExcel = () => {
+  const listName = exportList.value?.name || 'koszyk'
+  const shopName = exportList.value?.shopName || ''
+
+  const rows = exportItems.value.map((item, idx) => ({
+    'Lp.': idx + 1,
+    'Nazwa produktu': item.name,
+    'Ilość (szt.)': item.amount,
+    'Cena brutto (PLN)': Number(item.totalPrice).toFixed(2),
+    'Cena buforowa (PLN)': item.bufferPrice != null ? Number(item.bufferPrice).toFixed(2) : ''
+  }))
+
+  // summary row
+  const grossSum = exportItems.value.reduce((s, i) => s + i.totalPrice, 0)
+  const bufferSum = exportItems.value.reduce((s, i) => s + (i.bufferPrice || 0), 0)
+  rows.push({
+    'Lp.': '',
+    'Nazwa produktu': 'SUMA',
+    'Ilość (szt.)': '',
+    'Cena brutto (PLN)': grossSum.toFixed(2),
+    'Cena buforowa (PLN)': bufferSum.toFixed(2)
+  })
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+
+  // auto column widths
+  const colWidths = [
+    { wch: 5 },   // Lp.
+    { wch: 40 },  // Nazwa
+    { wch: 12 },  // Ilość
+    { wch: 20 },  // Cena brutto
+    { wch: 22 }   // Cena buforowa
+  ]
+  ws['!cols'] = colWidths
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Koszyk')
+
+  const safeFilename = `${listName}_${shopName}`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
+  XLSX.writeFile(wb, `${safeFilename}.xlsx`)
+}
+// ─────────────────────────────────────────────────────────
 const listToDeleteId = ref(null)
 const listToCloseId = ref(null)
 const selectedShopId = ref('')
@@ -944,6 +1085,8 @@ const reopenList = async (list) => {
 .list-card__button.close:hover { background: #d97706; color: rgb(var(--rgb-text)); border-color: #d97706; transform: translateY(-2px); }
 .list-card__button.delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
 .list-card__button.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; transform: translateY(-2px); }
+.list-card__button.export { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+.list-card__button.export:hover { background: #059669; color: rgb(var(--rgb-text)); border-color: #059669; transform: translateY(-2px); }
 
 .excel-table-wrapper { background: rgba(var(--rgb-surface), 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; width: 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
 .excel-list-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85vw; min-width: 1100px; }
@@ -974,6 +1117,8 @@ const reopenList = async (list) => {
 .table-btn.close:hover { background: #d97706; color: rgb(var(--rgb-text)); border-color: #d97706; }
 .table-btn.delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); }
 .table-btn.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; }
+.table-btn.export { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
+.table-btn.export:hover { background: #059669; color: rgb(var(--rgb-text)); border-color: #059669; }
 
 .confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
 .confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -990,6 +1135,34 @@ const reopenList = async (list) => {
 .confirm-btn-danger:hover { transform: translateY(-0.3vh); filter: brightness(1.1); box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5); }
 .confirm-btn-close { background: linear-gradient(135deg, #f59e0b, #d97706); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.25); }
 .confirm-btn-close:hover { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(245, 158, 11, 0.4); }
+.confirm-btn-export { background: linear-gradient(135deg, #059669, #047857); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3); }
+.confirm-btn-export:hover:not(:disabled) { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(5, 150, 105, 0.45); }
+.confirm-btn-export:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Export modal ──────────────────────────────────────── */
+.export-modal-content { background: rgb(var(--rgb-surface)); border: 1px solid rgba(var(--rgb-border-soft), 0.12); border-radius: 1.2vw; padding: 2.5vw; width: min(90vw, 60vw); max-height: 85vh; display: flex; flex-direction: column; gap: 1.5vw; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+.export-modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.export-modal-title { font-size: 1.4vw; font-weight: 800; color: var(--color-heading); margin: 0; }
+.export-modal-subtitle { font-size: 0.9vw; color: rgba(var(--rgb-muted), 0.75); margin: 0.3vw 0 0; }
+.export-modal-close { background: none; border: none; color: rgba(var(--rgb-muted), 0.6); font-size: 1.2vw; cursor: pointer; padding: 0.2vw 0.4vw; border-radius: 0.3vw; transition: color 0.2s; }
+.export-modal-close:hover { color: rgb(var(--rgb-text)); }
+.export-loading { text-align: center; color: rgba(var(--rgb-muted), 0.7); font-size: 1vw; padding: 2vw 0; }
+.export-table-wrapper { overflow-y: auto; flex: 1; }
+.export-table { width: 100%; border-collapse: collapse; font-size: 0.9vw; font-family: inherit; }
+.export-table th { background: rgba(var(--rgb-raised), 0.8); color: var(--color-heading); padding: 0.7vw 1vw; text-align: left; font-weight: 700; font-size: 0.8vw; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid rgba(var(--rgb-border-soft), 0.12); white-space: nowrap; }
+.export-table td { padding: 0.6vw 1vw; border-bottom: 1px solid rgba(var(--rgb-border-soft), 0.06); color: rgb(var(--rgb-text)); vertical-align: middle; }
+.export-table tfoot td { border-top: 2px solid rgba(var(--rgb-border-soft), 0.2); border-bottom: none; font-weight: 800; padding-top: 0.8vw; }
+.export-table tbody tr:hover td { background: rgba(59, 130, 246, 0.05); }
+.export-idx { color: rgba(var(--rgb-muted), 0.5); width: 3vw; text-align: center; }
+.export-name { max-width: 20vw; }
+.export-qty { color: rgba(var(--rgb-muted), 0.7); width: 6vw; }
+.export-price { font-variant-numeric: tabular-nums; color: #60a5fa; width: 9vw; }
+.export-summary-label { color: rgba(var(--rgb-muted), 0.7); font-weight: 700; }
+.export-summary-value { color: var(--color-heading); }
+.export-buffer { width: 10vw; }
+.export-buffer-input { width: 100%; padding: 0.4vw 0.6vw; border: 1px solid rgba(var(--rgb-border-soft), 0.2); border-radius: 0.4vw; background: rgba(var(--rgb-raised), 0.8); color: rgb(var(--rgb-text)); font-size: 0.9vw; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.export-buffer-input:focus { border-color: rgba(59, 130, 246, 0.6); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15); }
+.export-modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 0.5vw; border-top: 1px solid rgba(var(--rgb-border-soft), 0.1); }
 
 .font-bold { font-weight: 700; }
 .font-mono { font-family: monospace; }
