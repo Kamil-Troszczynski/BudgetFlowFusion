@@ -11,12 +11,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budgetflowfusion -d budgetflowfusion"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: backend
     container_name: backend
     depends_on:
-       - db
+      db:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion
     ports:

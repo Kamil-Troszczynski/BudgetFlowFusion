@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BudgetFlowFusion - dokumentacja</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --line: #d8e0ea;
+      --accent: #2457d6;
+      --code: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.62;
+    }
+    .layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 28px 22px;
+      background: #101827;
+      color: #e5edf8;
+    }
+    aside h1 { font-size: 20px; line-height: 1.25; margin: 0 0 20px; }
+    aside a {
+      display: block;
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: 14px;
+    }
+    main { padding: 42px; }
+    .paper {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 42px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
+    }
+    h1 { font-size: 34px; margin: 0 0 22px; color: #0f172a; }
+    h2 { margin-top: 38px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--accent); }
+    h3 { margin-top: 28px; color: #334155; }
+    p { margin: 12px 0; }
+    code { background: #eef2ff; padding: 2px 5px; border-radius: 4px; }
+    pre {
+      overflow-x: auto;
+      padding: 18px;
+      border-radius: 8px;
+      background: var(--code);
+      color: #e2e8f0;
+      line-height: 1.35;
+    }
+    pre code { background: transparent; padding: 0; color: inherit; }
+    li { margin: 6px 0; }
+    .doc-section + .doc-section { margin-top: 56px; }
+    @media print {
+      aside { display: none; }
+      .layout { display: block; }
+      main { padding: 0; }
+      .paper { border: 0; box-shadow: none; border-radius: 0; }
+      h1, h2, h3 { page-break-after: avoid; }
+      pre { white-space: pre-wrap; }
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static; height: auto; }
+      main { padding: 18px; }
+      .paper { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>BudgetFlowFusion<br>Dokumentacja</h1>
+      <a href="#dokumentacja-techniczna-budgetflowfusion">Dokumentacja techniczna BudgetFlowFusion</a>
+<a href="#wprowadzenie">Wprowadzenie</a>
+<a href="#dokumentacja-analityczno-projektowa">Dokumentacja analityczno-projektowa</a>
+<a href="#architektura-systemu">Architektura systemu</a>
+<a href="#model-danych">Model danych</a>
+<a href="#procesy-biznesowe">Procesy biznesowe</a>
+<a href="#api-backendu">API backendu</a>
+<a href="#dokumentacja-uzytkownika">Dokumentacja użytkownika</a>
+<a href="#uruchomienie-i-testy">Uruchomienie i testy</a>
+<a href="#utrzymanie-i-sownik-pojec">Utrzymanie i słownik pojęć</a>
+    </aside>
+    <main>
+      <article class="paper">
+        <section class="doc-section" id="dokumentacja-techniczna-budgetflowfusion"><h1 id="dokumentacja-techniczna-budgetflowfusion">Dokumentacja techniczna BudgetFlowFusion</h1>
+<h2 id="lista-rozdziaow">Lista rozdziałów</h2></section>
+<section class="doc-section" id="wprowadzenie"><h1 id="wprowadzenie">Wprowadzenie</h1>
+<h2 id="cel-systemu">Cel systemu</h2>
+<p>BudgetFlowFusion jest aplikacją do obsługi zakupów, budżetów, dofinansowań, planów zamówień publicznych, wniosków i rozliczeń w kole naukowym. System zastępuje rozproszone arkusze i ustalenia ręczne jednym modelem danych oraz jednym procesem operacyjnym.</p>
+<h2 id="zakres-funkcjonalny">Zakres funkcjonalny</h2>
+<p>System obsługuje:</p>
+<ul><li>rejestrację i logowanie użytkowników,</li><li>rozróżnienie zwykłego członka i skarbnika,</li><li>katalog przedmiotów oraz zgłaszanie sklepów,</li><li>listy zakupów prowadzone dla konkretnego sklepu i finansowania,</li><li>budżety koła, sekcji i dofinansowań,</li><li>roczne plany zamówień publicznych powiązane z dofinansowaniem,</li><li>wnioski o zamówienie z alokacją środków i pozycji planu,</li><li>finalizację wniosku wraz ze snapshotem danych,</li><li>rozliczenia, faktury i linie rozliczeniowe.</li></ul>
+<h2 id="role">Role</h2>
+<p><code>Student</code> Użytkownik aplikacji. Może dodawać przedmioty, zgłaszać sklepy i pracować na otwartych listach zakupów.</p>
+<p><code>ProjectFinanceManager</code> Skarbnik. Jest powiązany ze studentem przez <code>Student.project_finance_manager_id</code>. Zarządza finansami, planami, listami, wnioskami i rozliczeniami.</p>
+<h2 id="granice-systemu">Granice systemu</h2>
+<p>System nie integruje się z SAP ani z zewnętrznym systemem księgowym. Pole <code>Student.is_in_sap</code> ma charakter informacyjny. Dokumenty i faktury są odwzorowane jako dane w bazie, bez obsługi uploadu pełnych plików dokumentów poza nazwą pliku rozeznania rynku.</p>
+<h2 id="gowna-regua-finansowa">Główna reguła finansowa</h2>
+<p>Źródłem pieniędzy w systemie jest <code>Funding</code>. Budżety sekcji i koła są wyliczane z dofinansowań oraz zarezerwowanych/wykorzystanych kwot.</p>
+<pre><code>Funding.funding_price
+   - Funding.spent_money
+   - SUM(PurchaseRequestFundingAllocation.allocated_amount)
+   = dostępne środki po rezerwacjach</code></pre>
+<h2 id="gowna-regua-projektowa">Główna reguła projektowa</h2>
+<p>Plan zamówień publicznych jest przypisany do jednego dofinansowania. Wniosek rezerwuje środki i zużywa wskazane pozycje planu. Finalizacja zapisuje snapshot, żeby późniejsze zmiany planu lub dofinansowania nie zmieniły historii dokumentu.</p></section>
+<section class="doc-section" id="dokumentacja-analityczno-projektowa"><h1 id="dokumentacja-analityczno-projektowa">Dokumentacja analityczno-projektowa</h1>
+<h2 id="problem">Problem</h2>
+<p>Koło naukowe prowadzi zakupy z wielu źródeł finansowania. Każdy zakup musi być przypisany do sekcji/projektu, dofinansowania, pozycji planu zamówień publicznych oraz późniejszego rozliczenia. Bez systemu dane są rozproszone między listami zakupów, arkuszami budżetowymi, wnioskami i fakturami.</p>
+<h2 id="cel-projektowy">Cel projektowy</h2>
+<p>Celem systemu jest utrzymanie spójnego przebiegu:</p>
+<pre><code>dofinansowanie
+   -&gt; plan zamówień publicznych
+   -&gt; lista zakupów
+   -&gt; wniosek
+   -&gt; finalizacja
+   -&gt; rozliczenie
+   -&gt; faktura</code></pre>
+<p>Aplikacja ma pilnować:</p>
+<ul><li>dostępności środków,</li><li>zgodności wniosku z pozycją CPV,</li><li>wykorzystania planu publicznego,</li><li>powiązania koszyków z wnioskiem,</li><li>historii finalizacji,</li><li>statusów faktur i rozliczeń.</li></ul>
+<h2 id="aktorzy">Aktorzy</h2>
+<pre><code></code></pre>
+<p>Członek koła: przedmioty, sklepy, wkład do list zakupów Skarbnik: budżety, finansowania, plany, wnioski Obsługa rozliczeń: faktury, statusy, kwoty rzeczywiste</p>
+<p>Obsługa rozliczeń nie jest osobnym typem konta w modelu. Jej czynności są realizowane przez moduł <code>Settlement</code> i <code>Invoice</code>.</p>
+<h2 id="wymagania-funkcjonalne">Wymagania funkcjonalne</h2>
+<p>RF-01. Użytkownik może się zarejestrować i zalogować.</p>
+<p>RF-02. System rozróżnia zwykłego członka i skarbnika.</p>
+<p>RF-03. Członek może dodać przedmiot do katalogu.</p>
+<p>RF-04. Członek może zgłosić sklep. Skarbnik może sklep zaakceptować, edytować albo odrzucić.</p>
+<p>RF-05. Skarbnik może tworzyć dofinansowania wraz z zadaniami budżetowymi.</p>
+<p>RF-06. Skarbnik może utworzyć plan zamówień publicznych dla dofinansowania.</p>
+<p>RF-07. Skarbnik może tworzyć listy zakupów i przypisywać je do sklepu, dofinansowania oraz grupy zakupowej.</p>
+<p>RF-08. Użytkownicy mogą dodawać wkład do otwartych list zakupów.</p>
+<p>RF-09. Skarbnik może zamknąć listę i użyć jej przy wniosku.</p>
+<p>RF-10. Skarbnik może utworzyć wniosek o zamówienie z alokacją środków.</p>
+<p>RF-11. Wniosek może korzystać z jednej lub wielu pozycji planu.</p>
+<p>RF-12. Przekroczenie pozycji planu wymaga uzasadnienia.</p>
+<p>RF-13. Finalizacja wniosku zapisuje dane historyczne w snapshotach.</p>
+<p>RF-14. Rozliczenie wymaga obsługi faktur i kwot rzeczywistych.</p>
+<h2 id="wymagania-niefunkcjonalne">Wymagania niefunkcjonalne</h2>
+<ul><li>Backend udostępnia API REST w formacie JSON.</li><li>Frontend działa jako SPA w Vue 3.</li><li>Dane trwałe są przechowywane w PostgreSQL.</li><li>Modele bazodanowe są definiowane w SQLModel.</li><li>Testy backendu używają SQLite in-memory.</li><li>Dokumentacja jest generowana z plików <code>doc/*.rst</code> przez <code>doc_gen.py</code>.</li></ul>
+<h2 id="decyzje-projektowe">Decyzje projektowe</h2>
+<h3 id="budzet-wynika-z-dofinansowan">Budżet wynika z dofinansowań</h3>
+<p><code>ProjectBudget.total_budget</code> i <code>AssociationBudget.total_budget</code> nie powinny być traktowane jako niezależne źródło prawdy. W raportowaniu kwoty są liczone z tabeli <code>Funding</code> i rezerwacji wniosków.</p>
+<h3 id="plan-jest-przy-dofinansowaniu">Plan jest przy dofinansowaniu</h3>
+<p><code>PublicPurchasePlanList</code> ma relację 1:1 z <code>Funding</code>. Dzięki temu pozycje CPV są kontrolowane w kontekście konkretnego źródła pieniędzy.</p>
+<h3 id="wniosek-rezerwuje-srodki">Wniosek rezerwuje środki</h3>
+<p>Tabela <code>PurchaseRequestFundingAllocation</code> przechowuje kwoty zarezerwowane na wniosek. Jeżeli wniosek nie ma rekordów alokacji, backend używa pola legacy <code>PurchaseRequest.budget_allocated_for_the_order</code> jako fallback.</p>
+<h3 id="finalizacja-zapisuje-snapshot">Finalizacja zapisuje snapshot</h3>
+<p><code>PurchaseRequestFinalizationSnapshot</code> przechowuje skopiowane dane planu i finansowania: CPV, numer planu, nazwę finansowania, kwoty netto, brutto i EUR. Snapshot jest potrzebny, ponieważ plan albo finansowanie mogą zostać później zmienione.</p>
+<h3 id="koszyk-przechowuje-wkad-uzytkownikow">Koszyk przechowuje wkład użytkowników</h3>
+<p><code>ShopPurchaseListItem</code> przechowuje łączną ilość przedmiotu na liście. <code>ShopPurchaseListItemContribution</code> przechowuje ile dodał konkretny student. To pozwala zwykłemu członkowi usuwać tylko własny wkład.</p>
+<h2 id="zakres-ryzyka">Zakres ryzyka</h2>
+<p>Największe ryzyka projektowe:</p>
+<ul><li>podwójne liczenie kwot z dofinansowań i wniosków,</li><li>niespójność planu CPV po edycji lub usunięciu pozycji,</li><li>brak pełnej autoryzacji backendowej dla każdej operacji finansowej,</li><li>różnice między PostgreSQL runtime i SQLite w testach,</li><li>logika biznesowa umieszczona bezpośrednio w endpointach.</li></ul></section>
+<section class="doc-section" id="architektura-systemu"><h1 id="architektura-systemu">Architektura systemu</h1>
+<h2 id="widok-warstwowy">Widok warstwowy</h2>
+<pre><code></code></pre>
+<ul><li>Przeglądarka (Vue 3, Vue Router, komponenty .vue)</li></ul>
+<ul><li>Backend FastAPI (endpointy, walidacja Pydantic, logika domenowa)</li></ul>
+<ul><li>PostgreSQL</li></ul>
+<h2 id="backend">Backend</h2>
+<p>Katalog: <code>backend</code>.</p>
+<p>Najważniejsze pliki:</p>
+<ul><li><code>backend/run.py</code> - uruchomienie Uvicorn na porcie <code>8080</code>,</li><li><code>backend/src/__init__.py</code> - konfiguracja FastAPI, CORS, silnik bazy, lifecycle i migracja,</li><li><code>backend/src/relations.py</code> - encje SQLModel,</li><li><code>backend/src/routes</code> - moduły endpointów.</li></ul>
+<h2 id="rejestracja-tras">Rejestracja tras</h2>
+<p><code>backend/src/__init__.py</code> tworzy globalny obiekt <code>app</code>. Import <code>src.routes</code> ładuje wszystkie moduły z katalogu tras i rejestruje dekoratory <code>@app.get</code>, <code>@app.post</code>, <code>@app.patch</code>, <code>@app.delete</code>.</p>
+<pre><code>src.__init__
+   |
+   +-- app = FastAPI(...)
+   +-- engine = create_engine(DATABASE_URL)
+   +-- get_session()
+   +-- prepare_database()
+   +-- import src.routes
+           |
+           +-- login_register_routes
+           +-- members_routes
+           +-- items_routes
+           +-- shops_routes
+           +-- lists_routes
+           +-- fundings_routes
+           +-- public_purchase_plans_routes
+           +-- purchase_request_routes
+           +-- settlements_routes</code></pre>
+<h2 id="moduy-backendu">Moduły backendu</h2>
+<p><code>login_register_routes.py</code> Rejestracja i logowanie.</p>
+<p><code>members_routes.py</code> Lista studentów.</p>
+<p><code>items_routes.py</code> Katalog przedmiotów, statusy pending/approved/rejected, grupowanie.</p>
+<p><code>shops_routes.py</code> Sklepy, zgłaszanie, akceptacja, edycja i odrzucenie.</p>
+<p><code>categories_subcategories_routes.py</code> Kategorie, podkategorie i przypisanie CPV.</p>
+<p><code>lists_routes.py</code> Listy zakupów, pozycje, wkład użytkowników, zamykanie i otwieranie.</p>
+<p><code>fundings_routes.py</code> Dofinansowania, zadania budżetowe i dostępne środki.</p>
+<p><code>public_purchase_plans_routes.py</code> Budżety, dashboard, listy planów i pozycje planu publicznego.</p>
+<p><code>purchase_request_routes.py</code> Wnioski, alokacje finansowania, pozycje planu, finalizacja i linie rozliczeniowe.</p>
+<p><code>settlements_routes.py</code> Rozliczenia, faktury, historia i statusy.</p>
+<h2 id="frontend">Frontend</h2>
+<p>Katalog: <code>frontend</code>.</p>
+<p>Najważniejsze pliki:</p>
+<ul><li><code>frontend/src/main.js</code> - start aplikacji,</li><li><code>frontend/src/router/index.js</code> - routing SPA,</li><li><code>frontend/src/App.vue</code> - główny kontener,</li><li><code>frontend/src/composables/useAuth.js</code> - stan zalogowanego użytkownika,</li><li><code>frontend/src/composables/useToast.js</code> - komunikaty UI.</li></ul>
+<p>Główne widoki:</p>
+<ul><li><code>HomePage.vue</code> - panel użytkownika i dashboard,</li><li><code>AddedItems.vue</code> - katalog przedmiotów,</li><li><code>AddedShopPurchaseLists.vue</code> i <code>ShopPurchaseListDetails.vue</code> - listy zakupów,</li><li><code>PublicPurchasePlans.vue</code> - dofinansowania, budżety i plany,</li><li><code>PurchaseRequest.vue</code> - wnioski,</li><li><code>Settlement.vue</code> - rozliczenia i faktury,</li><li><code>Shops.vue</code> - sklepy.</li></ul>
+<h2 id="przepyw-requestu">Przepływ requestu</h2>
+<p>Dane w aplikacji przepływają od komponentu Vue, który wysyła żądanie HTTP do endpointu FastAPI. Endpoint odbiera parametry zapytania lub dane wejściowe zdefiniowane za pomocą modeli Pydantic (BaseModel). Następnie, przy użyciu sesji SQLAlchemy (Session(engine)), wykonywane są operacje na bazie danych PostgreSQL, takie jak pobieranie (select, get), dodawanie (add), usuwanie (delete) oraz zatwierdzanie zmian (commit). Po przetworzeniu danych FastAPI zwraca odpowiedź w postaci obiektu zgodnego z response_model lub słownika (dict), która jest automatycznie serializowana do formatu JSON i odbierana przez przeglądarkę w aplikacji Vue.</p>
+<h2 id="konfiguracja-srodowiska">Konfiguracja środowiska</h2>
+<p>Backend wymaga <code>DATABASE_URL</code>. W <code>docker-compose.yml</code> baza jest dostępna dla backendu jako:</p>
+<pre><code>postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion</code></pre>
+<p>Porty:</p>
+<pre><code>8080  backend FastAPI
+5431  PostgreSQL wystawiony na hosta</code></pre>
+<h2 id="inicjalizacja-bazy">Inicjalizacja bazy</h2>
+<p>Przy starcie backend:</p>
+<ol><li>tworzy tabele przez <code>SQLModel.metadata.create_all(engine)</code>,</li><li>wykonuje <code>migrate_project_budgets()</code> dla PostgreSQL,</li><li>próbuje załadować <code>backend/scripts/mockup_data.sql</code>.</li></ol>
+<p>Migracja w <code>src.__init__</code> dodaje brakujące kolumny i tabele używane przez nowsze funkcje: alokacje finansowania, pozycje planu wniosku, snapshot finalizacji, linie rozliczeniowe i zadania dofinansowań.</p>
+<h2 id="ograniczenia-architektury">Ograniczenia architektury</h2>
+<ul><li>Brak oddzielnej warstwy serwisowej: logika domenowa znajduje się w trasach.</li><li>Autoryzacja jest uproszczona: frontend przechowuje użytkownika w <code>localStorage</code>, a backend często przyjmuje identyfikatory w payloadzie lub query string.</li><li>Część endpointów zwraca modele SQLModel bez dedykowanego DTO.</li><li>Testy używają SQLite, a runtime używa PostgreSQL.</li></ul></section>
+<section class="doc-section" id="model-danych"><h1 id="model-danych">Model danych</h1>
+<p>Model danych dostępny jest w README.md w formacie mermaid.</p></section>
+<section class="doc-section" id="procesy-biznesowe"><h1 id="procesy-biznesowe">Procesy biznesowe</h1>
+<h2 id="proces-bazowy">Proces bazowy</h2>
+<ol><li>Skarbnik zakłada dofinansowanie.</li><li>Skarbnik tworzy plan publiczny dla dofinansowania.</li><li>Użytkownicy dodają przedmioty i pracują na listach zakupów.</li><li>Skarbnik zamyka listy zakupów.</li><li>Skarbnik tworzy wniosek.</li><li>System rezerwuje budżet i pozycje planu.</li><li>Skarbnik finalizuje wniosek.</li><li>System zapisuje snapshot i linie rozliczeniowe.</li><li>Wniosek przechodzi do rozliczeń.</li><li>Faktury zamykają rozliczenie.</li></ol>
+<h2 id="dodanie-przedmiotu">Dodanie przedmiotu</h2>
+<pre><code>Student
+   - POST /api/items
+   - Item(status = approved)
+   - GET /api/items</code></pre>
+<p>Reguły:</p>
+<ul><li>wymagane są nazwa, cena, waluta, podkategoria i student,</li><li>przedmiot jest przypisany do sklepu,</li><li>katalog pokazuje rekordy zaakceptowane,</li><li>skarbnik może dodatkowo zatwierdzać albo odrzucać pozycje pending.</li></ul>
+<h2 id="zgoszenie-sklepu">Zgłoszenie sklepu</h2>
+<pre><code>Student
+   - POST /api/shops
+   - Shop(status = pending)
+   - Skarbnik
+   - PATCH approve albo DELETE reject</code></pre>
+<p>Reguły:</p>
+<ul><li>nazwa sklepu jest wymagana,</li><li>próg darmowej dostawy nie może być ujemny,</li><li>nazwa i link nie mogą duplikować aktywnego sklepu,</li><li>zaakceptowanego sklepu nie można odrzucić endpointem reject.</li></ul>
+<h2 id="dofinansowanie">Dofinansowanie</h2>
+<pre><code>ProjectBudget
+   - Funding
+   - FundingTask*</code></pre>
+<p>Reguły:</p>
+<ul><li>kwota dofinansowania musi być dodatnia,</li><li>wymagane są nazwa, organizator i osoba podpisująca,</li><li>suma zadań budżetowych nie może przekroczyć kwoty dofinansowania,</li><li>dofinansowanie dziedziczy <code>project_id</code> i <code>association_budget_id</code> z budżetu projektu.</li></ul>
+<h2 id="plan-zamowien-publicznych">Plan zamówień publicznych</h2>
+<pre><code>Funding
+   - PublicPurchasePlanList
+   - PublicPurchasePlan*</code></pre>
+<p>Reguły:</p>
+<ul><li>jedno dofinansowanie ma najwyżej jeden nagłówek planu,</li><li>pozycja planu ma kod CPV i dodatnią kwotę,</li><li>kod CPV powinien być unikalny w ramach planu,</li><li>usunięcie pozycji jest blokowane, jeżeli pozycja jest użyta przez wniosek lub koszyk.</li></ul>
+<h2 id="lista-zakupow">Lista zakupów</h2>
+<pre><code>ShopPurchaseList
+   - ShopPurchaseListItem
+   - ShopPurchaseListItemContribution</code></pre>
+<p>Reguły:</p>
+<ul><li>lista jest przypisana do sklepu, finansowania i studenta,</li><li>pozycja listy przechowuje ilość łączną,</li><li>contribution przechowuje ilość dodaną przez konkretnego studenta,</li><li>zwykły członek może usunąć tylko swój wkład,</li><li>zamknięcie listy tworzy albo wiąże <code>Settlement</code>.</li></ul>
+<h2 id="wniosek">Wniosek</h2>
+<pre><code>POST /api/create_purchase_requests
+   |
+   +-- walidacja budżetu projektu
+   +-- walidacja dofinansowania
+   +-- walidacja pozycji planu
+   +-- zapis PurchaseRequest
+   +-- zapis PurchaseRequestFundingAllocation
+   +-- zapis PurchaseRequestPlanPosition</code></pre>
+<p>Reguły:</p>
+<ul><li><code>funding_id</code> musi należeć do wskazanego <code>project_budget_id</code>,</li><li>kwota wniosku nie może przekroczyć dostępnych środków projektu,</li><li>kwota wniosku nie może przekroczyć dostępnych środków finansowania,</li><li>pozycja planu musi należeć do finansowania użytego we wniosku,</li><li>przekroczenie pozostałej kwoty planu ustawia <code>plan_compliance_status = requires_approval</code>,</li><li>status <code>requires_approval</code> wymaga uzasadnienia.</li></ul>
+<h2 id="wniosek-z-zamknietej-listy">Wniosek z zamkniętej listy</h2>
+<pre><code>PATCH /api/lists/{id}/close
+   - Settlement bez purchase_request_id
+   - ShopPurchaseList.settlement_id
+
+POST /api/create_purchase_requests
+   shop_purchase_list_id = id
+   - PurchaseRequest
+   - Settlement.purchase_request_id = request.id</code></pre>
+<p>Reguły:</p>
+<ul><li>lista musi być zamknięta,</li><li>lista musi należeć do tego samego skarbnika,</li><li>settlement listy nie może być już powiązany z innym wnioskiem,</li><li>koszt wniosku jest liczony z pozycji listy.</li></ul>
+<h2 id="finalizacja">Finalizacja</h2>
+<pre><code>prepare_finalization
+   - can_add = False
+   - finalization_status = prepared
+
+finalize
+   - PurchaseRequestFinalizationSnapshot*
+   - PurchaseRequestFundingAllocation*
+   - PurchaseRequestSettlementLine*
+   - finalization_status = accounting_pending</code></pre>
+<p>Reguły:</p>
+<ul><li>wniosek musi mieć koszyki,</li><li>wniosek musi mieć pozycje CPV,</li><li>kurs euro musi być dodatni,</li><li>nazwa dokumentu jest wymagana,</li><li>finalizacja zapisuje snapshot i wartości końcowe netto/brutto,</li><li>po finalizacji nie można dalej dodawać pozycji do wniosku.</li></ul>
+<h2 id="rozliczenie">Rozliczenie</h2>
+<pre><code>send_to_settlement
+   - finalization_status = settlement
+   - Settlement
+   - Invoice*
+   - complete
+   - finalization_status = settled</code></pre>
+<p>Reguły:</p>
+<ul><li>do rozliczeń można przekazać tylko zatwierdzony wniosek,</li><li>dodatkowe linie rozliczeniowe można dodać dopiero po przekazaniu do rozliczeń,</li><li>zakończenie rozliczenia wymaga faktur,</li><li>linie rozliczeniowe pokazują różnicę między kwotą planowaną i rzeczywistą.</li></ul></section>
+<section class="doc-section" id="api-backendu"><h1 id="api-backendu">API backendu</h1>
+<h2 id="informacje-ogolne">Informacje ogólne</h2>
+<p>Base URL:</p>
+<pre><code>http://localhost:8080/api</code></pre>
+<p>Format danych: JSON.</p>
+<p>Backend używa FastAPI, Pydantic i SQLModel. Sesja bazy jest przekazywana do endpointów przez <code>Depends(get_session)</code>.</p>
+<h2 id="autoryzacja">Autoryzacja</h2>
+<p>Autoryzacja jest uproszczona. Frontend przechowuje użytkownika w <code>localStorage</code>. Backend w wielu miejscach przyjmuje <code>student_id</code>, <code>association_id</code> albo <code>project_finance_manager_id</code> w query string lub payloadzie. Wybrane endpointy sprawdzają, czy student ma powiązanie z <code>ProjectFinanceManager</code>.</p>
+<h2 id="logowanie">Logowanie</h2>
+<p><code>POST /api/login</code> Loguje użytkownika.</p>
+<p><code>POST /api/register</code> Rejestruje użytkownika i opcjonalnie tworzy rolę skarbnika.</p>
+<h2 id="uzytkownicy">Użytkownicy</h2>
+<p><code>GET /api/students</code> Lista studentów.</p>
+<h2 id="kategorie">Kategorie</h2>
+<p><code>GET /api/categories</code> Lista kategorii.</p>
+<p><code>POST /api/categories</code> Tworzy kategorię. Wymaga skarbnika.</p>
+<p><code>GET /api/subcategories</code> Lista podkategorii przypisanych do kategorii.</p>
+<p><code>GET /api/subcategories/pending</code> Lista podkategorii bez przypisanej kategorii.</p>
+<p><code>POST /api/subcategories</code> Tworzy podkategorię. Przypisanie do kategorii wymaga skarbnika.</p>
+<p><code>PATCH /api/subcategories/{subcategory_id}/assign-category</code> Przypisuje podkategorię do kategorii. Wymaga skarbnika.</p>
+<h2 id="przedmioty">Przedmioty</h2>
+<p><code>GET /api/items</code> Lista zaakceptowanych przedmiotów.</p>
+<p><code>GET /api/items/grouped?group_by=shop|cpv|category|status</code> Lista przedmiotów pogrupowanych.</p>
+<p><code>GET /api/items/pending</code> Przedmioty oczekujące. Może filtrować po <code>association_id</code>.</p>
+<p><code>POST /api/items</code> Tworzy przedmiot.</p>
+<p><code>PATCH /api/items/{item_id}/approve</code> Zatwierdza przedmiot.</p>
+<p><code>DELETE /api/items/{item_id}/reject</code> Odrzuca przedmiot.</p>
+<h2 id="sklepy">Sklepy</h2>
+<p><code>GET /api/shops?include_pending=false</code> Lista sklepów. Domyślnie tylko zaakceptowane.</p>
+<p><code>POST /api/shops</code> Zgłasza sklep.</p>
+<p><code>PATCH /api/shops/{shop_id}</code> Edytuje sklep. Wymaga skarbnika.</p>
+<p><code>PATCH /api/shops/{shop_id}/approve</code> Akceptuje sklep. Wymaga skarbnika.</p>
+<p><code>DELETE /api/shops/{shop_id}/reject?student_id=...</code> Odrzuca sklep oczekujący. Wymaga skarbnika.</p>
+<h2 id="dofinansowania-i-budzety">Dofinansowania i budżety</h2>
+<p><code>GET /api/fundings?association_id=...</code> Lista dofinansowań z wyliczonymi kwotami dostępnymi.</p>
+<p><code>POST /api/fundings</code> Tworzy dofinansowanie i zadania budżetowe.</p>
+<p><code>PATCH /api/fundings/{funding_id}</code> Aktualizuje dofinansowanie i zastępuje jego zadania.</p>
+<p><code>GET /api/association_budgets?association_id=...</code> Budżety kół.</p>
+<p><code>GET /api/project_budgets?association_id=...</code> Budżety projektów/sekcji.</p>
+<p><code>GET /api/dashboard/budget_summary?association_id=...</code> Agregat budżetowy dla pulpitu.</p>
+<h2 id="plany-publiczne">Plany publiczne</h2>
+<p><code>POST /api/public_purchase_plan_lists</code> Tworzy albo aktualizuje plan publiczny dla dofinansowania.</p>
+<p><code>GET /api/public_purchase_plan_lists</code> Lista planów. Obsługuje filtry <code>association_id</code> i <code>funding_id</code>.</p>
+<p><code>GET /api/public_purchase_plan_lists/{public_purchase_plan_list_id}</code> Szczegóły planu.</p>
+<p><code>POST /api/public_purchase_plans</code> Dodaje pozycję planu.</p>
+<p><code>PATCH /api/public_purchase_plans/{public_purchase_plan_id}</code> Aktualizuje pozycję planu.</p>
+<p><code>DELETE /api/public_purchase_plans/{public_purchase_plan_id}</code> Usuwa pozycję planu, jeśli nie jest użyta.</p>
+<h2 id="listy-zakupow">Listy zakupów</h2>
+<p><code>GET /api/lists</code> Lista koszyków. Endpoint obsługuje filtry użytkownika, koła, sklepu, planu, wniosku, grupy i statusu otwarcia.</p>
+<p><code>POST /api/lists</code> Tworzy listę zakupów.</p>
+<p><code>PATCH /api/lists/{list_id}/close</code> Zamyka listę i tworzy albo wiąże rozliczenie.</p>
+<p><code>PATCH /api/lists/{list_id}/reopen</code> Otwiera listę ponownie.</p>
+<p><code>GET /api/lists/closed_for_purchase_requests</code> Zamknięte listy dostępne do utworzenia wniosku.</p>
+<p><code>GET /api/lists/{list_id}</code> Szczegóły listy.</p>
+<p><code>PATCH /api/lists/{list_id}/market_research</code> Zapisuje komentarz i nazwę pliku rozeznania rynku.</p>
+<p><code>DELETE /api/lists/{list_id}</code> Usuwa listę.</p>
+<p><code>GET /api/lists/{list_id}/items</code> Pozycje listy.</p>
+<p><code>POST /api/lists/{list_id}/items</code> Dodaje przedmiot do listy.</p>
+<p><code>PUT /api/lists/{list_id}/items/{item_id}</code> Aktualizuje ilość pozycji.</p>
+<p><code>DELETE /api/lists/{list_id}/items/{item_id}</code> Usuwa pozycję albo wkład użytkownika.</p>
+<h2 id="wnioski">Wnioski</h2>
+<p><code>GET /api/purchase_requests?association_id=...</code> Lista wniosków.</p>
+<p><code>GET /api/purchase_requests/detail/{purchase_request_id}</code> Szczegóły jednego wniosku.</p>
+<p><code>GET /api/purchase_requests/{project_finance_manager_id}</code> Wnioski skarbnika.</p>
+<p><code>POST /api/create_purchase_requests</code> Tworzy wniosek.</p>
+<p><code>PATCH /api/purchase_requests/{purchase_request_id}</code> Aktualizuje wniosek.</p>
+<p><code>DELETE /api/purchase_requests/{purchase_request_id}</code> Usuwa wniosek i odpina powiązane rozliczenia.</p>
+<h2 id="finalizacja-wniosku">Finalizacja wniosku</h2>
+<p><code>POST /api/purchase_requests/{purchase_request_id}/prepare_finalization</code> Przygotowuje finalizację, blokuje dodawanie i wiąże rozliczenia z listami.</p>
+<p><code>PATCH /api/purchase_requests/{purchase_request_id}/finalization_draft</code> Zapisuje roboczą nazwę dokumentu, kurs euro i datę wartości umowy.</p>
+<p><code>POST /api/purchase_requests/{purchase_request_id}/finalize</code> Finalizuje wniosek, zapisuje snapshoty i ustawia <code>accounting_pending</code>.</p>
+<p><code>POST /api/purchase_requests/{purchase_request_id}/send_to_settlement</code> Przekazuje wniosek do rozliczeń.</p>
+<p><code>POST /api/purchase_requests/{purchase_request_id}/return_to_open</code> Cofa wniosek ze statusu <code>prepared</code> do <code>draft</code>.</p>
+<h2 id="linie-rozliczeniowe-wniosku">Linie rozliczeniowe wniosku</h2>
+<p><code>GET /api/purchase_requests/{purchase_request_id}/settlement_lines</code> Lista linii rozliczeniowych.</p>
+<p><code>PUT /api/purchase_requests/{purchase_request_id}/settlement_lines</code> Zapisuje zestaw linii przed przekazaniem do rozliczeń.</p>
+<p><code>PATCH /api/purchase_request_settlement_lines/{settlement_line_id}</code> Aktualizuje pojedynczą linię.</p>
+<p><code>POST /api/purchase_requests/{purchase_request_id}/settlement_lines/extra</code> Dodaje dodatkową linię po przekazaniu do rozliczeń.</p>
+<h2 id="rozliczenia-i-faktury">Rozliczenia i faktury</h2>
+<p><code>GET /api/settlements</code> Lista rozliczeń.</p>
+<p><code>GET /api/settlements/history</code> Rozliczenia zakończone.</p>
+<p><code>GET /api/settlements/manager/{project_finance_manager_id}</code> Rozliczenia skarbnika.</p>
+<p><code>POST /api/settlements</code> Tworzy rozliczenie.</p>
+<p><code>GET /api/invoices</code> Lista faktur. Obsługuje filtry statusu, skarbnika, wniosku i koła.</p>
+<p><code>POST /api/settlements/{settlement_id}/invoices</code> Dodaje fakturę do rozliczenia.</p>
+<p><code>PATCH /api/invoices/{invoice_id}</code> Aktualizuje fakturę.</p>
+<p><code>POST /api/settlements/{settlement_id}/complete</code> Kończy rozliczenie.</p>
+<p><code>PATCH /api/settlements/{settlement_id}/status</code> Zmienia status rozliczenia/faktur według logiki endpointu.</p>
+<h2 id="statusy">Statusy</h2>
+<p>Statusy wniosku:</p>
+<pre><code>draft
+prepared
+accounting_pending
+settlement
+settled</code></pre>
+<p>Statusy zgodności planu:</p>
+<pre><code>draft
+compliant
+requires_approval</code></pre>
+<p>Statusy faktury:</p>
+<pre><code>pending
+accepted
+rejected
+paid
+returned
+arrived</code></pre></section>
+<section class="doc-section" id="dokumentacja-uzytkownika"><h1 id="dokumentacja-uzytkownika">Dokumentacja użytkownika</h1>
+<h2 id="przeznaczenie">Przeznaczenie</h2>
+<p>Aplikacja służy do prowadzenia zakupów koła naukowego od zgłoszenia przedmiotu do rozliczenia faktury. Użytkownik pracuje w przeglądarce. Dane są zapisywane na backendzie.</p>
+<h2 id="role-uzytkownikow">Role użytkowników</h2>
+<p>Zwykły członek może:</p>
+<ul><li>logować się i przeglądać swój profil,</li><li>dodawać przedmioty,</li><li>zgłaszać sklepy,</li><li>przeglądać dostępne listy zakupów,</li><li>dodawać przedmioty do otwartych list,</li><li>usuwać własny wkład z listy.</li></ul>
+<p>Skarbnik może dodatkowo:</p>
+<ul><li>zarządzać sklepami i kategoriami,</li><li>tworzyć dofinansowania,</li><li>tworzyć plany zamówień publicznych,</li><li>tworzyć i zamykać listy zakupów,</li><li>tworzyć wnioski,</li><li>finalizować wnioski,</li><li>przekazywać wnioski do rozliczeń,</li><li>dodawać faktury,</li><li>kończyć rozliczenia,</li><li>kontrolować budżet koła i sekcji.</li></ul>
+<h2 id="logowanie">Logowanie</h2>
+<ol><li>Otwórz aplikację.</li><li>Wpisz login/e-mail i hasło.</li><li>Zatwierdź formularz.</li><li>Po poprawnym logowaniu aplikacja pokazuje panel główny.</li></ol>
+<h2 id="rejestracja">Rejestracja</h2>
+<ol><li>Otwórz formularz rejestracji.</li><li>Podaj imię, nazwisko, login/e-mail i hasło.</li><li>Wybierz koło i sekcję/projekt.</li><li>Ustaw informację SAP.</li><li>Wybierz rolę.</li><li>Zapisz konto.</li></ol>
+<p>Status SAP jest informacyjny. Aplikacja nie łączy się z SAP.</p>
+<h2 id="panel-gowny">Panel główny</h2>
+<p>Panel pokazuje dane użytkownika:</p>
+<ul><li>imię i nazwisko,</li><li>login/e-mail,</li><li>koło,</li><li>sekcję,</li><li>rolę,</li><li>status SAP.</li></ul>
+<p>Skarbnik widzi dodatkowo podsumowanie budżetu:</p>
+<ul><li>budżet całkowity,</li><li>wydane środki,</li><li>środki zarezerwowane we wnioskach,</li><li>środki dostępne po rezerwacjach,</li><li>procent wykorzystania.</li></ul>
+<h2 id="katalog-przedmiotow">Katalog przedmiotów</h2>
+<p>Dodanie przedmiotu:</p>
+<ol><li>Przejdź do widoku dodanych przedmiotów.</li><li>Wybierz dodanie nowego przedmiotu.</li><li>Podaj nazwę, link, cenę, walutę, sklep i podkategorię.</li><li>Zapisz formularz.</li></ol>
+<p>Przedmiot trafia do katalogu i może zostać użyty na liście zakupów.</p>
+<h2 id="kategorie-i-podkategorie">Kategorie i podkategorie</h2>
+<p>Skarbnik może tworzyć kategorie z kodem CPV. Użytkownik może zgłosić podkategorię. Podkategoria bez kategorii trafia do oczekujących i może zostać przypisana przez skarbnika.</p>
+<h2 id="sklepy">Sklepy</h2>
+<p>Zgłoszenie sklepu:</p>
+<ol><li>Przejdź do widoku sklepów.</li><li>Dodaj sklep.</li><li>Podaj nazwę, link, opinię i próg darmowej dostawy.</li><li>Zapisz.</li></ol>
+<p>Skarbnik może:</p>
+<ul><li>zaakceptować sklep,</li><li>edytować sklep,</li><li>odrzucić sklep oczekujący.</li></ul>
+<h2 id="listy-zakupow">Listy zakupów</h2>
+<p>Lista zakupów jest koszykiem dla jednego sklepu.</p>
+<p>Stany listy:</p>
+<pre><code>otwarta   - można dodawać i usuwać pozycje
+zamknięta - nie można zmieniać pozycji, można użyć we wniosku</code></pre>
+<p>Dodanie pozycji do listy:</p>
+<ol><li>Otwórz listę.</li><li>Wybierz przedmiot z katalogu.</li><li>Podaj ilość.</li><li>Zapisz.</li></ol>
+<p>Jeżeli kilku użytkowników dodaje ten sam przedmiot, aplikacja pokazuje łączną ilość, ale pamięta wkład każdego użytkownika oddzielnie.</p>
+<p>Zamknięcie listy:</p>
+<ol><li>Otwórz listę jako skarbnik.</li><li>Sprawdź pozycje i koszt.</li><li>Zamknij listę.</li></ol>
+<p>Zamknięta lista może zostać użyta do utworzenia wniosku.</p>
+<h2 id="dofinansowania">Dofinansowania</h2>
+<p>Tworzenie dofinansowania:</p>
+<ol><li>Przejdź do widoku planów publicznych/budżetów.</li><li>Wybierz sekcję/projekt.</li><li>Podaj nazwę dofinansowania.</li><li>Podaj organizatora.</li><li>Podaj osobę podpisującą.</li><li>Podaj termin wydatkowania.</li><li>Podaj kwotę.</li><li>Opcjonalnie dodaj zadania budżetowe.</li><li>Zapisz.</li></ol>
+<p>Suma zadań budżetowych nie może przekroczyć kwoty dofinansowania.</p>
+<h2 id="plany-publiczne">Plany publiczne</h2>
+<p>Utworzenie planu:</p>
+<ol><li>Wybierz dofinansowanie.</li><li>Utwórz plan.</li><li>Podaj rok, numer planu, osobę odpowiedzialną i kurs euro.</li><li>Zapisz.</li></ol>
+<p>Dodanie pozycji planu:</p>
+<ol><li>Otwórz plan.</li><li>Dodaj pozycję.</li><li>Podaj nazwę, CPV, numer pozycji i kwotę.</li><li>Zapisz.</li></ol>
+<p>Znaczenie kwot:</p>
+<pre><code>kwota planowana  - limit pozycji planu
+wykorzystano     - suma alokacji z wniosków
+pozostało        - kwota planowana minus wykorzystanie</code></pre>
+<h2 id="wnioski">Wnioski</h2>
+<p>Utworzenie wniosku:</p>
+<ol><li>Przejdź do widoku wniosków.</li><li>Utwórz wniosek albo wybierz zamkniętą listę.</li><li>Podaj nazwę i typ zakupu.</li><li>Wybierz finansowanie.</li><li>Wskaż pozycje planu CPV i kwoty.</li><li>Jeżeli system wymaga uzasadnienia, uzupełnij powód odstępstwa.</li><li>Zapisz.</li></ol>
+<p>Po zapisaniu wniosek rezerwuje środki. Budżet dostępny zmniejsza się o kwotę alokacji.</p>
+<h2 id="finalizacja-wniosku">Finalizacja wniosku</h2>
+<ol><li>Otwórz wniosek.</li><li>Przygotuj finalizację.</li><li>Sprawdź koszyki, kwoty i CPV.</li><li>Podaj nazwę dokumentu.</li><li>Podaj datę wartości umowy.</li><li>Podaj kurs euro.</li><li>Finalizuj.</li></ol>
+<p>Po finalizacji:</p>
+<ul><li>dodawanie pozycji jest zablokowane,</li><li>zapisywany jest snapshot danych,</li><li>tworzone są linie rozliczeniowe,</li><li>wniosek przechodzi do oczekiwania na księgowość.</li></ul>
+<h2 id="rozliczenia-i-faktury">Rozliczenia i faktury</h2>
+<p>Przekazanie do rozliczeń:</p>
+<ol><li>Otwórz sfinalizowany wniosek.</li><li>Wybierz przekazanie do rozliczeń.</li><li>Sprawdź linie rozliczeniowe.</li></ol>
+<p>Dodanie faktury:</p>
+<ol><li>Otwórz rozliczenie.</li><li>Dodaj fakturę.</li><li>Podaj numer, datę, sprzedawcę, NIP, kwotę netto i VAT.</li><li>Zapisz.</li></ol>
+<p>Zakończenie rozliczenia:</p>
+<ol><li>Uzupełnij faktury.</li><li>Przypisz kwoty rzeczywiste do linii.</li><li>Zakończ rozliczenie.</li></ol>
+<h2 id="historia">Historia</h2>
+<p>Historia rozliczeń pokazuje wnioski zakończone. Widok służy do kontroli faktur, kwot rzeczywistych i różnic względem planu.</p></section>
+<section class="doc-section" id="uruchomienie-i-testy"><h1 id="uruchomienie-i-testy">Uruchomienie i testy</h1>
+<h2 id="wymagania">Wymagania</h2>
+<p>Do uruchomienia projektu potrzebne są:</p>
+<ul><li>Docker,</li><li>Docker Compose,</li><li>Node.js i npm,</li><li>przeglądarka internetowa.</li></ul>
+<h2 id="backend-i-baza">Backend i baza</h2>
+<p>Uruchomienie kontenerów:</p>
+<pre><code>docker compose up --build</code></pre>
+<p>Adres backendu:</p>
+<pre><code>http://localhost:8080</code></pre>
+<p>PostgreSQL jest wystawiony lokalnie na porcie:</p>
+<pre><code>5431</code></pre>
+<p>Reset bazy:</p>
+<pre><code>docker compose down -v
+docker compose up --build</code></pre>
+<p>Po starcie backend tworzy tabele, wykonuje migrację i próbuje załadować:</p>
+<pre><code>backend/scripts/mockup_data.sql</code></pre>
+<h2 id="frontend">Frontend</h2>
+<p>Instalacja zależności:</p>
+<pre><code>cd frontend
+npm install</code></pre>
+<p>Tryb developerski:</p>
+<pre><code>npm run dev</code></pre>
+<p>Build:</p>
+<pre><code>npm run build</code></pre>
+<h2 id="testy-backendu">Testy backendu</h2>
+<p>Katalog testów:</p>
+<pre><code>backend/tests</code></pre>
+<p>Uruchomienie całego pakietu w kontenerze backendu:</p>
+<pre><code>docker exec -it backend python -m pytest tests/ -v</code></pre>
+<p>Uruchomienie pojedynczego pliku:</p>
+<pre><code>docker exec -it backend python -m pytest tests/test_purchase_request.py -v</code></pre>
+<p>Uruchomienie jednego testu:</p>
+<pre><code>docker exec -it backend python -m pytest tests/test_purchase_request.py::test_create_purchase_request -v</code></pre>
+<p>Tryb po ostatniej awarii:</p>
+<pre><code>docker exec -it backend python -m pytest tests/ --lf -v</code></pre>
+<h2 id="testowa-baza-danych">Testowa baza danych</h2>
+<p>Testy backendu używają SQLite in-memory. Fixture z <code>conftest.py</code> podmienia zależność <code>get_session</code> i tworzy tabele z modeli SQLModel.</p>
+<p>Konsekwencje:</p>
+<ul><li>testy są szybkie,</li><li>testy nie wymagają PostgreSQL,</li><li>testy nie pokrywają w pełni różnic dialektu PostgreSQL,</li><li>po zmianach migracji trzeba sprawdzić również start kontenerów.</li></ul>
+<h2 id="zakres-testow">Zakres testów</h2>
+<p><code>test_business_logic.py</code> Kategorie, podkategorie, katalog przedmiotów, akceptacja, odrzucanie i izolacja danych między kołami.</p>
+<p><code>test_public_purchase_plans.py</code> Budżety, dofinansowania, dashboard, plany publiczne, CPV i walidacja kwot.</p>
+<p><code>test_purchase_request.py</code> Tworzenie wniosków, alokacje, plan publiczny, przekroczenia planu, usuwanie i aktualizacje.</p>
+<p><code>test_settlements.py</code> Rozliczenia, faktury, filtrowanie, blokady i statusy.</p>
+<h2 id="generowanie-dokumentacji">Generowanie dokumentacji</h2>
+<p>Dokumentacja jest generowana skryptem:</p>
+<pre><code>python3 doc_gen.py</code></pre>
+<p>Wyniki:</p>
+<pre><code>doc/build/html/index.html
+doc/build/pdf/BudgetFlowFusion_documentation.pdf</code></pre>
+<p>Skrypt używa tylko standardowej biblioteki Pythona.</p></section>
+<section class="doc-section" id="utrzymanie-i-sownik-pojec"><h1 id="utrzymanie-i-sownik-pojec">Utrzymanie i słownik pojęć</h1>
+<h2 id="zasady-utrzymania">Zasady utrzymania</h2>
+<ol><li>Zmiana modelu w <code>relations.py</code> wymaga sprawdzenia migracji w <code>src/__init__.py</code>.</li><li>Zmiana endpointu wymaga aktualizacji dokumentacji API.</li><li>Zmiana procesu użytkownika wymaga aktualizacji dokumentacji użytkowej.</li><li>Zmiana budżetów wymaga testów dofinansowań, dashboardu, wniosków i rozliczeń.</li><li>Zmiana planów publicznych wymaga testów wykorzystania CPV i finalizacji.</li><li>Zmiana finalizacji wymaga sprawdzenia snapshotów i linii rozliczeniowych.</li></ol>
+<h2 id="miejsca-wysokiego-ryzyka">Miejsca wysokiego ryzyka</h2>
+<p>Budżety Kwoty są liczone z <code>Funding</code>, <code>PurchaseRequestFundingAllocation</code> i <code>Funding.spent_money</code>. Należy unikać podwójnego liczenia.</p>
+<p>Plany publiczne Pozycje planu są używane przez wnioski i listy. Usuwanie lub edycja pozycji wpływa na raportowanie wykorzystania.</p>
+<p>Finalizacja Snapshot jest historią dokumentu. Nie powinien być kasowany poza świadomą operacją ponownej finalizacji.</p>
+<p>Rozliczenia Faktury, settlementy i linie rozliczeniowe są powiązane z wnioskiem. Zmiana statusu powinna zachować historię kwot.</p>
+<p>Autoryzacja Frontend ukrywa część funkcji, ale backend powinien walidować operacje finansowe niezależnie od UI.</p>
+<h2 id="checklist-zmiana-modelu-danych">Checklist: zmiana modelu danych</h2>
+<ol><li>Zmień klasę SQLModel w <code>backend/src/relations.py</code>.</li><li>Dodaj migrację PostgreSQL w <code>migrate_project_budgets()</code>, jeżeli baza może już istnieć.</li><li>Zaktualizuj modele Pydantic w trasach.</li><li>Zaktualizuj frontendowe payloady i odczyty odpowiedzi.</li><li>Zaktualizuj testy fixture.</li><li>Uruchom testy backendu.</li><li>Uruchom backend z PostgreSQL.</li><li>Zaktualizuj dokumentację.</li></ol>
+<h2 id="checklist-zmiana-budzetow">Checklist: zmiana budżetów</h2>
+<p>Sprawdź:</p>
+<ul><li><code>public_purchase_plans_routes.py</code> - agregaty budżetowe,</li><li><code>fundings_routes.py</code> - dostępne środki dofinansowania,</li><li><code>purchase_request_routes.py</code> - rezerwacje i finalizacja,</li><li>dashboard frontendu,</li><li>testy public purchase plans i purchase request.</li></ul>
+<p>Minimalny scenariusz ręczny:</p>
+<ol><li>Utwórz dofinansowanie.</li><li>Sprawdź budżet sekcji.</li><li>Sprawdź budżet koła.</li><li>Utwórz wniosek.</li><li>Sprawdź spadek dostępnych środków.</li><li>Sfinalizuj wniosek.</li><li>Sprawdź rozliczenie.</li></ol>
+<h2 id="checklist-zmiana-planow-publicznych">Checklist: zmiana planów publicznych</h2>
+<p>Sprawdź:</p>
+<ul><li>jeden plan dla jednego dofinansowania,</li><li>dodatnie kwoty pozycji,</li><li>unikalność CPV w planie,</li><li><code>remaining_amount</code>,</li><li>blokadę usunięcia użytej pozycji,</li><li>walidację pozycji planu przy wniosku,</li><li>snapshot finalizacji.</li></ul>
+<h2 id="checklist-zmiana-wnioskow">Checklist: zmiana wniosków</h2>
+<p>Sprawdź:</p>
+<ul><li>zgodność <code>funding_id</code> z <code>project_budget_id</code>,</li><li>alokacje finansowania,</li><li>alokacje pozycji planu,</li><li>uzasadnienie odstępstwa,</li><li>przejścia statusów,</li><li>finalizację,</li><li>przekazanie do rozliczeń,</li><li>usunięcie wniosku z odpięciem settlementów.</li></ul>
+<h2 id="sownik">Słownik</h2>
+<p>Koło naukowe <code>Association</code>.</p>
+<p>Członek koła <code>Student</code> bez powiązania z <code>ProjectFinanceManager</code>.</p>
+<p>Skarbnik <code>Student</code> z ustawionym <code>project_finance_manager_id</code>.</p>
+<p>Sekcja/projekt <code>Project</code>.</p>
+<p>Budżet sekcji <code>ProjectBudget</code>.</p>
+<p>Budżet koła <code>AssociationBudget</code>.</p>
+<p>Dofinansowanie <code>Funding</code>.</p>
+<p>Zadanie budżetowe <code>FundingTask</code>.</p>
+<p>Plan publiczny <code>PublicPurchasePlanList</code>.</p>
+<p>Pozycja planu <code>PublicPurchasePlan</code>.</p>
+<p>Koszyk/lista zakupów <code>ShopPurchaseList</code>.</p>
+<p>Pozycja koszyka <code>ShopPurchaseListItem</code>.</p>
+<p>Wkład użytkownika <code>ShopPurchaseListItemContribution</code>.</p>
+<p>Wniosek <code>PurchaseRequest</code>.</p>
+<p>Alokacja finansowania <code>PurchaseRequestFundingAllocation</code>.</p>
+<p>Alokacja planu <code>PurchaseRequestPlanPosition</code>.</p>
+<p>Snapshot finalizacji <code>PurchaseRequestFinalizationSnapshot</code>.</p>
+<p>Rozliczenie <code>Settlement</code>.</p>
+<p>Faktura <code>Invoice</code>.</p>
+<p>Linia rozliczeniowa <code>PurchaseRequestSettlementLine</code>.</p></section>
+      </article>
+    </main>
+  </div>
+</body>
+</html>

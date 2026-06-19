@@ -1,0 +1,1244 @@
+<template>
+  <div v-if="!activeList" class="lists-section">
+    <div class="lists-header">
+      <div class="lists-title-section">
+        <h2 class="lists-title">{{ isTreasurer ? 'Koszyki sklepowe' : 'Otwarte koszyki sklepowe' }}</h2>
+        <p class="lists-subtitle">
+          {{ isTreasurer ? 'Zarządzaj wszystkimi listami koła z tego poziomu' : 'Wybierz otwartą listę dla sklepu lub utwórz nową i dodaj swoje pozycje' }}
+        </p>
+      </div>
+      <button class="lists-add-button" :disabled="!canCreateList" @click="showAddListModal = true">Nowy koszyk sklepowy</button>
+    </div>
+
+    <div class="lists-filter-bar">
+      <div class="lists-filter">
+        <label class="lists-filter__label">Wniosek</label>
+        <select v-model="selectedPublicPurchasePlanId" class="lists-filter__select lists-filter__select--wide" @change="fetchLists">
+          <option value="">{{ isTreasurer ? 'Wszystkie zamowienia publiczne' : 'Wybierz wniosek' }}</option>
+          <option
+            v-for="plan in publicPurchasePlans"
+            :key="plan.purchase_request_id"
+            :value="plan.purchase_request_id"
+          >
+            {{ plan.purchase_request_name }} - {{ plan.funding_name }} ({{ formatMoney(plan.remaining_amount) }} PLN){{ plan.can_add ? '' : ' - tylko odczyt' }}
+          </option>
+        </select>
+      </div>
+
+
+      <div class="lists-filter">
+        <label class="lists-filter__label">Status wniosku</label>
+        <select v-model="selectedStatus" class="lists-filter__select" @change="fetchLists">
+          <option value="open">Otwarte</option>
+          <option value="closed">Zamknięte</option>
+          <option value="all">Wszystkie</option>
+        </select>
+      </div>
+
+      <div class="lists-filter">
+        <label class="lists-filter__label">Projekt</label>
+        <select v-model="selectedProjectId" class="lists-filter__select" @change="fetchLists">
+          <option value="">Wszystkie projekty</option>
+          <option v-for="f in fundings" :key="f.funding_id" :value="f.funding_id">{{ f.funding_name }}</option>
+        </select>
+      </div>
+
+      <div class="view-toggle-container">
+        <button
+          class="toggle-view-btn"
+          :class="{ 'toggle-view-btn--active': currentLayout === 'grid' }"
+          @click="currentLayout = 'grid'"
+        >
+          Kafelki
+        </button>
+        <button
+          class="toggle-view-btn"
+          :class="{ 'toggle-view-btn--active': currentLayout === 'list' }"
+          @click="currentLayout = 'list'"
+        >
+          Lista
+        </button>
+      </div>
+    </div>
+
+    <section v-for="section in listSections" :key="section.key" class="lists-group">
+      <div v-if="section.title" class="lists-group__header">
+        <div>
+          <h3 class="lists-group__title">{{ section.title }}</h3>
+          <p class="lists-group__subtitle">{{ section.subtitle }}</p>
+        </div>
+        <span class="lists-group__count">{{ section.lists.length }}</span>
+      </div>
+
+      <div v-if="section.lists.length === 0" class="lists-empty" :class="{ 'lists-empty--compact': section.title }">
+        <p class="lists-empty-text">{{ section.emptyText }}</p>
+        <p class="lists-empty-subtext">{{ section.emptySubtext }}</p>
+      </div>
+
+      <template v-else>
+        <div v-if="currentLayout === 'grid'" class="lists-grid">
+          <div
+            v-for="list in section.lists"
+            :key="list.id"
+            class="list-card"
+            :class="{ 'list-card--closed': !list.isOpen }"
+          >
+            <div class="list-card__header">
+              <div style="display: flex; align-items: center; gap: 0.5vw;">
+                <h3 class="list-card__title" :class="{ 'list-title--closed': !list.isOpen }">
+                  <span v-if="!list.isOpen" class="lock-icon-small">🔒</span>
+                  {{ list.name }}
+                </h3>
+                <span v-if="!list.isOpen" class="status-closed-badge">Zamknięta</span>
+              </div>
+              <span class="list-card__shop">{{ list.shopName }}</span>
+            </div>
+            <div class="list-card__content">
+              <p class="list-card__detail">
+                <span class="list-card__label">Przedmioty:</span>
+                <span class="list-card__value">{{ list.itemCount }} pozycji / {{ list.itemTotal }} szt.</span>
+              </p>
+              <p class="list-card__detail">
+                <span class="list-card__label">Kwota:</span>
+                <span class="list-card__value">{{ formatMoney(list.totalPrice) }} PLN</span>
+              </p>
+              <p class="list-card__detail">
+                <span class="list-card__label">Status:</span>
+                <span class="list-card__value">{{ list.isOpen ? 'Otwarta' : 'Zamknięta' }}</span>
+              </p>
+              <p class="list-card__detail">
+                <span class="list-card__label">Utworzył:</span>
+                <span class="list-card__value">{{ list.creatorName }}</span>
+              </p>
+              <p v-if="list.lastContributionTime" class="list-card__detail">
+                <span class="list-card__label">Ostatnia edycja:</span>
+                <span class="list-card__value">{{ formatTimeAgo(list.lastContributionTime) }}</span>
+              </p>
+              <p v-if="list.lastContributorName" class="list-card__detail">
+                <span class="list-card__label">Ostatnio edytował:</span>
+                <span class="list-card__value">{{ list.lastContributorName }}</span>
+              </p>
+              <p v-if="list.contributedStudentsNameList && list.contributedStudentsNameList.length > 0" class="list-card__detail">
+                <span class="list-card__label">Współtwórcy:</span>
+                <span class="list-card__value">{{ list.contributedStudentsNameList.join(', ') }}</span>
+              </p>
+            </div>
+            <div class="list-card__actions">
+              <button class="list-card__button view" @click="openList(list)">Otwórz listę</button>
+              <button class="list-card__button export" @click.stop="openExportModal(list)">Eksport Excel</button>
+              <button v-if="canCloseList(list)" class="list-card__button close" @click.stop="promptCloseList(list)">Zamknij</button>
+              <button v-if="canReopenList(list)" class="list-card__button reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
+              <button v-if="canDeleteList(list)" class="list-card__button delete" @click.stop="promptDeleteList(list)">Usuń</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="currentLayout === 'list'" class="excel-table-wrapper custom-scrollbar">
+          <table class="excel-list-table">
+            <thead>
+              <tr>
+                <th>Nazwa zamówienia</th>
+                <th>Sklep</th>
+                <th>Pozycje / Sztuki</th>
+                <th>Suma Brutto</th>
+                <th>Status</th>
+                <th>Utworzył</th>
+                <th>Ostatnia edycja</th>
+                <th>Ostatni edytor</th>
+                <th>Współtwórcy</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="list in section.lists" :key="list.id" :class="{ 'row-closed': !list.isOpen }">
+                <td class="font-bold text-white">{{ list.name }}</td>
+                <td><span class="table-shop-badge">{{ list.shopName }}</span></td>
+                <td>{{ list.itemCount }} poz. / {{ list.itemTotal }} szt.</td>
+                <td class="font-mono text-blue font-bold">{{ formatMoney(list.totalPrice) }} PLN</td>
+                <td>
+                  <span :class="list.isOpen ? 'status-open-tag' : 'status-closed-tag'">
+                    {{ list.isOpen ? 'Otwarta' : 'Zamknięta' }}
+                  </span>
+                </td>
+                <td>{{ list.creatorName }}</td>
+                <td>{{ list.lastContributionTime ? formatTimeAgo(list.lastContributionTime) : '-' }}</td>
+                <td>{{ list.lastContributorName || '-' }}</td>
+                <td class="max-cell-width">{{ list.contributedStudentsNameList?.join(', ') || '-' }}</td>
+                <td>
+                  <div class="table-row-actions">
+                    <button class="table-btn view" @click="openList(list)">Otwórz</button>
+                    <button class="table-btn export" @click.stop="openExportModal(list)">Pobierz</button>
+                    <button v-if="canCloseList(list)" class="table-btn close" @click.stop="promptCloseList(list)">Zamknij i zablokuj</button>
+                    <button v-if="canReopenList(list)" class="table-btn reopen" @click.stop="reopenList(list)">Otwórz ponownie</button>
+                    <button v-if="canDeleteList(list)" class="table-btn delete" @click.stop="promptDeleteList(list)">Usuń</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+    </section>
+  </div>
+
+  <ShopPurchaseListDetails
+    v-else-if="activeList"
+    :list="activeList"
+    :can-manage-items="true"
+    :can-close-list="canCloseList(activeList)"
+    :can-reopen-list="canReopenList(activeList)"
+    @back="activeList = null"
+    @close-list="promptCloseList(activeList)"
+    @reopen-list="reopenList(activeList)"
+    @market-research-saved="updateListMarketResearch"
+  />
+
+  <div v-if="showDeleteModal" class="confirm-modal-overlay" @click="showDeleteModal = false">
+    <div class="confirm-modal-content" @click.stop>
+      <h2 class="confirm-modal-title">Usuwanie listy</h2>
+      <p class="confirm-modal-text">
+        Czy na pewno chcesz usunąć listę "{{ listToDeleteName }}"?<br/>
+        <strong class="text-danger">Wszystkie przedmioty w jej koszyku również zostaną usunięte.</strong>
+      </p>
+      <div class="confirm-modal-actions">
+        <button class="confirm-btn confirm-btn-cancel" @click="showDeleteModal = false">Anuluj</button>
+        <button class="confirm-btn confirm-btn-danger" @click="executeDeleteList">Tak, usuń</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showCloseModal" class="confirm-modal-overlay" @click="showCloseModal = false">
+    <div class="confirm-modal-content confirm-modal-content--close" @click.stop>
+      <h2 class="confirm-modal-title confirm-modal-title--close">Zamykanie zamówienia</h2>
+      <p class="confirm-modal-text">
+        Czy na pewno chcesz zamknąć listę "{{ listToCloseName }}"?<br/>
+        Po zamknięciu członkowie nie będą mogli dodawać do niej kolejnych pozycji.
+      </p>
+      <div class="confirm-modal-actions">
+        <button class="confirm-btn confirm-btn-cancel" @click="showCloseModal = false">Anuluj</button>
+        <button class="confirm-btn confirm-btn-close" @click="executeCloseList">Zamknij zamówienie</button>
+      </div>
+    </div>
+  </div>
+
+  <AddListModal
+    :isOpen="showAddListModal"
+    :public-purchase-plan="selectedPublicPurchasePlan"
+    @close="showAddListModal = false"
+    @submit-list="handleNewList"
+  />
+
+  <!-- Modal eksportu Excel -->
+  <div v-if="showExportModal" class="confirm-modal-overlay" @click="showExportModal = false">
+    <div class="export-modal-content" @click.stop>
+      <div class="export-modal-header">
+        <div>
+          <h2 class="export-modal-title">Eksport do Excel</h2>
+          <p class="export-modal-subtitle">{{ exportList?.name }} — {{ exportList?.shopName }}</p>
+        </div>
+        <button class="export-modal-close" @click="showExportModal = false">✕</button>
+      </div>
+
+      <div v-if="exportLoading" class="export-loading">Ładowanie pozycji…</div>
+
+      <div v-else-if="exportItems.length === 0" class="export-loading">Brak pozycji w tym koszyku.</div>
+
+      <div v-else class="export-table-wrapper custom-scrollbar">
+        <table class="export-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nazwa produktu</th>
+              <th>Ilość</th>
+              <th>Cena brutto (PLN)</th>
+              <th>Cena buforowa (PLN)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, idx) in exportItems" :key="item.id">
+              <td class="export-idx">{{ idx + 1 }}</td>
+              <td class="export-name">{{ item.name }}</td>
+              <td class="export-qty">{{ item.amount }} szt.</td>
+              <td class="export-price">{{ formatMoney(item.totalPrice) }}</td>
+              <td class="export-buffer">
+                <input
+                  v-model.number="item.bufferPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="export-buffer-input"
+                  placeholder="0.00"
+                />
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="export-summary-label">Suma</td>
+              <td class="export-price export-summary-value">{{ formatMoney(exportItems.reduce((s, i) => s + i.totalPrice, 0)) }}</td>
+              <td class="export-price export-summary-value">{{ formatMoney(exportItems.reduce((s, i) => s + (i.bufferPrice || 0), 0)) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="export-modal-actions">
+        <button class="confirm-btn confirm-btn-cancel" @click="showExportModal = false">Anuluj</button>
+
+        <button
+          class="confirm-btn confirm-btn-export-csv"
+          :disabled="exportLoading || exportItems.length === 0"
+          @click="downloadCSV"
+        >Pobierz CSV</button>
+
+        <button
+          class="confirm-btn confirm-btn-export"
+          :disabled="exportLoading || exportItems.length === 0"
+          @click="downloadExcel"
+        >Pobierz Excel</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
+import ShopPurchaseListDetails from './ShopPurchaseListDetails.vue'
+import AddListModal from './AddListModal.vue'
+import * as XLSX from 'xlsx'
+
+const { user } = useAuth()
+const props = defineProps({
+  initialPurchaseRequestId: {
+    type: [Number, String],
+    default: null
+  }
+})
+const activeList = ref(null)
+const showAddListModal = ref(false)
+const toast = useToast()
+const allLists = ref([])
+const shops = ref([])
+const students = ref([])
+const publicPurchasePlans = ref([])
+const showDeleteModal = ref(false)
+const showCloseModal = ref(false)
+
+// ── Excel export ──────────────────────────────────────────
+const showExportModal = ref(false)
+const exportList = ref(null)
+const exportItems = ref([])
+const exportLoading = ref(false)
+
+const openExportModal = async (list) => {
+  exportList.value = list
+  exportItems.value = []
+  exportLoading.value = true
+  showExportModal.value = true
+  try {
+    const res = await fetch(`http://localhost:8080/api/lists/${list.id}/items?t=${Date.now()}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error('Błąd pobierania pozycji')
+    const data = await res.json()
+    exportItems.value = data.map(item => ({
+      id: item.line_item_id ?? item.item_id,
+      name: item.name,
+      amount: item.amount,
+      totalPrice: Number(item.total_price || 0),
+      bufferPrice: null
+    }))
+  } catch (e) {
+    console.error(e)
+    toast.error('Nie udało się załadować pozycji koszyka.')
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+const downloadExcel = () => {
+  const listName = exportList.value?.name || 'koszyk'
+  const shopName = exportList.value?.shopName || ''
+
+  const rows = exportItems.value.map((item, idx) => ({
+    'Lp.': idx + 1,
+    'Nazwa produktu': item.name,
+    'Ilość (szt.)': item.amount,
+    'Cena brutto (PLN)': Number(item.totalPrice).toFixed(2),
+    'Cena buforowa (PLN)': item.bufferPrice != null ? Number(item.bufferPrice).toFixed(2) : ''
+  }))
+
+  // summary row
+  const grossSum = exportItems.value.reduce((s, i) => s + i.totalPrice, 0)
+  const bufferSum = exportItems.value.reduce((s, i) => s + (i.bufferPrice || 0), 0)
+  rows.push({
+    'Lp.': '',
+    'Nazwa produktu': 'SUMA',
+    'Ilość (szt.)': '',
+    'Cena brutto (PLN)': grossSum.toFixed(2),
+    'Cena buforowa (PLN)': bufferSum.toFixed(2)
+  })
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+
+  // auto column widths
+  const colWidths = [
+    { wch: 5 },   // Lp.
+    { wch: 40 },  // Nazwa
+    { wch: 12 },  // Ilość
+    { wch: 20 },  // Cena brutto
+    { wch: 22 }   // Cena buforowa
+  ]
+  ws['!cols'] = colWidths
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Koszyk')
+
+  const safeFilename = `${listName}_${shopName}`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
+  XLSX.writeFile(wb, `${safeFilename}.xlsx`)
+}
+
+const downloadCSV = () => {
+  const listName = exportList.value?.name || 'koszyk'
+  const shopName = exportList.value?.shopName || ''
+
+  const rows = exportItems.value.map((item, idx) => ({
+    'Lp.': idx + 1,
+    'Nazwa produktu': item.name,
+    'Ilość (szt.)': item.amount,
+    'Cena brutto (PLN)': Number(item.totalPrice).toFixed(2),
+    'Cena buforowa (PLN)': item.bufferPrice != null ? Number(item.bufferPrice).toFixed(2) : ''
+  }))
+
+  const grossSum = exportItems.value.reduce((s, i) => s + i.totalPrice, 0)
+  const bufferSum = exportItems.value.reduce((s, i) => s + (i.bufferPrice || 0), 0)
+  rows.push({
+    'Lp.': '',
+    'Nazwa produktu': 'SUMA',
+    'Ilość (szt.)': '',
+    'Cena brutto (PLN)': grossSum.toFixed(2),
+    'Cena buforowa (PLN)': bufferSum.toFixed(2)
+  })
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const csvContent = XLSX.utils.sheet_to_csv(ws, { FS: ";" })
+
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+
+  const safeFilename = `${listName}_${shopName}`.replace(/[^a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, '_')
+
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", `${safeFilename}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+// ─────────────────────────────────────────────────────────
+const listToDeleteId = ref(null)
+const listToCloseId = ref(null)
+const selectedShopId = ref('')
+const selectedPublicPurchasePlanId = ref('')
+const currentLayout = ref('list')
+const fundings = ref([])
+const selectedStatus = ref('open')
+const selectedProjectId = ref('')
+
+const isTreasurer = computed(() => user.value?.role === 'treasurer')
+const currentStudentId = computed(() => Number(user.value?.id))
+const selectedPublicPurchasePlan = computed(() =>
+  publicPurchasePlans.value.find(plan => Number(plan.purchase_request_id) === Number(selectedPublicPurchasePlanId.value)) || null
+)
+const canCreateList = computed(() => !!selectedPublicPurchasePlan.value?.can_add)
+
+const filteredLists = computed(() => {
+  let lists = Array.isArray(allLists.value) ? allLists.value.slice() : []
+  if (selectedStatus.value === 'open') lists = lists.filter(l => l.isOpen)
+  else if (selectedStatus.value === 'closed') lists = lists.filter(l => !l.isOpen)
+  if (selectedProjectId.value) {
+    lists = lists.filter(l => String(l.funding_id) === String(selectedProjectId.value))
+  }
+  return lists
+})
+
+const userLists = computed(() => filteredLists.value)
+const ownLists = computed(() => filteredLists.value.filter(list => Number(list.student_id) === currentStudentId.value))
+const otherTreasurerLists = computed(() => filteredLists.value.filter(list => Number(list.student_id) !== currentStudentId.value))
+
+const listSections = computed(() => {
+  if (!isTreasurer.value) {
+    return [{
+      key: 'open',
+      title: '',
+      subtitle: '',
+      lists: userLists.value,
+      emptyText: 'Brak aktywnego wniosku',
+      emptySubtext: 'Poproś skarbnika o dodanie nowego wniosku lub wybierz otwarty wniosek z listy powyżej'
+    }]
+  }
+
+  return [
+    {
+      key: 'own',
+      title: 'Koszyki utworzone przez Ciebie',
+      subtitle: 'Tu znajdziesz stworzone przez Ciebie koszyki.',
+      lists: ownLists.value,
+      emptyText: 'Nie utworzyłeś jeszcze żadnej listy zakupowej',
+      emptySubtext: 'Kliknij przycisk powyżej, aby zainicjować koszyk'
+    },
+    {
+      key: 'others',
+      title: 'Wszystkie pozostałe koszyki w tym wniosku',
+      subtitle: 'Tu znajdziesz koszyki utworzone przez innych w tym wniosku.',
+      lists: otherTreasurerLists.value,
+      emptyText: 'Brak list od innych członków organizacji',
+      emptySubtext: 'Gdy ktoś inny założy listę, pojawi się ona w tej sekcji'
+    }
+  ]
+})
+
+const listToDelete = computed(() => allLists.value.find(list => list.id === listToDeleteId.value))
+const listToClose = computed(() => allLists.value.find(list => list.id === listToCloseId.value))
+const listToDeleteName = computed(() => listToDelete.value?.name || 'tę listę')
+const listToCloseName = computed(() => listToClose.value?.name || activeList.value?.name || 'tę listę')
+
+const formatTimeAgo = (dateInput) => {
+  if (!dateInput) return '-'
+  const dateStr = String(dateInput).endsWith('Z') || String(dateInput).includes('+') ? dateInput : `${dateInput}Z`
+  const date = new Date(dateStr)
+  const now = new Date()
+  const serverTimeMs = date.getTime() + (2 * 60 * 60 * 1000)
+  const diffMs = now.getTime() - serverTimeMs
+  if (diffMs < 0 && diffMs > -60000) return 'przed chwilą'
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+  if (diffSec < 60) return 'przed chwilą'
+  if (diffMin < 60) return `${diffMin} min temu`
+  if (diffHour < 24) return `${diffHour} godz. temu`
+  return `${diffDay} dni temu`
+}
+
+const fetchShops = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/shops')
+    const data = await response.json()
+    shops.value = data
+  } catch (error) {
+    console.error('Błąd pobierania sklepów:', error)
+  }
+}
+
+const fetchStudents = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/students')
+    if (!response.ok) throw new Error('Błąd sieci przy pobieraniu członków')
+    students.value = await response.json()
+  } catch (error) {
+    console.error('Błąd pobierania członków:', error)
+  }
+}
+
+const fetchPublicPurchasePlans = async () => {
+  try {
+    if (!user.value?.association_id) return
+    const response = await fetch(`http://localhost:8080/api/purchase_requests?association_id=${user.value.association_id}`)
+    if (!response.ok) throw new Error('Blad sieci przy pobieraniu zamowien')
+    const requests = await response.json()
+    publicPurchasePlans.value = requests
+      .map(request => ({
+        purchase_request_id: request.purchase_request_id,
+        purchase_request_name: request.purchase_request_name,
+        can_add: request.can_add,
+        finalization_status: request.finalization_status,
+        funding_id: request.funding_id,
+        funding_name: request.funding_name,
+        public_purchase_plan_id: request.public_purchase_plan_id,
+        gslbccf_id: request.gslbccf_id,
+        cpv_code: request.used_cpv_id,
+        cost: request.budget_allocated_for_the_order,
+        remaining_amount: request.budget_allocated_for_the_order
+      }))
+    if (props.initialPurchaseRequestId) {
+      selectedPublicPurchasePlanId.value = String(props.initialPurchaseRequestId)
+    }
+  } catch (error) {
+    console.error('Blad pobierania zamowien:', error)
+  }
+}
+
+const fetchLists = async () => {
+  try {
+    await fetchShops()
+    await fetchStudents()
+    await fetchPublicPurchasePlans()
+
+    let fundingsLocal = []
+    if (isTreasurer.value || user.value?.association_id) {
+      const fundingsUrl = `http://localhost:8080/api/fundings?association_id=${user.value.association_id}`
+      const fundingsResponse = await fetch(fundingsUrl)
+      if (fundingsResponse.ok) {
+        fundingsLocal = await fundingsResponse.json()
+      }
+    }
+    fundings.value = fundingsLocal
+
+    const timestamp = new Date().getTime()
+    const params = new URLSearchParams({ t: String(timestamp) })
+    if (isTreasurer.value) {
+      params.set('treasurer_view', 'true')
+      if (user.value?.association_id) params.set('association_id', user.value.association_id)
+    } else {
+      if (user.value?.association_id) params.set('association_id', user.value.association_id)
+      if (selectedShopId.value) params.set('shop_id', selectedShopId.value)
+    }
+    if (selectedPublicPurchasePlan.value) {
+      params.set('purchase_request_id', selectedPublicPurchasePlan.value.purchase_request_id)
+    }
+
+    const response = await fetch(`http://localhost:8080/api/lists?${params.toString()}`, {
+      cache: 'no-store'
+    })
+
+    if (!response.ok) throw new Error('Błąd sieci przy pobieraniu list')
+    const data = await response.json()
+
+    const processedLists = await Promise.all(data.map(async (list) => {
+      let items = []
+      try {
+        const itemsResponse = await fetch(`http://localhost:8080/api/lists/${list.shop_purchase_list_id}/items?t=${timestamp}`, { cache: 'no-store' })
+        if (itemsResponse.ok) items = await itemsResponse.json()
+      } catch (e) {
+        console.warn('Brak przedmiotów na liście', e)
+      }
+
+      const foundShop = shops.value.find(s => s.shop_id === list.shop_id)
+      const foundFunding = Array.isArray(fundingsLocal) ? fundingsLocal.find(f => f.funding_id === list.funding_id) : null
+      const maxBudget = foundFunding ? (foundFunding.funding_price - foundFunding.spent_money) : 0
+      const creator = list.student || students.value.find(student => Number(student.student_id) === Number(list.student_id))
+      const itemTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
+      const totalPrice = items.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0)
+
+      const studentIdsSet = new Set()
+      let latestTime = null
+      let latestContributorId = null
+
+      items.forEach(item => {
+        const sId = item.student_id
+        if (sId) {
+          studentIdsSet.add(sId)
+        }
+        const itemTime = item.updated_at || item.created_at
+        const itemTimeMs = itemTime ? new Date(itemTime).getTime() : null
+        if (itemTimeMs && (!latestTime || itemTimeMs > latestTime)) {
+          latestTime = itemTimeMs
+          latestContributorId = sId
+        }
+      })
+
+      const lastEditedByStudent = students.value.find(s => Number(s.student_id) === Number(latestContributorId))
+      const lastContributorName = lastEditedByStudent ? `${lastEditedByStudent.name} ${lastEditedByStudent.surname}` : (latestContributorId ? `Student #${latestContributorId}` : null)
+
+      const contributedStudentsNameList = Array.from(studentIdsSet).map(id => {
+        const match = students.value.find(s => Number(s.student_id) === Number(id))
+        return match ? `${match.name} ${match.surname.substring(0, 1)}.` : `Student #${id}`
+      })
+
+      return {
+        ...list,
+        id: list.shop_purchase_list_id,
+        name: list.name?.trim() || `Zamówienie #${list.shop_purchase_list_id}`,
+        shopName: foundShop ? foundShop.shop_name : 'Nieznany sklep',
+        itemCount: items.length,
+        itemTotal,
+        totalPrice,
+        participants: 1,
+        maxBudget,
+        isOpen: list.settlement_id === null || list.settlement_id === undefined,
+        creatorName: creator ? `${creator.name} ${creator.surname}` : `Student #${list.student_id}`,
+        lastContributionTime: latestTime ? new Date(latestTime).toISOString() : null,
+        lastContributor_id: latestContributorId,
+        lastContributorName,
+        contributedStudents_id: Array.from(studentIdsSet),
+        contributedStudentsNameList,
+        closedByName: list.closed_by_name || null,
+        closedAt: list.closed_at || null
+      }
+    }))
+
+    allLists.value = processedLists
+  } catch (error) {
+    console.error('Krytyczny błąd pobierania list:', error)
+  }
+}
+
+onMounted(() => {
+  fetchLists()
+})
+
+watch(
+  () => props.initialPurchaseRequestId,
+  async (requestId) => {
+    if (!requestId) return
+    selectedPublicPurchasePlanId.value = String(requestId)
+    activeList.value = null
+    await fetchLists()
+  }
+)
+
+const isOwnList = (list) => {
+  return Number(list?.student_id) === currentStudentId.value
+}
+
+// Zmiana reguł: Tylko skarbnik może zamykać i usuwać dowolne listy
+const canCloseList = (list) => {
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add && list?.isOpen
+}
+
+const canReopenList = (list) => {
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add && list && !list.isOpen
+}
+
+const canDeleteList = (list) => {
+  return isTreasurer.value && selectedPublicPurchasePlan.value?.can_add
+}
+
+const formatMoney = (value) => {
+  return Number(value || 0).toFixed(2)
+}
+
+const openList = (list) => {
+  activeList.value = list
+}
+
+const updateListMarketResearch = (updatedList) => {
+  if (!updatedList) return
+  const listId = updatedList.shop_purchase_list_id
+  const applyUpdate = list => (
+    Number(list.shop_purchase_list_id) === Number(listId)
+      ? { ...list, ...updatedList }
+      : list
+  )
+  allLists.value = allLists.value.map(applyUpdate)
+  if (activeList.value?.shop_purchase_list_id === listId) {
+    activeList.value = { ...activeList.value, ...updatedList }
+  }
+}
+
+const handleNewList = async (listData) => {
+  try {
+    if (!selectedPublicPurchasePlan.value) {
+      toast.error('Najpierw wybierz zamowienie publiczne.')
+      return
+    }
+
+    const publicPlan = selectedPublicPurchasePlan.value || null
+    const payload = {
+      name: listData.name,
+      priority: listData.priority || 1,
+      cost: 0.0,
+      created_at: new Date().toISOString(),
+      funding_id: publicPlan?.funding_id || listData.fundingId || listData.funding_id,
+      shop_id: listData.shopId || listData.shop_id,
+      student_id: currentStudentId.value,
+      purchase_request_id: publicPlan?.purchase_request_id || null,
+      public_purchase_plan_id: publicPlan?.public_purchase_plan_id || listData.publicPurchasePlanId || null,
+      gslbccf_id: publicPlan?.gslbccf_id || null
+    }
+
+    const response = await fetch('http://localhost:8080/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.detail || 'Nie udało się zapisać listy w bazie')
+    }
+
+    await fetchLists()
+    showAddListModal.value = false
+    toast.success('Lista została poprawnie utworzona!')
+  } catch (error) {
+    toast.error(error.message || 'Wystąpił błąd podczas zapisu nowej listy.')
+  }
+}
+
+const promptDeleteList = (list) => {
+  if (!canDeleteList(list)) {
+    toast.error('Tylko skarbnik ma uprawnienia do usuwania zamówień.')
+    return
+  }
+  listToDeleteId.value = list.id
+  showDeleteModal.value = true
+}
+
+const executeDeleteList = async () => {
+  if (!listToDeleteId.value) return
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${listToDeleteId.value}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) throw new Error('Nie udało się usunąć listy z backendu')
+    toast.info('Lista została trwale usunięta z systemu.')
+    await fetchLists()
+  } catch (error) {
+    toast.error('Wystąpił problem przy usuwaniu listy.')
+  } finally {
+    showDeleteModal.value = false
+    listToDeleteId.value = null
+  }
+}
+
+const promptCloseList = (list) => {
+  if (!canCloseList(list)) {
+    toast.error('Tylko skarbnik ma uprawnienia do zamykania zamówień.')
+    return
+  }
+  listToCloseId.value = list.id
+  showCloseModal.value = true
+}
+
+const executeCloseList = async () => {
+  if (!listToCloseId.value) return
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${listToCloseId.value}/close`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: currentStudentId.value })
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.detail || 'Nie udało się zamknąć listy')
+    }
+    toast.success('Lista została zamknięta.')
+    activeList.value = null
+    await fetchLists()
+  } catch (error) {
+    toast.error(error.message || 'Wystąpił problem przy zamykaniu listy.')
+  } finally {
+    showCloseModal.value = false
+    listToCloseId.value = null
+  }
+}
+
+const reopenList = async (list) => {
+  if (!canReopenList(list)) {
+    toast.error('Tylko skarbnik ma uprawnienia do ponownego otwierania list.')
+    return
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/lists/${list.id}/reopen`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: currentStudentId.value })
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.detail || 'Nie udalo sie ponownie otworzyc listy')
+    }
+    toast.success('Lista zostala ponownie otwarta do edycji.')
+    activeList.value = null
+    await fetchLists()
+  } catch (error) {
+    toast.error(error.message || 'Wystapil problem przy ponownym otwieraniu listy.')
+  }
+}
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+.lists-section {
+  width: 100%;
+  padding: 3vh 0;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.lists-header {
+  margin-bottom: 3vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vw;
+}
+
+.lists-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+}
+
+.lists-title {
+  font-size: 2vw;
+  font-weight: 800;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.lists-subtitle {
+  font-size: 1vw;
+  color: rgba(var(--rgb-muted), 0.6);
+  margin: 0;
+}
+
+.shops-header-actions {
+  display: flex;
+  gap: 0.8vw;
+}
+
+.lists-add-button {
+  padding: 0.8vw 1.5vw;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: rgb(var(--rgb-text));
+  border: none;
+  border-radius: 0.8vw;
+  font-size: 1vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.lists-add-button:hover {
+  transform: translateY(-0.2vh);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.lists-add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
+.lists-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 1rem;
+  margin-bottom: 2vw;
+  padding: 1vw;
+  background: rgba(var(--rgb-surface), 0.5);
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.8vw;
+}
+
+.lists-filter {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 180px;
+  max-width: 400px;
+}
+
+.search-placeholder-block {
+  flex: 1;
+}
+
+.lists-filter__label {
+  color: rgba(var(--rgb-muted), 0.75);
+  font-size: 0.95vw;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lists-filter__select {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.8vw 1vw;
+  background: rgba(var(--rgb-raised), 0.65);
+  border: 0.08vw solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.65vw;
+  color: rgb(var(--rgb-text));
+  font-size: 0.95vw;
+  font-family: 'Nunito', system-ui, sans-serif;
+  outline: none;
+}
+
+.lists-filter__select:focus {
+  border-color: rgba(96, 165, 250, 0.7);
+}
+
+.lists-filter__select--wide {
+  max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .lists-filter-bar {
+    padding: 0.9rem;
+  }
+  .lists-filter {
+    max-width: 100%;
+  }
+  .lists-filter__label {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .lists-filter-bar {
+    gap: 0.75rem;
+  }
+  .lists-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lists-filter__label {
+    white-space: normal;
+  }
+}
+
+.view-toggle-container {
+  display: flex;
+  background: rgba(var(--rgb-raised), 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.6vw;
+  padding: 0.2vw;
+}
+
+.toggle-view-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.5vw 1.2vw;
+  font-size: 0.85vw;
+  font-weight: 700;
+  border-radius: 0.4vw;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.toggle-view-btn--active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.lists-group + .lists-group {
+  margin-top: 3vw;
+  padding-top: 2.5vw;
+  border-top: 0.08vw solid rgba(148, 163, 184, 0.16);
+}
+
+.lists-group__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1vw;
+  margin-bottom: 1.5vw;
+}
+
+.lists-group__title {
+  color: rgb(var(--rgb-muted));
+  font-size: 1.35vw;
+  font-weight: 800;
+  margin: 0 0 0.35vw 0;
+}
+
+.lists-group__subtitle {
+  color: rgba(var(--rgb-muted), 0.58);
+  font-size: 0.95vw;
+  margin: 0;
+}
+
+.lists-group__count {
+  min-width: 2.4vw;
+  height: 2.4vw;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5vw;
+  background: rgba(59, 130, 246, 0.16);
+  color: var(--color-heading);
+  font-size: 1vw;
+  font-weight: 800;
+}
+
+.lists-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6vh;
+  background: rgba(var(--rgb-surface), 0.4);
+  border: 0.08vw dashed rgba(148, 163, 184, 0.3);
+  border-radius: 1vw;
+  text-align: center;
+}
+
+.lists-empty--compact { padding: 4vh; }
+.lists-empty-text { font-size: 1.2vw; font-weight: 600; color: rgba(var(--rgb-muted), 0.8); margin: 0 0 0.5vh 0; }
+.lists-empty-subtext { font-size: 0.95vw; color: rgba(var(--rgb-muted), 0.5); margin: 0; }
+
+.lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(26vw, 1fr));
+  gap: 2vw;
+}
+
+.list-card {
+  display: flex;
+  flex-direction: column;
+  padding: 2vw;
+  background: rgba(var(--rgb-surface), 0.6);
+  border: 0.08vw solid rgba(148, 163, 184, 0.15);
+  border-radius: 1vw;
+  transition: all 0.3s ease;
+}
+
+.list-card--closed { opacity: 0.74; }
+
+.list-card:hover {
+  background: rgba(var(--rgb-surface), 0.8);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-0.4vh);
+}
+
+.list-card__header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5vw; gap: 1vw; }
+.list-card__title { padding: 0.4vw 0.0vw; font-size: 1.25vw; font-weight: 700; color: rgb(var(--rgb-text)); margin: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.list-card__shop { padding: 0.4vw 0.8vw; border-radius: 0.4vw; font-size: 1.25vw; font-weight: 600; background: rgba(59, 130, 246, 0.2); color: var(--color-link); white-space: nowrap; }
+
+.list-card__content { flex: 1; display: flex; flex-direction: column; gap: 0.8vw; margin-bottom: 1.5vw; }
+.list-card__detail { display: flex; align-items: center; justify-content: space-between; gap: 1vw; font-size: 0.95vw; margin: 0; }
+.list-card__label { color: rgba(var(--rgb-muted), 0.6); font-weight: 600; }
+.list-card__value { color: rgb(var(--rgb-text)); font-weight: 500; text-align: right; }
+
+.list-card__actions { display: flex; flex-wrap: wrap; gap: 0.8vw; }
+
+.list-card__button {
+  flex: 1;
+  min-width: 7vw;
+  padding: 0.8vw;
+  border: none;
+  border-radius: 0.6vw;
+  font-size: 0.9vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+.list-card__button.view { background: rgba(59, 130, 246, 0.18); color: var(--color-link); border: 1px solid rgba(59, 130, 246, 0.3); }
+.list-card__button.view:hover { background: #2563eb; color: rgb(var(--rgb-text)); border-color: #2563eb; transform: translateY(-2px); }
+.list-card__button.close { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+.list-card__button.close:hover { background: #d97706; color: rgb(var(--rgb-text)); border-color: #d97706; transform: translateY(-2px); }
+.list-card__button.delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+.list-card__button.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; transform: translateY(-2px); }
+.list-card__button.export { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+.list-card__button.export:hover { background: #059669; color: rgb(var(--rgb-text)); border-color: #059669; transform: translateY(-2px); }
+
+.excel-table-wrapper { background: rgba(var(--rgb-surface), 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; width: 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+.excel-list-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85vw; min-width: 1100px; }
+.excel-list-table th, .excel-list-table td { padding: 1vw 1.2vw; border-bottom: 1px solid rgba(148, 163, 184, 0.1); vertical-align: middle; }
+.excel-list-table th { background: rgba(var(--rgb-raised), 0.8); color: #94a3b8; font-weight: 700; text-transform: uppercase; font-size: 0.75vw; letter-spacing: 0.05em; border-bottom: 2px solid rgba(148, 163, 184, 0.2); }
+.excel-list-table tr:hover { background: rgba(59, 130, 246, 0.02); }
+.row-closed { opacity: 0.65; }
+
+.table-shop-badge { padding: 0.2vw 0.5vw; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-radius: 0.4vw; font-weight: 700; }
+.status-open-tag { color: #34d399; font-weight: 700; }
+.status-closed-tag { color: #fca5a5; font-weight: 700; }
+.max-cell-width { max-width: 14vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.table-row-actions { display: flex; gap: 0.4vw; }
+.table-btn {
+  padding: 0.5vw 0.9vw;
+  border: none;
+  border-radius: 0.5vw;
+  font-size: 0.8vw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+.table-btn.view { background: rgba(59, 130, 246, 0.15); color: var(--color-link); border: 1px solid rgba(59, 130, 246, 0.25); }
+.table-btn.view:hover { background: #2563eb; color: rgb(var(--rgb-text)); border-color: #2563eb; }
+.table-btn.close { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); }
+.table-btn.close:hover { background: #d97706; color: rgb(var(--rgb-text)); border-color: #d97706; }
+.table-btn.delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); }
+.table-btn.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; }
+.table-btn.export { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
+.table-btn.export:hover { background: #059669; color: rgb(var(--rgb-text)); border-color: #059669; }
+
+.confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
+.confirm-modal-content { background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.5vw; padding: 3vw; width: 90%; max-width: 32vw; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.confirm-modal-content--close { border-color: rgba(245, 158, 11, 0.32); }
+.confirm-modal-title { color: #ef4444; font-size: 2vw; font-weight: 800; margin: 0 0 1vw 0; }
+.confirm-modal-title--close { color: #fcd34d; }
+.confirm-modal-text { color: rgb(var(--rgb-muted)); font-size: 1.1vw; line-height: 1.6; margin-bottom: 2.5vw; }
+.text-danger { color: #fca5a5; font-weight: 700; }
+
+.confirm-btn { padding: 0.9vw 2.5vw; border-radius: 0.8vw; font-size: 1.1vw; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s ease; }
+.confirm-btn-cancel { background: rgba(148, 163, 184, 0.15); color: rgb(var(--rgb-muted)); }
+.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: rgb(var(--rgb-text)); }
+.confirm-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
+.confirm-btn-danger:hover { transform: translateY(-0.3vh); filter: brightness(1.1); box-shadow: 0 14px 28px rgba(239, 68, 68, 0.5); }
+.confirm-btn-close { background: linear-gradient(135deg, #f59e0b, #d97706); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.25); }
+.confirm-btn-close:hover { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(245, 158, 11, 0.4); }
+.confirm-btn-export { background: linear-gradient(135deg, #059669, #047857); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3); }
+.confirm-btn-export:hover:not(:disabled) { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(5, 150, 105, 0.45); }
+.confirm-btn-export:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Export modal ──────────────────────────────────────── */
+.export-modal-content { background: rgb(var(--rgb-surface)); border: 1px solid rgba(var(--rgb-border-soft), 0.12); border-radius: 1.2vw; padding: 2.5vw; width: min(90vw, 60vw); max-height: 85vh; display: flex; flex-direction: column; gap: 1.5vw; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+.export-modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.export-modal-title { font-size: 1.4vw; font-weight: 800; color: var(--color-heading); margin: 0; }
+.export-modal-subtitle { font-size: 0.9vw; color: rgba(var(--rgb-muted), 0.75); margin: 0.3vw 0 0; }
+.export-modal-close { background: none; border: none; color: rgba(var(--rgb-muted), 0.6); font-size: 1.2vw; cursor: pointer; padding: 0.2vw 0.4vw; border-radius: 0.3vw; transition: color 0.2s; }
+.export-modal-close:hover { color: rgb(var(--rgb-text)); }
+.export-loading { text-align: center; color: rgba(var(--rgb-muted), 0.7); font-size: 1vw; padding: 2vw 0; }
+.export-table-wrapper { overflow-y: auto; flex: 1; }
+.export-table { width: 100%; border-collapse: collapse; font-size: 0.9vw; font-family: inherit; }
+.export-table th { background: rgba(var(--rgb-raised), 0.8); color: var(--color-heading); padding: 0.7vw 1vw; text-align: left; font-weight: 700; font-size: 0.8vw; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid rgba(var(--rgb-border-soft), 0.12); white-space: nowrap; }
+.export-table td { padding: 0.6vw 1vw; border-bottom: 1px solid rgba(var(--rgb-border-soft), 0.06); color: rgb(var(--rgb-text)); vertical-align: middle; }
+.export-table tfoot td { border-top: 2px solid rgba(var(--rgb-border-soft), 0.2); border-bottom: none; font-weight: 800; padding-top: 0.8vw; }
+.export-table tbody tr:hover td { background: rgba(59, 130, 246, 0.05); }
+.export-idx { color: rgba(var(--rgb-muted), 0.5); width: 3vw; text-align: center; }
+.export-name { max-width: 20vw; }
+.export-qty { color: rgba(var(--rgb-muted), 0.7); width: 6vw; }
+.export-price { font-variant-numeric: tabular-nums; color: #60a5fa; width: 9vw; }
+.export-summary-label { color: rgba(var(--rgb-muted), 0.7); font-weight: 700; }
+.export-summary-value { color: var(--color-heading); }
+.export-buffer { width: 10vw; }
+.export-buffer-input { width: 100%; padding: 0.4vw 0.6vw; border: 1px solid rgba(var(--rgb-border-soft), 0.2); border-radius: 0.4vw; background: rgba(var(--rgb-raised), 0.8); color: rgb(var(--rgb-text)); font-size: 0.9vw; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.export-buffer-input:focus { border-color: rgba(59, 130, 246, 0.6); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15); }
+.export-modal-actions { display: flex; justify-content: flex-end; gap: 1vw; padding-top: 0.5vw; border-top: 1px solid rgba(var(--rgb-border-soft), 0.1); }
+
+.confirm-btn-export-csv { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: rgb(var(--rgb-text)); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3); }
+.confirm-btn-export-csv:hover:not(:disabled) { transform: translateY(-0.3vh); filter: brightness(1.08); box-shadow: 0 14px 28px rgba(14, 165, 233, 0.45); }
+.confirm-btn-export-csv:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.font-bold { font-weight: 700; }
+.font-mono { font-family: monospace; }
+.text-white { color: rgb(var(--rgb-text)); }
+.custom-scrollbar::-webkit-scrollbar { height: 7px; background: rgba(var(--rgb-raised), 0.5); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+
+.list-title--closed {
+  color: #94a3b8 !important;
+  opacity: 0.75;
+}
+
+.lock-icon-small {
+  font-size: 0.9vw;
+  margin-right: 0.3vw;
+}
+
+.status-closed-badge {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--color-subtle);
+  padding: 0.3vw 0.7vw;
+  border-radius: 0.4vw;
+  font-size: 0.7vw;
+  font-weight: 800;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+</style>

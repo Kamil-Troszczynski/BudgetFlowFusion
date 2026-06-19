@@ -1,7 +1,11 @@
 <script setup>
-import SignIn from './components/login_register_screen/SignIn.vue'
+import ToastNotification from '@/components/ToastNotification.vue'
+import { useTheme } from '@/composables/useTheme'
+useTheme()
 </script>
 
 <template>
-  <SignIn />
+  <RouterView />
+
+  <ToastNotification />
 </template>
