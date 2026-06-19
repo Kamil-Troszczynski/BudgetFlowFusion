@@ -220,7 +220,7 @@ class GroupedShopsListByCpvCategoryAndFunding(SQLModel, table=True):
     gslbccf_id: Optional[int] = Field(default=None, primary_key=True)
     allocated_money: float
 
-    purchase_requests: Optional[PurchaseRequest] = Relationship(back_populates="grouped_shops_list")
+    purchase_requests: list[PurchaseRequest] = Relationship(back_populates="grouped_shops_list")
     public_purchase_plans: list["PublicPurchasePlan"] = Relationship(back_populates="grouped_shops_list")
     shop_purchase_lists: list["ShopPurchaseList"] = Relationship(back_populates="grouped_shops_list")
 

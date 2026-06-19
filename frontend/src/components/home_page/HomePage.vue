@@ -20,7 +20,7 @@
           </nav>
           <div class="dashboard__user-section">
             <button class="dashboard__theme-toggle" @click="toggleTheme" :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
-              {{ theme === 'dark' ? 'dark-mode' : 'light-mode' }}
+              {{ theme === 'dark' ? '🌙' : '☀️' }}
             </button>
             <div class="dashboard__user-menu" ref="userMenuRef">
               <button
