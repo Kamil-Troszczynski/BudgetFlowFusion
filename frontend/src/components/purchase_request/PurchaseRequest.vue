@@ -100,8 +100,25 @@
                 </div>
                 <div class="request-card__actions">
                   <button class="request-card__button view" @click="emit('open-shopping', request)">Otwórz koszyk</button>
-                  <button v-if="isOwner(request) && !canFinalizeRequest(request)" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
-                  <button v-if="canFinalizeRequest(request)" class="request-card__button finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request) }}</button>
+                  <button v-if="isOwner(request) && request.status === 'pending'" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
+                  <!-- pending → przenieś do dokończenia -->
+                  <button
+                    v-if="request.status === 'pending' && isOwner(request) && Number(request.sourceList__shopCount || 0) > 0"
+                    class="request-card__button finalize"
+                    @click="moveToDoDokonczenia(request)"
+                  >Przenieś do dokończenia</button>
+                  <!-- prepared → zatwierdź (otwiera modal finalizacji) -->
+                  <button
+                    v-if="request.status === 'prepared' && isOwner(request)"
+                    class="request-card__button approve"
+                    @click="prepareFinalization(request)"
+                  >Zatwierdź</button>
+                  <!-- prepared → odrzuć -->
+                  <button
+                    v-if="request.status === 'prepared' && isOwner(request)"
+                    class="request-card__button reject-btn"
+                    @click="rejectRequest(request)"
+                  >Odrzuć</button>
                   <button v-if="canReturnToOpen(request)" class="request-card__button reopen" @click="returnToOpen(request)">Przywróć do otwartych</button>
                   <button class="request-card__button view" @click="activeRequest = request">Podsumowanie</button>
                   <button v-if="isOwner(request)" class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
@@ -139,8 +156,25 @@
                     <td>
                       <div class="table-row-actions">
                         <button class="table-btn view" @click="emit('open-shopping', request)">Lista</button>
-                        <button v-if="isOwner(request) && !canFinalizeRequest(request)" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
-                        <button v-if="canFinalizeRequest(request)" class="table-btn finalize" @click="prepareFinalization(request)">{{ finalizationActionLabel(request, true) }}</button>
+                        <button v-if="isOwner(request) && request.status === 'pending'" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
+                        <!-- pending → przenieś do dokończenia -->
+                        <button
+                          v-if="request.status === 'pending' && isOwner(request) && Number(request.sourceList__shopCount || 0) > 0"
+                          class="table-btn finalize"
+                          @click="moveToDoDokonczenia(request)"
+                        >Do dokończenia</button>
+                        <!-- prepared → zatwierdź -->
+                        <button
+                          v-if="request.status === 'prepared' && isOwner(request)"
+                          class="table-btn approve"
+                          @click="prepareFinalization(request)"
+                        >Zatwierdź</button>
+                        <!-- prepared → odrzuć -->
+                        <button
+                          v-if="request.status === 'prepared' && isOwner(request)"
+                          class="table-btn reject-btn"
+                          @click="rejectRequest(request)"
+                        >Odrzuć</button>
                         <button v-if="canReturnToOpen(request)" class="table-btn reopen" @click="returnToOpen(request)">Otwórz</button>
                         <button class="table-btn view" @click="activeRequest = request">Podsumowanie</button>
                         <button v-if="isOwner(request)" class="table-btn delete" @click="deleteRequest(request.id)">Usuń</button>
@@ -1346,9 +1380,10 @@ const filterAndSortList = (itemsList) => {
 const aggregatedRequestGroups = computed(() => {
   const processed = filterAndSortList(allRequests.value)
   return [
-    { key: 'open', title: 'Otwarte wnioski', items: processed.filter(r => r.status === 'pending') },
+    { key: 'open',     title: 'Otwarte wnioski',       items: processed.filter(r => r.status === 'pending') },
     { key: 'prepared', title: 'Wnioski do dokończenia', items: processed.filter(r => r.status === 'prepared') },
-    { key: 'closed', title: 'Zamknięte wnioski', items: processed.filter(r => !['pending', 'prepared'].includes(r.status)) }
+    { key: 'rejected', title: 'Odrzucone wnioski',      items: processed.filter(r => r.status === 'rejected') },
+    { key: 'closed',   title: 'Zamknięte wnioski',      items: processed.filter(r => !['pending', 'prepared', 'rejected'].includes(r.status)) }
   ]
 })
 
@@ -1376,11 +1411,13 @@ const mapRequest = (req) => {
     sectionName: req.section_name || req.project_budget_name,
     budget: req.budget_allocated_for_the_order,
     ifService: req.if_service,
-    status: req.finalization_status === 'prepared'
-      ? 'prepared'
-      : (req.finalization_status === 'accounting_pending'
-        ? 'accounting'
-        : (req.can_add ? 'pending' : 'approved')),
+    status: req.finalization_status === 'rejected'
+      ? 'rejected'
+      : (req.finalization_status === 'prepared'
+        ? 'prepared'
+        : (req.finalization_status === 'accounting_pending'
+          ? 'accounting'
+          : (req.can_add ? 'pending' : 'approved'))),
     created_at: req.created_at,
     updated_at: req.updated_at,
     used_cpv_id: req.used_cpv_id,
@@ -1900,6 +1937,37 @@ const saveFinalizationDraft = async () => {
   }
 }
 
+const moveToDoDokonczenia = async (request) => {
+  if (!confirm(`Przenieść wniosek "${request.name}" do dokończenia?\nKoszyki zostaną zablokowane do edycji.`)) return
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${request.id}/prepare_finalization`, {
+      method: 'POST'
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udało się przenieść wniosku')
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udało się przenieść wniosku do dokończenia.')
+  }
+}
+
+const rejectRequest = async (request) => {
+  if (!confirm(`Odrzucić wniosek "${request.name}"?\nTej operacji nie można cofnąć.`)) return
+  try {
+    const response = await fetch(`${API_URL}/purchase_requests/${request.id}/reject`, {
+      method: 'POST'
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Nie udało się odrzucić wniosku')
+    await Promise.all([fetchRequests(), fetchClosedOrdersForRequests()])
+    emit('budget-changed')
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Nie udało się odrzucić wniosku.')
+  }
+}
+
 const returnToOpen = async request => {
   if (!confirm('Przywrócić wniosek do otwartych i odblokować edycję koszyków?')) return
   try {
@@ -2111,6 +2179,10 @@ onMounted(async () => {
 .request-card__button.reopen:hover { background: #d97706; color: rgb(var(--rgb-text)); border-color: #d97706; }
 .request-card__button.delete { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
 .request-card__button.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; }
+.request-card__button.approve { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
+.request-card__button.approve:hover { background: #059669; color: rgb(var(--rgb-text)); border-color: #059669; }
+.request-card__button.reject-btn { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
+.request-card__button.reject-btn:hover { background: #dc2626; color: rgb(var(--rgb-text)); border-color: #dc2626; }
 
 .excel-table-wrapper { background: rgba(var(--rgb-surface), 0.4); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 0.8vw; overflow-x: auto; width: 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); margin-bottom: 1vw; }
 .excel-list-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85vw; min-width: 1050px; }
@@ -2130,6 +2202,10 @@ onMounted(async () => {
 .table-btn.reopen:hover { background: #d97706; color: rgb(var(--rgb-text)); }
 .table-btn.delete { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
 .table-btn.delete:hover { background: #dc2626; color: rgb(var(--rgb-text)); }
+.table-btn.approve { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.28); }
+.table-btn.approve:hover { background: #059669; color: rgb(var(--rgb-text)); }
+.table-btn.reject-btn { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
+.table-btn.reject-btn:hover { background: #dc2626; color: rgb(var(--rgb-text)); }
 
 .sort-label { font-size: 0.8vw; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
 .excel-sort-select { background: transparent; border: none; color: #60a5fa; font-size: 0.85vw; font-weight: 700; cursor: pointer; outline: none; font-family: inherit; }

@@ -1582,6 +1582,58 @@ def return_purchase_request_to_open(
     return _purchase_request_out(request, session)
 
 
+@app.post(
+    "/api/purchase_requests/{purchase_request_id}/reject",
+    response_model=PurchaseRequestOut,
+)
+def reject_purchase_request(
+    purchase_request_id: int,
+    session: Session = Depends(get_session),
+):
+    request = session.get(PurchaseRequest, purchase_request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Wniosek nie znaleziony")
+    if request.finalization_status != "prepared":
+        raise HTTPException(
+            status_code=400,
+            detail="Odrzucić można tylko wniosek oczekujący na dokończenie",
+        )
+
+    settlement_ids = []
+    for purchase_list in _request_purchase_lists(request, session):
+        if purchase_list.settlement_id:
+            settlement_ids.append(purchase_list.settlement_id)
+            purchase_list.settlement_id = None
+            session.add(purchase_list)
+
+    session.flush()
+    for settlement_id in set(settlement_ids):
+        settlement = session.get(Settlement, settlement_id)
+        if not settlement:
+            continue
+        invoices = session.exec(
+            select(Invoice).where(Invoice.settlement_id == settlement_id)
+        ).all()
+        linked_lists = session.exec(
+            select(ShopPurchaseList).where(
+                ShopPurchaseList.settlement_id == settlement_id
+            )
+        ).all()
+        if invoices or linked_lists:
+            settlement.purchase_request_id = None
+            session.add(settlement)
+        elif settlement.purchase_request_id == request.purchase_request_id:
+            session.delete(settlement)
+
+    request.can_add = False
+    request.finalization_status = "rejected"
+    request.finalized_at = None
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return _purchase_request_out(request, session)
+
+
 @app.get("/api/purchase_requests/{project_finance_manager_id}", response_model=List[PurchaseRequestOut])
 def get_purchase_requests_by_project_finance_manager(project_finance_manager_id: int, 
                                                      session: Session = Depends(get_session)):
