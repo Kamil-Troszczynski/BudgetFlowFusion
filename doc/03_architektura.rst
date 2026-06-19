@@ -5,25 +5,11 @@ Widok warstwowy
 ---------------
 
 .. code-block:: text
+* Przeglądarka (Vue 3, Vue Router, komponenty .vue)
 
-   +--------------------------------------------------+
-   | Przeglądarka                                     |
-   | Vue 3, Vue Router, komponenty .vue               |
-   +-------------------------+------------------------+
-                             |
-                             | HTTP REST / JSON
-                             v
-   +--------------------------------------------------+
-   | Backend FastAPI                                  |
-   | endpointy, walidacja Pydantic, logika domenowa   |
-   +-------------------------+------------------------+
-                             |
-                             | SQLModel / SQLAlchemy
-                             v
-   +--------------------------------------------------+
-   | PostgreSQL                                       |
-   | tabele tworzone z modeli SQLModel + migracja     |
-   +--------------------------------------------------+
+* Backend FastAPI (endpointy, walidacja Pydantic, logika domenowa)
+
+* PostgreSQL
 
 Backend
 -------
@@ -127,25 +113,12 @@ Główne widoki:
 Przepływ requestu
 -----------------
 
-.. code-block:: text
-
-   komponent Vue
-      |
-      | fetch("http://localhost:8080/api/...")
-      v
-   endpoint FastAPI
-      |
-      | Pydantic BaseModel / query params
-      v
-   Session(engine)
-      |
-      | select / get / add / delete / commit
-      v
-   PostgreSQL
-      |
-      | response_model albo dict
-      v
-   JSON w przeglądarce
+Dane w aplikacji przepływają od komponentu Vue, który wysyła żądanie HTTP do endpointu FastAPI.
+Endpoint odbiera parametry zapytania lub dane wejściowe zdefiniowane za pomocą modeli Pydantic (BaseModel).
+Następnie, przy użyciu sesji SQLAlchemy (Session(engine)), wykonywane są operacje na bazie danych PostgreSQL, 
+takie jak pobieranie (select, get), dodawanie (add), usuwanie (delete) oraz zatwierdzanie zmian (commit).
+Po przetworzeniu danych FastAPI zwraca odpowiedź w postaci obiektu zgodnego z response_model lub słownika (dict), 
+która jest automatycznie serializowana do formatu JSON i odbierana przez przeglądarkę w aplikacji Vue.
 
 Konfiguracja środowiska
 -----------------------
