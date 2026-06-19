@@ -29,7 +29,7 @@ stream
 0.08 0.12 0.20 rg BT /F1 11 Tf 1 0 0 1 76.00 454.00 Tm (- uruchomienie, testy i utrzymanie) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (1/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (1/30) Tj ET
 endstream
 endobj
 6 0 obj
@@ -48,7 +48,7 @@ stream
 0.08 0.12 0.20 rg BT /F1 11 Tf 1 0 0 1 72.00 568.00 Tm (Utrzymanie i s\263ownik poj\352\346) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (2/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (2/30) Tj ET
 endstream
 endobj
 7 0 obj
@@ -59,7 +59,7 @@ stream
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 729.00 Tm (Lista rozdzia\263\363w) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (3/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (3/30) Tj ET
 endstream
 endobj
 8 0 obj
@@ -106,11 +106,11 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 75.60 Tm (zmiany planu lub dofinansowania nie zmieni\263y historii dokumentu.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (4/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (4/30) Tj ET
 endstream
 endobj
 9 0 obj
-<< /Length 4603 >>
+<< /Length 4548 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Dokumentacja analityczno-projektowa) Tj ET
 0.16 0.34 0.84 RG 1.2 w 56 767.00 m 539 767.00 l S
@@ -137,630 +137,381 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 407.80 Tm (- historii finalizacji,) Tj ET
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 391.60 Tm (- status\363w faktur i rozlicze\361.) Tj ET
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 361.40 Tm (Aktorzy) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 247.20 483.00 97.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 329.40 Tm (+-------------------+----------------------------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 317.80 Tm (| Aktor             | Odpowiedzialno\234\346                             |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 306.20 Tm (+===================+==============================================+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 294.60 Tm (| Cz\263onek ko\263a      | przedmioty, sklepy, wk\263ad do list zakup\363w    |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 283.00 Tm (| Skarbnik          | bud\277ety, finansowania, plany, wnioski        |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 271.40 Tm (| Obs\263uga rozlicze\361 | faktury, statusy, kwoty rzeczywiste          |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 259.80 Tm (+-------------------+----------------------------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 234.20 Tm (Obs\263uga rozlicze\361 nie jest osobnym typem konta w modelu. Jej czynno\234ci s\271 realizowane przez) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 220.00 Tm (modu\263 Settlement i Invoice.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 191.80 Tm (Model r\363l) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 77.60 483.00 97.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 159.80 Tm (Student) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 148.20 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 136.60 Tm (   | project_finance_manager_id IS NULL) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 125.00 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 113.40 Tm (zwyk\263y cz\263onek) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 101.80 Tm () Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 90.20 Tm (Student) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 316.80 483.00 27.60 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 329.40 Tm () Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 303.80 Tm (Cz\263onek ko\263a: przedmioty, sklepy, wk\263ad do list zakup\363w Skarbnik: bud\277ety, finansowania,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 289.60 Tm (plany, wnioski Obs\263uga rozlicze\361: faktury, statusy, kwoty rzeczywiste) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 271.40 Tm (Obs\263uga rozlicze\361 nie jest osobnym typem konta w modelu. Jej czynno\234ci s\271 realizowane przez) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 257.20 Tm (modu\263 Settlement i Invoice.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 229.00 Tm (Wymagania funkcjonalne) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 207.00 Tm (RF-01. U\277ytkownik mo\277e si\352 zarejestrowa\346 i zalogowa\346.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 188.80 Tm (RF-02. System rozr\363\277nia zwyk\263ego cz\263onka i skarbnika.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 170.60 Tm (RF-03. Cz\263onek mo\277e doda\346 przedmiot do katalogu.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 152.40 Tm (RF-04. Cz\263onek mo\277e zg\263osi\346 sklep. Skarbnik mo\277e sklep zaakceptowa\346, edytowa\346 albo odrzuci\346.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 134.20 Tm (RF-05. Skarbnik mo\277e tworzy\346 dofinansowania wraz z zadaniami bud\277etowymi.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 116.00 Tm (RF-06. Skarbnik mo\277e utworzy\346 plan zam\363wie\361 publicznych dla dofinansowania.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 97.80 Tm (RF-07. Skarbnik mo\277e tworzy\346 listy zakup\363w i przypisywa\346 je do sklepu, dofinansowania oraz) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 83.60 Tm (grupy zakupowej.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (5/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (5/30) Tj ET
 endstream
 endobj
 10 0 obj
-<< /Length 4816 >>
+<< /Length 5216 >>
 stream
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 724.60 483.00 62.40 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (   | project_finance_manager_id -> ProjectFinanceManager) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 748.80 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 737.20 Tm (skarbnik) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 711.60 Tm (Frontend ukrywa funkcje zale\277nie od roli. Backend dodatkowo sprawdza cz\352\234\346 operacji) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 697.40 Tm (skarbnika, np. zarz\271dzanie kategoriami, sklepami i finansami.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 669.20 Tm (Wymagania funkcjonalne) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 647.20 Tm (RF-01. U\277ytkownik mo\277e si\352 zarejestrowa\346 i zalogowa\346.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 629.00 Tm (RF-02. System rozr\363\277nia zwyk\263ego cz\263onka i skarbnika.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 610.80 Tm (RF-03. Cz\263onek mo\277e doda\346 przedmiot do katalogu.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 592.60 Tm (RF-04. Cz\263onek mo\277e zg\263osi\346 sklep. Skarbnik mo\277e sklep zaakceptowa\346, edytowa\346 albo odrzuci\346.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 574.40 Tm (RF-05. Skarbnik mo\277e tworzy\346 dofinansowania wraz z zadaniami bud\277etowymi.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 556.20 Tm (RF-06. Skarbnik mo\277e utworzy\346 plan zam\363wie\361 publicznych dla dofinansowania.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 538.00 Tm (RF-07. Skarbnik mo\277e tworzy\346 listy zakup\363w i przypisywa\346 je do sklepu, dofinansowania oraz) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 523.80 Tm (grupy zakupowej.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 505.60 Tm (RF-08. U\277ytkownicy mog\271 dodawa\346 wk\263ad do otwartych list zakup\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 487.40 Tm (RF-09. Skarbnik mo\277e zamkn\271\346 list\352 i u\277y\346 jej przy wniosku.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 469.20 Tm (RF-10. Skarbnik mo\277e utworzy\346 wniosek o zam\363wienie z alokacj\271 \234rodk\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 451.00 Tm (RF-11. Wniosek mo\277e korzysta\346 z jednej lub wielu pozycji planu.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 432.80 Tm (RF-12. Przekroczenie pozycji planu wymaga uzasadnienia.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 414.60 Tm (RF-13. Finalizacja wniosku zapisuje dane historyczne w snapshotach.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 396.40 Tm (RF-14. Rozliczenie wymaga obs\263ugi faktur i kwot rzeczywistych.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 368.20 Tm (Wymagania niefunkcjonalne) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 346.20 Tm (- Backend udost\352pnia API REST w formacie JSON.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 330.00 Tm (- Frontend dzia\263a jako SPA w Vue 3.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 313.80 Tm (- Dane trwa\263e s\271 przechowywane w PostgreSQL.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 297.60 Tm (- Modele bazodanowe s\271 definiowane w SQLModel.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 281.40 Tm (- Testy backendu u\277ywaj\271 SQLite in-memory.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 265.20 Tm (- Dokumentacja jest generowana z plik\363w doc/*.rst przez doc_gen.py.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 235.00 Tm (Decyzje projektowe) Tj ET
-0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 213.00 Tm (Bud\277et wynika z dofinansowa\361) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 195.00 Tm (ProjectBudget.total_budget i AssociationBudget.total_budget nie powinny by\346 traktowane jako) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 180.80 Tm (niezale\277ne \237r\363d\263o prawdy. W raportowaniu kwoty s\271 liczone z tabeli Funding i rezerwacji) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 166.60 Tm (wniosk\363w.) Tj ET
-0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 148.40 Tm (Plan jest przy dofinansowaniu) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 130.40 Tm (PublicPurchasePlanList ma relacj\352 1:1 z Funding. Dzi\352ki temu pozycje CPV s\271 kontrolowane w) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 116.20 Tm (kontek\234cie konkretnego \237r\363d\263a pieni\352dzy.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (RF-08. U\277ytkownicy mog\271 dodawa\346 wk\263ad do otwartych list zakup\363w.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 763.80 Tm (RF-09. Skarbnik mo\277e zamkn\271\346 list\352 i u\277y\346 jej przy wniosku.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 745.60 Tm (RF-10. Skarbnik mo\277e utworzy\346 wniosek o zam\363wienie z alokacj\271 \234rodk\363w.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 727.40 Tm (RF-11. Wniosek mo\277e korzysta\346 z jednej lub wielu pozycji planu.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 709.20 Tm (RF-12. Przekroczenie pozycji planu wymaga uzasadnienia.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 691.00 Tm (RF-13. Finalizacja wniosku zapisuje dane historyczne w snapshotach.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 672.80 Tm (RF-14. Rozliczenie wymaga obs\263ugi faktur i kwot rzeczywistych.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 644.60 Tm (Wymagania niefunkcjonalne) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 622.60 Tm (- Backend udost\352pnia API REST w formacie JSON.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 606.40 Tm (- Frontend dzia\263a jako SPA w Vue 3.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 590.20 Tm (- Dane trwa\263e s\271 przechowywane w PostgreSQL.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 574.00 Tm (- Modele bazodanowe s\271 definiowane w SQLModel.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 557.80 Tm (- Testy backendu u\277ywaj\271 SQLite in-memory.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 541.60 Tm (- Dokumentacja jest generowana z plik\363w doc/*.rst przez doc_gen.py.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 511.40 Tm (Decyzje projektowe) Tj ET
+0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 489.40 Tm (Bud\277et wynika z dofinansowa\361) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 471.40 Tm (ProjectBudget.total_budget i AssociationBudget.total_budget nie powinny by\346 traktowane jako) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 457.20 Tm (niezale\277ne \237r\363d\263o prawdy. W raportowaniu kwoty s\271 liczone z tabeli Funding i rezerwacji) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 443.00 Tm (wniosk\363w.) Tj ET
+0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 424.80 Tm (Plan jest przy dofinansowaniu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 406.80 Tm (PublicPurchasePlanList ma relacj\352 1:1 z Funding. Dzi\352ki temu pozycje CPV s\271 kontrolowane w) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 392.60 Tm (kontek\234cie konkretnego \237r\363d\263a pieni\352dzy.) Tj ET
+0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 374.40 Tm (Wniosek rezerwuje \234rodki) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 356.40 Tm (Tabela PurchaseRequestFundingAllocation przechowuje kwoty zarezerwowane na wniosek. Je\277eli) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 342.20 Tm (wniosek nie ma rekord\363w alokacji, backend u\277ywa pola legacy) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 328.00 Tm (PurchaseRequest.budget_allocated_for_the_order jako fallback.) Tj ET
+0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 309.80 Tm (Finalizacja zapisuje snapshot) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 291.80 Tm (PurchaseRequestFinalizationSnapshot przechowuje skopiowane dane planu i finansowania: CPV,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 277.60 Tm (numer planu, nazw\352 finansowania, kwoty netto, brutto i EUR. Snapshot jest potrzebny,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 263.40 Tm (poniewa\277 plan albo finansowanie mog\271 zosta\346 p\363\237niej zmienione.) Tj ET
+0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 245.20 Tm (Koszyk przechowuje wk\263ad u\277ytkownik\363w) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 227.20 Tm (ShopPurchaseListItem przechowuje \263\271czn\271 ilo\234\346 przedmiotu na li\234cie.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 213.00 Tm (ShopPurchaseListItemContribution przechowuje ile doda\263 konkretny student. To pozwala) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 198.80 Tm (zwyk\263emu cz\263onkowi usuwa\346 tylko w\263asny wk\263ad.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 170.60 Tm (Zakres ryzyka) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 148.60 Tm (Najwi\352ksze ryzyka projektowe:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 130.40 Tm (- podw\363jne liczenie kwot z dofinansowa\361 i wniosk\363w,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 114.20 Tm (- niesp\363jno\234\346 planu CPV po edycji lub usuni\352ciu pozycji,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 98.00 Tm (- brak pe\263nej autoryzacji backendowej dla ka\277dej operacji finansowej,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 81.80 Tm (- r\363\277nice mi\352dzy PostgreSQL runtime i SQLite w testach,) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (6/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (6/30) Tj ET
 endstream
 endobj
 11 0 obj
-<< /Length 2629 >>
+<< /Length 330 >>
 stream
-0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 782.00 Tm (Wniosek rezerwuje \234rodki) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 764.00 Tm (Tabela PurchaseRequestFundingAllocation przechowuje kwoty zarezerwowane na wniosek. Je\277eli) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 749.80 Tm (wniosek nie ma rekord\363w alokacji, backend u\277ywa pola legacy) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 735.60 Tm (PurchaseRequest.budget_allocated_for_the_order jako fallback.) Tj ET
-0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 717.40 Tm (Finalizacja zapisuje snapshot) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 699.40 Tm (PurchaseRequestFinalizationSnapshot przechowuje skopiowane dane planu i finansowania: CPV,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 685.20 Tm (numer planu, nazw\352 finansowania, kwoty netto, brutto i EUR. Snapshot jest potrzebny,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 671.00 Tm (poniewa\277 plan albo finansowanie mog\271 zosta\346 p\363\237niej zmienione.) Tj ET
-0.20 0.26 0.38 rg BT /F2 12 Tf 1 0 0 1 56.00 652.80 Tm (Koszyk przechowuje wk\263ad u\277ytkownik\363w) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 634.80 Tm (ShopPurchaseListItem przechowuje \263\271czn\271 ilo\234\346 przedmiotu na li\234cie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 620.60 Tm (ShopPurchaseListItemContribution przechowuje ile doda\263 konkretny student. To pozwala) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 606.40 Tm (zwyk\263emu cz\263onkowi usuwa\346 tylko w\263asny wk\263ad.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 578.20 Tm (Zakres ryzyka) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 556.20 Tm (Najwi\352ksze ryzyka projektowe:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 538.00 Tm (- podw\363jne liczenie kwot z dofinansowa\361 i wniosk\363w,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 521.80 Tm (- niesp\363jno\234\346 planu CPV po edycji lub usuni\352ciu pozycji,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 505.60 Tm (- brak pe\263nej autoryzacji backendowej dla ka\277dej operacji finansowej,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 489.40 Tm (- r\363\277nice mi\352dzy PostgreSQL runtime i SQLite w testach,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 473.20 Tm (- logika biznesowa umieszczona bezpo\234rednio w endpointach.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (- logika biznesowa umieszczona bezpo\234rednio w endpointach.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (7/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (7/30) Tj ET
 endstream
 endobj
 12 0 obj
-<< /Length 5119 >>
+<< /Length 4311 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Architektura systemu) Tj ET
 0.16 0.34 0.84 RG 1.2 w 56 767.00 m 539 767.00 l S
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 729.00 Tm (Widok warstwowy) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 487.20 483.00 224.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 697.00 Tm (+--------------------------------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 685.40 Tm (| Przegl\271darka                                     |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 673.80 Tm (| Vue 3, Vue Router, komponenty .vue               |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 662.20 Tm (+-------------------------+------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 650.60 Tm (                          |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 639.00 Tm (                          | HTTP REST / JSON) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 627.40 Tm (                          v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 615.80 Tm (+--------------------------------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 604.20 Tm (| Backend FastAPI                                  |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 592.60 Tm (| endpointy, walidacja Pydantic, logika domenowa   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 581.00 Tm (+-------------------------+------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 569.40 Tm (                          |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 557.80 Tm (                          | SQLModel / SQLAlchemy) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 546.20 Tm (                          v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 534.60 Tm (+--------------------------------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 523.00 Tm (| PostgreSQL                                       |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 511.40 Tm (| tabele tworzone z modeli SQLModel + migracja     |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 499.80 Tm (+--------------------------------------------------+) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 464.20 Tm (Backend) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 442.20 Tm (Katalog: backend.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 424.00 Tm (Najwa\277niejsze pliki:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 405.80 Tm (- backend/run.py - uruchomienie Uvicorn na porcie 8080,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 389.60 Tm (- backend/src/__init__.py - konfiguracja FastAPI, CORS, silnik bazy, lifecycle i) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 375.40 Tm (migracja,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 359.20 Tm (- backend/src/relations.py - encje SQLModel,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 343.00 Tm (- backend/src/routes - modu\263y endpoint\363w.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 312.80 Tm (Rejestracja tras) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 290.80 Tm (backend/src/__init__.py tworzy globalny obiekt app. Import src.routes \263aduje wszystkie) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 276.60 Tm (modu\263y z katalogu tras i rejestruje dekoratory @app.get, @app.post, @app.patch, @app.delete.) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 73.40 483.00 190.00 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 248.40 Tm (src.__init__) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 236.80 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 225.20 Tm (   +-- app = FastAPI\(...\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 213.60 Tm (   +-- engine = create_engine\(DATABASE_URL\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 202.00 Tm (   +-- get_session\(\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 190.40 Tm (   +-- prepare_database\(\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 178.80 Tm (   +-- import src.routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 167.20 Tm (           |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 155.60 Tm (           +-- login_register_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 144.00 Tm (           +-- members_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 132.40 Tm (           +-- items_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 120.80 Tm (           +-- shops_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 109.20 Tm (           +-- lists_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 97.60 Tm (           +-- fundings_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 86.00 Tm (           +-- public_purchase_plans_routes) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 684.40 483.00 27.60 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 697.00 Tm () Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 671.40 Tm (- Przegl\271darka \(Vue 3, Vue Router, komponenty .vue\)) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 651.20 Tm (- Backend FastAPI \(endpointy, walidacja Pydantic, logika domenowa\)) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 631.00 Tm (- PostgreSQL) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 600.80 Tm (Backend) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 578.80 Tm (Katalog: backend.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 560.60 Tm (Najwa\277niejsze pliki:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 542.40 Tm (- backend/run.py - uruchomienie Uvicorn na porcie 8080,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 526.20 Tm (- backend/src/__init__.py - konfiguracja FastAPI, CORS, silnik bazy, lifecycle i) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 512.00 Tm (migracja,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 495.80 Tm (- backend/src/relations.py - encje SQLModel,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 479.60 Tm (- backend/src/routes - modu\263y endpoint\363w.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 449.40 Tm (Rejestracja tras) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 427.40 Tm (backend/src/__init__.py tworzy globalny obiekt app. Import src.routes \263aduje wszystkie) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 413.20 Tm (modu\263y z katalogu tras i rejestruje dekoratory @app.get, @app.post, @app.patch, @app.delete.) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 186.80 483.00 213.20 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 385.00 Tm (src.__init__) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 373.40 Tm (   |) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 361.80 Tm (   +-- app = FastAPI\(...\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 350.20 Tm (   +-- engine = create_engine\(DATABASE_URL\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 338.60 Tm (   +-- get_session\(\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 327.00 Tm (   +-- prepare_database\(\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 315.40 Tm (   +-- import src.routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 303.80 Tm (           |) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 292.20 Tm (           +-- login_register_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 280.60 Tm (           +-- members_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 269.00 Tm (           +-- items_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 257.40 Tm (           +-- shops_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 245.80 Tm (           +-- lists_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 234.20 Tm (           +-- fundings_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 222.60 Tm (           +-- public_purchase_plans_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 211.00 Tm (           +-- purchase_request_routes) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 199.40 Tm (           +-- settlements_routes) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 163.80 Tm (Modu\263y backendu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 141.80 Tm (login_register_routes.py Rejestracja i logowanie.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 123.60 Tm (members_routes.py Lista student\363w.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 105.40 Tm (items_routes.py Katalog przedmiot\363w, statusy pending/approved/rejected, grupowanie.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 87.20 Tm (shops_routes.py Sklepy, zg\263aszanie, akceptacja, edycja i odrzucenie.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (8/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (8/30) Tj ET
 endstream
 endobj
 13 0 obj
-<< /Length 4547 >>
+<< /Length 4788 >>
 stream
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 747.80 483.00 39.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (           +-- purchase_request_routes) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (           +-- settlements_routes) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 724.80 Tm (Modu\263y backendu) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 702.80 Tm (login_register_routes.py Rejestracja i logowanie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 684.60 Tm (members_routes.py Lista student\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 666.40 Tm (items_routes.py Katalog przedmiot\363w, statusy pending/approved/rejected, grupowanie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 648.20 Tm (shops_routes.py Sklepy, zg\263aszanie, akceptacja, edycja i odrzucenie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 630.00 Tm (categories_subcategories_routes.py Kategorie, podkategorie i przypisanie CPV.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 611.80 Tm (lists_routes.py Listy zakup\363w, pozycje, wk\263ad u\277ytkownik\363w, zamykanie i otwieranie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 593.60 Tm (fundings_routes.py Dofinansowania, zadania bud\277etowe i dost\352pne \234rodki.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 575.40 Tm (public_purchase_plans_routes.py Bud\277ety, dashboard, listy plan\363w i pozycje planu) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 561.20 Tm (publicznego.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 543.00 Tm (purchase_request_routes.py Wnioski, alokacje finansowania, pozycje planu, finalizacja i) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 528.80 Tm (linie rozliczeniowe.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 510.60 Tm (settlements_routes.py Rozliczenia, faktury, historia i statusy.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 482.40 Tm (Frontend) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 460.40 Tm (Katalog: frontend.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 442.20 Tm (Najwa\277niejsze pliki:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 424.00 Tm (- frontend/src/main.js - start aplikacji,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 407.80 Tm (- frontend/src/router/index.js - routing SPA,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 391.60 Tm (- frontend/src/App.vue - g\263\363wny kontener,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 375.40 Tm (- frontend/src/composables/useAuth.js - stan zalogowanego u\277ytkownika,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 359.20 Tm (- frontend/src/composables/useToast.js - komunikaty UI.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 339.00 Tm (G\263\363wne widoki:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 320.80 Tm (- HomePage.vue - panel u\277ytkownika i dashboard,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 304.60 Tm (- AddedItems.vue - katalog przedmiot\363w,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 288.40 Tm (- AddedShopPurchaseLists.vue i ShopPurchaseListDetails.vue - listy zakup\363w,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 272.20 Tm (- PublicPurchasePlans.vue - dofinansowania, bud\277ety i plany,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 256.00 Tm (- PurchaseRequest.vue - wnioski,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 239.80 Tm (- Settlement.vue - rozliczenia i faktury,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 223.60 Tm (- Shops.vue - sklepy.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 193.40 Tm (Przep\263yw requestu) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 79.20 483.00 97.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 161.40 Tm (komponent Vue) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 149.80 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 138.20 Tm (   | fetch\("http://localhost:8080/api/..."\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 126.60 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 115.00 Tm (endpoint FastAPI) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 103.40 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 91.80 Tm (   | Pydantic BaseModel / query params) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (categories_subcategories_routes.py Kategorie, podkategorie i przypisanie CPV.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 763.80 Tm (lists_routes.py Listy zakup\363w, pozycje, wk\263ad u\277ytkownik\363w, zamykanie i otwieranie.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 745.60 Tm (fundings_routes.py Dofinansowania, zadania bud\277etowe i dost\352pne \234rodki.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 727.40 Tm (public_purchase_plans_routes.py Bud\277ety, dashboard, listy plan\363w i pozycje planu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 713.20 Tm (publicznego.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 695.00 Tm (purchase_request_routes.py Wnioski, alokacje finansowania, pozycje planu, finalizacja i) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 680.80 Tm (linie rozliczeniowe.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 662.60 Tm (settlements_routes.py Rozliczenia, faktury, historia i statusy.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 634.40 Tm (Frontend) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 612.40 Tm (Katalog: frontend.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 594.20 Tm (Najwa\277niejsze pliki:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 576.00 Tm (- frontend/src/main.js - start aplikacji,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 559.80 Tm (- frontend/src/router/index.js - routing SPA,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 543.60 Tm (- frontend/src/App.vue - g\263\363wny kontener,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 527.40 Tm (- frontend/src/composables/useAuth.js - stan zalogowanego u\277ytkownika,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 511.20 Tm (- frontend/src/composables/useToast.js - komunikaty UI.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 491.00 Tm (G\263\363wne widoki:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 472.80 Tm (- HomePage.vue - panel u\277ytkownika i dashboard,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 456.60 Tm (- AddedItems.vue - katalog przedmiot\363w,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 440.40 Tm (- AddedShopPurchaseLists.vue i ShopPurchaseListDetails.vue - listy zakup\363w,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 424.20 Tm (- PublicPurchasePlans.vue - dofinansowania, bud\277ety i plany,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 408.00 Tm (- PurchaseRequest.vue - wnioski,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 391.80 Tm (- Settlement.vue - rozliczenia i faktury,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 375.60 Tm (- Shops.vue - sklepy.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 345.40 Tm (Przep\263yw requestu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 323.40 Tm (Dane w aplikacji przep\263ywaj\271 od komponentu Vue, kt\363ry wysy\263a \277\271danie HTTP do endpointu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 309.20 Tm (FastAPI. Endpoint odbiera parametry zapytania lub dane wej\234ciowe zdefiniowane za pomoc\271) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 295.00 Tm (modeli Pydantic \(BaseModel\). Nast\352pnie, przy u\277yciu sesji SQLAlchemy \(Session\(engine\)\),) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 280.80 Tm (wykonywane s\271 operacje na bazie danych PostgreSQL, takie jak pobieranie \(select, get\),) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 266.60 Tm (dodawanie \(add\), usuwanie \(delete\) oraz zatwierdzanie zmian \(commit\). Po przetworzeniu) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 252.40 Tm (danych FastAPI zwraca odpowied\237 w postaci obiektu zgodnego z response_model lub s\263ownika) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 238.20 Tm (\(dict\), kt\363ra jest automatycznie serializowana do formatu JSON i odbierana przez) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 224.00 Tm (przegl\271dark\352 w aplikacji Vue.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 195.80 Tm (Konfiguracja \234rodowiska) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 173.80 Tm (Backend wymaga DATABASE_URL. W docker-compose.yml baza jest dost\352pna dla backendu jako:) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 133.00 483.00 27.60 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 145.60 Tm (postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 120.00 Tm (Porty:) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (9/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (9/30) Tj ET
 endstream
 endobj
 14 0 obj
-<< /Length 3578 >>
+<< /Length 2200 >>
 stream
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 655.00 483.00 132.00 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (Session\(engine\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 748.80 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 737.20 Tm (   | select / get / add / delete / commit) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 725.60 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 714.00 Tm (PostgreSQL) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 702.40 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 690.80 Tm (   | response_model albo dict) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 679.20 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 667.60 Tm (JSON w przegl\271darce) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 632.00 Tm (Konfiguracja \234rodowiska) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 610.00 Tm (Backend wymaga DATABASE_URL. W docker-compose.yml baza jest dost\352pna dla backendu jako:) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 569.20 483.00 27.60 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 581.80 Tm (postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 556.20 Tm (Porty:) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 503.80 483.00 39.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 528.00 Tm (8080  backend FastAPI) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 516.40 Tm (5431  PostgreSQL wystawiony na hosta) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 480.80 Tm (Inicjalizacja bazy) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 458.80 Tm (Przy starcie backend:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 440.60 Tm (1. tworzy tabele przez SQLModel.metadata.create_all\(engine\),) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 424.40 Tm (2. wykonuje migrate_project_budgets\(\) dla PostgreSQL,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 408.20 Tm (3. pr\363buje za\263adowa\346 backend/scripts/mockup_data.sql.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 388.00 Tm (Migracja w src.__init__ dodaje brakuj\271ce kolumny i tabele u\277ywane przez nowsze funkcje:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 373.80 Tm (alokacje finansowania, pozycje planu wniosku, snapshot finalizacji, linie rozliczeniowe i) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 359.60 Tm (zadania dofinansowa\361.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 331.40 Tm (Ograniczenia architektury) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 309.40 Tm (- Brak oddzielnej warstwy serwisowej: logika domenowa znajduje si\352 w trasach.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 293.20 Tm (- Autoryzacja jest uproszczona: frontend przechowuje u\277ytkownika w localStorage, a) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 279.00 Tm (backend cz\352sto przyjmuje identyfikatory w payloadzie lub query string.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 262.80 Tm (- Cz\352\234\346 endpoint\363w zwraca modele SQLModel bez dedykowanego DTO.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 246.60 Tm (- Testy u\277ywaj\271 SQLite, a runtime u\277ywa PostgreSQL.) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 747.80 483.00 39.20 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (8080  backend FastAPI) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (5431  PostgreSQL wystawiony na hosta) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 724.80 Tm (Inicjalizacja bazy) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 702.80 Tm (Przy starcie backend:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 684.60 Tm (1. tworzy tabele przez SQLModel.metadata.create_all\(engine\),) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 668.40 Tm (2. wykonuje migrate_project_budgets\(\) dla PostgreSQL,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 652.20 Tm (3. pr\363buje za\263adowa\346 backend/scripts/mockup_data.sql.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 632.00 Tm (Migracja w src.__init__ dodaje brakuj\271ce kolumny i tabele u\277ywane przez nowsze funkcje:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 617.80 Tm (alokacje finansowania, pozycje planu wniosku, snapshot finalizacji, linie rozliczeniowe i) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 603.60 Tm (zadania dofinansowa\361.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 575.40 Tm (Ograniczenia architektury) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 553.40 Tm (- Brak oddzielnej warstwy serwisowej: logika domenowa znajduje si\352 w trasach.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 537.20 Tm (- Autoryzacja jest uproszczona: frontend przechowuje u\277ytkownika w localStorage, a) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 523.00 Tm (backend cz\352sto przyjmuje identyfikatory w payloadzie lub query string.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 506.80 Tm (- Cz\352\234\346 endpoint\363w zwraca modele SQLModel bez dedykowanego DTO.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 490.60 Tm (- Testy u\277ywaj\271 SQLite, a runtime u\277ywa PostgreSQL.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (10/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (10/30) Tj ET
 endstream
 endobj
 15 0 obj
-<< /Length 5543 >>
+<< /Length 458 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Model danych) Tj ET
 0.16 0.34 0.84 RG 1.2 w 56 767.00 m 539 767.00 l S
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 729.00 Tm (\217r\363d\263o modelu) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 707.00 Tm (Model bazodanowy jest zdefiniowany w backend/src/relations.py jako klasy SQLModel. Tabele s\271) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 692.80 Tm (tworzone przez SQLModel.metadata.create_all\(engine\). Dodatkowe zmiany dla istniej\271cej bazy) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 678.60 Tm (PostgreSQL s\271 wykonywane w migrate_project_budgets\(\).) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 650.40 Tm (Legenda diagram\363w) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 559.40 483.00 74.00 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 618.40 Tm (PK   klucz g\263\363wny) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 606.80 Tm (FK   klucz obcy) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 595.20 Tm (1    dok\263adnie jeden) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 583.60 Tm (0..1 zero albo jeden) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 572.00 Tm (*    wiele) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 536.40 Tm (Diagram g\263\363wnych encji) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 143.80 483.00 375.60 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 504.40 Tm (+-------------+ 1     * +---------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 492.80 Tm (| Association |---------| Student |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 481.20 Tm (| PK id       |         | PK id   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 469.60 Tm (+------+------+         +----+----+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 458.00 Tm (       | 1                   | 0..1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 446.40 Tm (       |                     v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 434.80 Tm (       |              +-----------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 423.20 Tm (       |              | ProjectFinanceManager |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 411.60 Tm (       |              | PK id                 |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 400.00 Tm (       |              +-----------+-----------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 388.40 Tm (       |                          |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 376.80 Tm (       | 1                        | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 365.20 Tm (       v                          v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 353.60 Tm (+---------+ 1   1 +---------------+ 1   * +---------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 342.00 Tm (| Project |-------| ProjectBudget |-------| Funding |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 330.40 Tm (| PK id   |       | PK id         |       | PK id   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 318.80 Tm (+----+----+       +-------+-------+       +----+----+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 307.20 Tm (     |                    |                    |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 295.60 Tm (     |                    | *                  | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 284.00 Tm (     |                    v                    v 0..1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 272.40 Tm (     |          +-------------------+   +------------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 260.80 Tm (     |          | AssociationBudget |   | PublicPurchasePlanList |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 249.20 Tm (     |          | PK id             |   | PK id                  |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 237.60 Tm (     |          +-------------------+   +-----------+------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 226.00 Tm (     |                                           | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 214.40 Tm (     |                                           | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 202.80 Tm (     |                                           v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 191.20 Tm (     |                                  +--------------------+) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 179.60 Tm (     |                                  | PublicPurchasePlan |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 168.00 Tm (     |                                  | PK id, cpv_code    |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 156.40 Tm (     |                                  +--------------------+) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 120.80 Tm (Opis g\263\363wnych encji organizacyjno-finansowych) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 98.80 Tm (Association Ko\263o naukowe. Grupuje student\363w i projekty.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 80.60 Tm (Student Konto u\277ytkownika. Przechowuje dane osobowe, login, hash has\263a, przynale\277no\234\346 do) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 739.00 Tm (Model danych dost\352pny jest w README.md w formacie mermaid.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (11/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (11/30) Tj ET
 endstream
 endobj
 16 0 obj
-<< /Length 5249 >>
-stream
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (ko\263a i opcjonalne powi\271zanie ze skarbnikiem.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 763.80 Tm (ProjectFinanceManager Konto/rola skarbnika. Powi\271zanie ze studentem nadaje uprawnienia) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 749.60 Tm (skarbnika.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 731.40 Tm (Project Sekcja lub projekt ko\263a. Nale\277y do Association.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 713.20 Tm (ProjectBudget Bud\277et projektu. Ma relacj\352 1:1 z Project i nale\277y do AssociationBudget.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 695.00 Tm (AssociationBudget Bud\277et ko\263a. Grupuje bud\277ety projekt\363w i dofinansowania.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 676.80 Tm (Funding Dofinansowanie. Nale\277y do bud\277etu projektu i bud\277etu ko\263a. Jest g\263\363wnym \237r\363d\263em) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 662.60 Tm (pieni\352dzy dla list zakup\363w, plan\363w i wniosk\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 644.40 Tm (FundingTask Zadanie bud\277etowe w ramach dofinansowania. Suma zada\361 nie mo\277e przekracza\346 kwoty) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 630.20 Tm (dofinansowania.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 602.00 Tm (Diagram planu publicznego i wniosku) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 290.60 483.00 294.40 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 570.00 Tm (Funding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 558.40 Tm (   | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 546.80 Tm (   | 0..1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 535.20 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 523.60 Tm (PublicPurchasePlanList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 512.00 Tm (   | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 500.40 Tm (   | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 488.80 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 477.20 Tm (PublicPurchasePlan) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 465.60 Tm (   ^) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 454.00 Tm (   | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 442.40 Tm (   | przez PurchaseRequestPlanPosition) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 430.80 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 419.20 Tm (PurchaseRequest) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 407.60 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 396.00 Tm (   | * przez PurchaseRequestFundingAllocation) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 384.40 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 372.80 Tm (Funding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 361.20 Tm () Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 349.60 Tm (PurchaseRequest) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 338.00 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 326.40 Tm (   +-- PurchaseRequestFinalizationSnapshot) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 314.80 Tm (   +-- PurchaseRequestSettlementLine) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 303.20 Tm (   +-- Settlement) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 267.60 Tm (Opis encji planu i wniosku) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 245.60 Tm (PublicPurchasePlanList Nag\263\363wek planu publicznego. Ma rok, numer planu, osob\352) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 231.40 Tm (odpowiedzialn\271, kurs euro i relacj\352 1:1 z Funding.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 213.20 Tm (PublicPurchasePlan Pozycja planu publicznego. Przechowuje nazw\352, kod CPV, numer pozycji i) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 199.00 Tm (planowan\271 kwot\352.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 180.80 Tm (PurchaseRequest Wniosek o zam\363wienie. \243\271czy bud\277et projektu, dofinansowanie, pozycje planu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 166.60 Tm (grup\352 list zakup\363w, status finalizacji i dane dokumentowe.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 148.40 Tm (PurchaseRequestFundingAllocation Tabela asocjacyjna PurchaseRequest -> Funding z kwot\271) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 134.20 Tm (allocated_amount. Pozwala podzieli\346 wniosek mi\352dzy wiele \237r\363de\263 finansowania.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 116.00 Tm (PurchaseRequestPlanPosition Tabela asocjacyjna PurchaseRequest -> ShopPurchaseList ->) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 101.80 Tm (PublicPurchasePlan z kwot\271 wykorzystania pozycji planu.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 83.60 Tm (PurchaseRequestFinalizationSnapshot Historyczny zapis danych finalizacji. Przechowuje kopie) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (12/33) Tj ET
-endstream
-endobj
-17 0 obj
-<< /Length 4891 >>
-stream
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (nazw, numer\363w, CPV i kwot u\277ytych w dokumencie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 763.80 Tm (PurchaseRequestSettlementLine Linia rozliczeniowa wniosku. Zawiera planowan\271 i rzeczywist\271) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 749.60 Tm (kwot\352 brutto oraz opcjonalne powi\271zanie z faktur\271.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 721.40 Tm (Diagram list zakup\363w) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 549.20 483.00 155.20 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 689.40 Tm (GroupedShopsListByCpvCategoryAndFunding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 677.80 Tm (   | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 666.20 Tm (   | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 654.60 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 643.00 Tm (ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 631.40 Tm (   | *                         * |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 619.80 Tm (   | przez ShopPurchaseListItem  |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 608.20 Tm (   v                            v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 596.60 Tm (Item                         Student) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 585.00 Tm (   ^                            ^) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 573.40 Tm (   |                            |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 561.80 Tm (   +-- ShopPurchaseListItemContribution) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 526.20 Tm (Opis encji zakupowych) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 504.20 Tm (GroupedShopsListByCpvCategoryAndFunding Grupa koszyk\363w zakupowych. \243\271czy listy z tym samym) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 490.00 Tm (kontekstem CPV i finansowania.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 471.80 Tm (ShopPurchaseList Koszyk dla jednego sklepu. Ma koszt, priorytet, dat\352 utworzenia,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 457.60 Tm (finansowanie, sklep, w\263a\234ciciela-studenta i opcjonalne rozliczenie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 439.40 Tm (ShopPurchaseListItem Pozycja koszyka. Kluczem jest para shop_purchase_list_id i item_id.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 425.20 Tm (Pole amount zawiera \263\271czn\271 ilo\234\346.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 407.00 Tm (ShopPurchaseListItemContribution Wk\263ad konkretnego studenta w pozycj\352 koszyka. Kluczem jest) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 392.80 Tm (lista, przedmiot i student.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 374.60 Tm (Item Przedmiot w katalogu. Ma cen\352, walut\352, link, stawk\352 VAT, status, podkategori\352, autora i) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 360.40 Tm (sklep.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 342.20 Tm (Shop Sklep. Ma nazw\352, link, opini\352, status, pr\363g darmowej dostawy i listy zakup\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 324.00 Tm (ProductCategory Kategoria produktu z kodem CPV.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 305.80 Tm (ProductSubcategory Podkategoria produktu. Mo\277e by\346 pending, gdy nie ma przypisanej) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 291.60 Tm (kategorii.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 263.40 Tm (Diagram rozlicze\361) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 79.60 483.00 166.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 231.40 Tm (PurchaseRequest 0..1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 219.80 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 208.20 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 196.60 Tm (Settlement) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 185.00 Tm (   | 1) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 173.40 Tm (   | *) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 161.80 Tm (   v) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 150.20 Tm (Invoice) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 138.60 Tm () Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 127.00 Tm (Settlement) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 115.40 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 103.80 Tm (   +-- ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 92.20 Tm (   +-- PurchaseRequestSettlementLine) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (13/33) Tj ET
-endstream
-endobj
-18 0 obj
-<< /Length 4343 >>
-stream
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 772.00 Tm (Opis encji rozliczeniowych) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 750.00 Tm (Settlement Rozliczenie. Mo\277e by\346 powi\271zane z wnioskiem i skarbnikiem, kt\363ry op\263aca) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 735.80 Tm (rozliczenie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 717.60 Tm (Invoice Faktura. Zawiera numer, dat\352 wystawienia, sprzedawc\352, NIP, kwoty netto i VAT, status) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 703.40 Tm (oraz powi\271zanie z rozliczeniem.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 675.20 Tm (Enumy) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 653.20 Tm (Currency PLN, EUR, USD.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 635.00 Tm (InvoiceStatus pending, accepted, rejected, paid, returned, arrived.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 616.80 Tm (ItemStatus draft, pending, approved, rejected.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 588.60 Tm (Najwa\277niejsze relacje) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 346.80 483.00 224.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 556.60 Tm (Association 1..* Student) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 545.00 Tm (Association 1..* Project) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 533.40 Tm (Project 1..1 ProjectBudget) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 521.80 Tm (AssociationBudget 1..* ProjectBudget) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 510.20 Tm (ProjectBudget 1..* Funding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 498.60 Tm (Funding 1..0..1 PublicPurchasePlanList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 487.00 Tm (PublicPurchasePlanList 1..* PublicPurchasePlan) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 475.40 Tm (Funding 1..* ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 463.80 Tm (Shop 1..* ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 452.20 Tm (Student 1..* ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 440.60 Tm (ProductCategory 1..* ProductSubcategory) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 429.00 Tm (ProductSubcategory 1..* Item) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 417.40 Tm (ShopPurchaseList *..* Item przez ShopPurchaseListItem) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 405.80 Tm (PurchaseRequest *..* Funding przez PurchaseRequestFundingAllocation) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 394.20 Tm (PurchaseRequest *..* PublicPurchasePlan przez PurchaseRequestPlanPosition) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 382.60 Tm (PurchaseRequest 1..* PurchaseRequestFinalizationSnapshot) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 371.00 Tm (PurchaseRequest 1..* PurchaseRequestSettlementLine) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 359.40 Tm (Settlement 1..* Invoice) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 323.80 Tm (Regu\263y sp\363jno\234ci danych) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 301.80 Tm (- Jedno dofinansowanie mo\277e mie\346 najwy\277ej jeden plan publiczny.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 285.60 Tm (- Pozycje planu musz\271 mie\346 dodatni koszt.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 269.40 Tm (- Kod CPV powinien by\346 tekstem, nie liczb\271.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 253.20 Tm (- Pozycja planu nie powinna by\346 usuwana, je\234li jest u\277yta przez list\352 lub wniosek.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 237.00 Tm (- Wniosek musi wskazywa\346 bud\277et projektu i finansowanie.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 220.80 Tm (- Alokacja planu musi nale\277e\346 do finansowania u\277ytego we wniosku.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 204.60 Tm (- Finalizacja ustawia can_add = False i zapisuje snapshot.) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 188.40 Tm (- Rozliczenie zako\361czone wymaga faktur.) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (14/33) Tj ET
-endstream
-endobj
-19 0 obj
-<< /Length 4197 >>
+<< /Length 3752 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Procesy biznesowe) Tj ET
 0.16 0.34 0.84 RG 1.2 w 56 767.00 m 539 767.00 l S
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 729.00 Tm (Proces bazowy) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 580.00 483.00 132.00 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 697.00 Tm (1. Skarbnik zak\263ada dofinansowanie.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 685.40 Tm (2. Skarbnik tworzy plan publiczny dla dofinansowania.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 673.80 Tm (3. U\277ytkownicy dodaj\271 przedmioty i pracuj\271 na listach zakup\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 662.20 Tm (4. Skarbnik zamyka listy zakup\363w.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 650.60 Tm (5. Skarbnik tworzy wniosek.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 639.00 Tm (6. System rezerwuje bud\277et i pozycje planu.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 627.40 Tm (7. Skarbnik finalizuje wniosek.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 615.80 Tm (8. System zapisuje snapshot i linie rozliczeniowe.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 604.20 Tm (9. Wniosek przechodzi do rozlicze\361.) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 592.60 Tm (10. Faktury zamykaj\271 rozliczenie.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 557.00 Tm (Dodanie przedmiotu) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 477.60 483.00 62.40 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 525.00 Tm (Student) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 513.40 Tm (   -> POST /api/items) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 501.80 Tm (   -> Item\(status = approved\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 490.20 Tm (   -> GET /api/items) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 464.60 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 446.40 Tm (- wymagane s\271 nazwa, cena, waluta, podkategoria i student,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 430.20 Tm (- przedmiot jest przypisany do sklepu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 414.00 Tm (- katalog pokazuje rekordy zaakceptowane,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 397.80 Tm (- skarbnik mo\277e dodatkowo zatwierdza\346 albo odrzuca\346 pozycje pending.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 367.60 Tm (Zg\263oszenie sklepu) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 276.60 483.00 74.00 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 335.60 Tm (Student) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 324.00 Tm (   -> POST /api/shops) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 312.40 Tm (   -> Shop\(status = pending\)) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 300.80 Tm (   -> Skarbnik) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 289.20 Tm (   -> PATCH approve albo DELETE reject) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 263.60 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 245.40 Tm (- nazwa sklepu jest wymagana,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 229.20 Tm (- pr\363g darmowej dostawy nie mo\277e by\346 ujemny,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 213.00 Tm (- nazwa i link nie mog\271 duplikowa\346 aktywnego sklepu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 196.80 Tm (- zaakceptowanego sklepu nie mo\277na odrzuci\346 endpointem reject.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 166.60 Tm (Dofinansowanie) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 98.80 483.00 50.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 134.60 Tm (ProjectBudget) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 123.00 Tm (   -> Funding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 111.40 Tm (   -> FundingTask*) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 85.80 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 707.00 Tm (1. Skarbnik zak\263ada dofinansowanie.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 690.80 Tm (2. Skarbnik tworzy plan publiczny dla dofinansowania.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 674.60 Tm (3. U\277ytkownicy dodaj\271 przedmioty i pracuj\271 na listach zakup\363w.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 658.40 Tm (4. Skarbnik zamyka listy zakup\363w.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 642.20 Tm (5. Skarbnik tworzy wniosek.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 626.00 Tm (6. System rezerwuje bud\277et i pozycje planu.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 609.80 Tm (7. Skarbnik finalizuje wniosek.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 593.60 Tm (8. System zapisuje snapshot i linie rozliczeniowe.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 577.40 Tm (9. Wniosek przechodzi do rozlicze\361.) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 561.20 Tm (10. Faktury zamykaj\271 rozliczenie.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 531.00 Tm (Dodanie przedmiotu) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 451.60 483.00 62.40 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 499.00 Tm (Student) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 487.40 Tm (   - POST /api/items) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 475.80 Tm (   - Item\(status = approved\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 464.20 Tm (   - GET /api/items) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 438.60 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 420.40 Tm (- wymagane s\271 nazwa, cena, waluta, podkategoria i student,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 404.20 Tm (- przedmiot jest przypisany do sklepu,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 388.00 Tm (- katalog pokazuje rekordy zaakceptowane,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 371.80 Tm (- skarbnik mo\277e dodatkowo zatwierdza\346 albo odrzuca\346 pozycje pending.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 341.60 Tm (Zg\263oszenie sklepu) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 250.60 483.00 74.00 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 309.60 Tm (Student) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 298.00 Tm (   - POST /api/shops) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 286.40 Tm (   - Shop\(status = pending\)) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 274.80 Tm (   - Skarbnik) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 263.20 Tm (   - PATCH approve albo DELETE reject) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 237.60 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 219.40 Tm (- nazwa sklepu jest wymagana,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 203.20 Tm (- pr\363g darmowej dostawy nie mo\277e by\346 ujemny,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 187.00 Tm (- nazwa i link nie mog\271 duplikowa\346 aktywnego sklepu,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 170.80 Tm (- zaakceptowanego sklepu nie mo\277na odrzuci\346 endpointem reject.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 140.60 Tm (Dofinansowanie) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (15/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (12/30) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Length 4449 >>
+stream
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 736.20 483.00 50.80 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (ProjectBudget) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (   - Funding) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 748.80 Tm (   - FundingTask*) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 723.20 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 705.00 Tm (- kwota dofinansowania musi by\346 dodatnia,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 688.80 Tm (- wymagane s\271 nazwa, organizator i osoba podpisuj\271ca,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 672.60 Tm (- suma zada\361 bud\277etowych nie mo\277e przekroczy\346 kwoty dofinansowania,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 656.40 Tm (- dofinansowanie dziedziczy project_id i association_budget_id z bud\277etu projektu.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 626.20 Tm (Plan zam\363wie\361 publicznych) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 558.40 483.00 50.80 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 594.20 Tm (Funding) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 582.60 Tm (   - PublicPurchasePlanList) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 571.00 Tm (   - PublicPurchasePlan*) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 545.40 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 527.20 Tm (- jedno dofinansowanie ma najwy\277ej jeden nag\263\363wek planu,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 511.00 Tm (- pozycja planu ma kod CPV i dodatni\271 kwot\352,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 494.80 Tm (- kod CPV powinien by\346 unikalny w ramach planu,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 478.60 Tm (- usuni\352cie pozycji jest blokowane, je\277eli pozycja jest u\277yta przez wniosek lub) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 464.40 Tm (koszyk.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 434.20 Tm (Lista zakup\363w) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 366.40 483.00 50.80 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 402.20 Tm (ShopPurchaseList) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 390.60 Tm (   - ShopPurchaseListItem) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 379.00 Tm (   - ShopPurchaseListItemContribution) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 353.40 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 335.20 Tm (- lista jest przypisana do sklepu, finansowania i studenta,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 319.00 Tm (- pozycja listy przechowuje ilo\234\346 \263\271czn\271,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 302.80 Tm (- contribution przechowuje ilo\234\346 dodan\271 przez konkretnego studenta,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 286.60 Tm (- zwyk\263y cz\263onek mo\277e usun\271\346 tylko sw\363j wk\263ad,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 270.40 Tm (- zamkni\352cie listy tworzy albo wi\271\277e Settlement.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 240.20 Tm (Wniosek) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 114.40 483.00 108.80 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 208.20 Tm (POST /api/create_purchase_requests) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 196.60 Tm (   |) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 185.00 Tm (   +-- walidacja bud\277etu projektu) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 173.40 Tm (   +-- walidacja dofinansowania) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 161.80 Tm (   +-- walidacja pozycji planu) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 150.20 Tm (   +-- zapis PurchaseRequest) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 138.60 Tm (   +-- zapis PurchaseRequestFundingAllocation) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 127.00 Tm (   +-- zapis PurchaseRequestPlanPosition) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 101.40 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 83.20 Tm (- funding_id musi nale\277e\346 do wskazanego project_budget_id,) Tj ET
+0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (13/30) Tj ET
+endstream
+endobj
+18 0 obj
+<< /Length 4626 >>
+stream
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (- kwota wniosku nie mo\277e przekroczy\346 dost\352pnych \234rodk\363w projektu,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 765.80 Tm (- kwota wniosku nie mo\277e przekroczy\346 dost\352pnych \234rodk\363w finansowania,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 749.60 Tm (- pozycja planu musi nale\277e\346 do finansowania u\277ytego we wniosku,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 733.40 Tm (- przekroczenie pozosta\263ej kwoty planu ustawia plan_compliance_status =) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 719.20 Tm (requires_approval,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 703.00 Tm (- status requires_approval wymaga uzasadnienia.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 672.80 Tm (Wniosek z zamkni\352tej listy) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 547.00 483.00 108.80 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 640.80 Tm (PATCH /api/lists/{id}/close) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 629.20 Tm (   - Settlement bez purchase_request_id) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 617.60 Tm (   - ShopPurchaseList.settlement_id) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 606.00 Tm () Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 594.40 Tm (POST /api/create_purchase_requests) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 582.80 Tm (   shop_purchase_list_id = id) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 571.20 Tm (   - PurchaseRequest) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 559.60 Tm (   - Settlement.purchase_request_id = request.id) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 534.00 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 515.80 Tm (- lista musi by\346 zamkni\352ta,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 499.60 Tm (- lista musi nale\277e\346 do tego samego skarbnika,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 483.40 Tm (- settlement listy nie mo\277e by\346 ju\277 powi\271zany z innym wnioskiem,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 467.20 Tm (- koszt wniosku jest liczony z pozycji listy.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 437.00 Tm (Finalizacja) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 299.60 483.00 120.40 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 405.00 Tm (prepare_finalization) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 393.40 Tm (   - can_add = False) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 381.80 Tm (   - finalization_status = prepared) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 370.20 Tm () Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 358.60 Tm (finalize) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 347.00 Tm (   - PurchaseRequestFinalizationSnapshot*) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 335.40 Tm (   - PurchaseRequestFundingAllocation*) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 323.80 Tm (   - PurchaseRequestSettlementLine*) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 312.20 Tm (   - finalization_status = accounting_pending) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 286.60 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 268.40 Tm (- wniosek musi mie\346 koszyki,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 252.20 Tm (- wniosek musi mie\346 pozycje CPV,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 236.00 Tm (- kurs euro musi by\346 dodatni,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 219.80 Tm (- nazwa dokumentu jest wymagana,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 203.60 Tm (- finalizacja zapisuje snapshot i warto\234ci ko\361cowe netto/brutto,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 187.40 Tm (- po finalizacji nie mo\277na dalej dodawa\346 pozycji do wniosku.) Tj ET
+0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 157.20 Tm (Rozliczenie) Tj ET
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 77.80 483.00 62.40 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 125.20 Tm (send_to_settlement) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 113.60 Tm (   - finalization_status = settlement) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 102.00 Tm (   - Settlement) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 90.40 Tm (   - Invoice*) Tj ET
+0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (14/30) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Length 1087 >>
+stream
+0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 747.80 483.00 39.20 re B
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 772.00 Tm (   - complete) Tj ET
+0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 760.40 Tm (   - finalization_status = settled) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 734.80 Tm (Regu\263y:) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 716.60 Tm (- do rozlicze\361 mo\277na przekaza\346 tylko zatwierdzony wniosek,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 700.40 Tm (- dodatkowe linie rozliczeniowe mo\277na doda\346 dopiero po przekazaniu do rozlicze\361,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 684.20 Tm (- zako\361czenie rozliczenia wymaga faktur,) Tj ET
+0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 668.00 Tm (- linie rozliczeniowe pokazuj\271 r\363\277nic\352 mi\352dzy kwot\271 planowan\271 i rzeczywist\271.) Tj ET
+0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (15/30) Tj ET
 endstream
 endobj
 20 0 obj
-<< /Length 4731 >>
-stream
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (- kwota dofinansowania musi by\346 dodatnia,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 765.80 Tm (- wymagane s\271 nazwa, organizator i osoba podpisuj\271ca,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 749.60 Tm (- suma zada\361 bud\277etowych nie mo\277e przekroczy\346 kwoty dofinansowania,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 733.40 Tm (- dofinansowanie dziedziczy project_id i association_budget_id z bud\277etu projektu.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 703.20 Tm (Plan zam\363wie\361 publicznych) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 635.40 483.00 50.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 671.20 Tm (Funding) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 659.60 Tm (   -> PublicPurchasePlanList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 648.00 Tm (   -> PublicPurchasePlan*) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 622.40 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 604.20 Tm (- jedno dofinansowanie ma najwy\277ej jeden nag\263\363wek planu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 588.00 Tm (- pozycja planu ma kod CPV i dodatni\271 kwot\352,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 571.80 Tm (- kod CPV powinien by\346 unikalny w ramach planu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 555.60 Tm (- usuni\352cie pozycji jest blokowane, je\277eli pozycja jest u\277yta przez wniosek lub) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 541.40 Tm (koszyk.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 511.20 Tm (Lista zakup\363w) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 443.40 483.00 50.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 479.20 Tm (ShopPurchaseList) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 467.60 Tm (   -> ShopPurchaseListItem) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 456.00 Tm (   -> ShopPurchaseListItemContribution) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 430.40 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 412.20 Tm (- lista jest przypisana do sklepu, finansowania i studenta,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 396.00 Tm (- pozycja listy przechowuje ilo\234\346 \263\271czn\271,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 379.80 Tm (- contribution przechowuje ilo\234\346 dodan\271 przez konkretnego studenta,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 363.60 Tm (- zwyk\263y cz\263onek mo\277e usun\271\346 tylko sw\363j wk\263ad,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 347.40 Tm (- zamkni\352cie listy tworzy albo wi\271\277e Settlement.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 317.20 Tm (Wniosek) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 191.40 483.00 108.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 285.20 Tm (POST /api/create_purchase_requests) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 273.60 Tm (   |) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 262.00 Tm (   +-- walidacja bud\277etu projektu) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 250.40 Tm (   +-- walidacja dofinansowania) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 238.80 Tm (   +-- walidacja pozycji planu) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 227.20 Tm (   +-- zapis PurchaseRequest) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 215.60 Tm (   +-- zapis PurchaseRequestFundingAllocation) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 204.00 Tm (   +-- zapis PurchaseRequestPlanPosition) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 178.40 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 160.20 Tm (- funding_id musi nale\277e\346 do wskazanego project_budget_id,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 144.00 Tm (- kwota wniosku nie mo\277e przekroczy\346 dost\352pnych \234rodk\363w projektu,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 127.80 Tm (- kwota wniosku nie mo\277e przekroczy\346 dost\352pnych \234rodk\363w finansowania,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 111.60 Tm (- pozycja planu musi nale\277e\346 do finansowania u\277ytego we wniosku,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 95.40 Tm (- przekroczenie pozosta\263ej kwoty planu ustawia plan_compliance_status =) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 92.00 81.20 Tm (requires_approval,) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (16/33) Tj ET
-endstream
-endobj
-21 0 obj
-<< /Length 4524 >>
-stream
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (- status requires_approval wymaga uzasadnienia.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 751.80 Tm (Wniosek z zamkni\352tej listy) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 626.00 483.00 108.80 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 719.80 Tm (PATCH /api/lists/{id}/close) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 708.20 Tm (   -> Settlement bez purchase_request_id) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 696.60 Tm (   -> ShopPurchaseList.settlement_id) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 685.00 Tm () Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 673.40 Tm (POST /api/create_purchase_requests) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 661.80 Tm (   shop_purchase_list_id = id) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 650.20 Tm (   -> PurchaseRequest) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 638.60 Tm (   -> Settlement.purchase_request_id = request.id) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 613.00 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 594.80 Tm (- lista musi by\346 zamkni\352ta,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 578.60 Tm (- lista musi nale\277e\346 do tego samego skarbnika,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 562.40 Tm (- settlement listy nie mo\277e by\346 ju\277 powi\271zany z innym wnioskiem,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 546.20 Tm (- koszt wniosku jest liczony z pozycji listy.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 516.00 Tm (Finalizacja) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 378.60 483.00 120.40 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 484.00 Tm (prepare_finalization) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 472.40 Tm (   -> can_add = False) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 460.80 Tm (   -> finalization_status = prepared) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 449.20 Tm () Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 437.60 Tm (finalize) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 426.00 Tm (   -> PurchaseRequestFinalizationSnapshot*) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 414.40 Tm (   -> PurchaseRequestFundingAllocation*) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 402.80 Tm (   -> PurchaseRequestSettlementLine*) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 391.20 Tm (   -> finalization_status = accounting_pending) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 365.60 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 347.40 Tm (- wniosek musi mie\346 koszyki,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 331.20 Tm (- wniosek musi mie\346 pozycje CPV,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 315.00 Tm (- kurs euro musi by\346 dodatni,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 298.80 Tm (- nazwa dokumentu jest wymagana,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 282.60 Tm (- finalizacja zapisuje snapshot i warto\234ci ko\361cowe netto/brutto,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 266.40 Tm (- po finalizacji nie mo\277na dalej dodawa\346 pozycji do wniosku.) Tj ET
-0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 236.20 Tm (Rozliczenie) Tj ET
-0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 133.60 483.00 85.60 re B
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 204.20 Tm (send_to_settlement) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 192.60 Tm (   -> finalization_status = settlement) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 181.00 Tm (   -> Settlement) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 169.40 Tm (   -> Invoice*) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 157.80 Tm (   -> complete) Tj ET
-0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 146.20 Tm (   -> finalization_status = settled) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 120.60 Tm (Regu\263y:) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 102.40 Tm (- do rozlicze\361 mo\277na przekaza\346 tylko zatwierdzony wniosek,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 86.20 Tm (- dodatkowe linie rozliczeniowe mo\277na doda\346 dopiero po przekazaniu do rozlicze\361,) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (17/33) Tj ET
-endstream
-endobj
-22 0 obj
-<< /Length 479 >>
-stream
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (- zako\361czenie rozliczenia wymaga faktur,) Tj ET
-0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 765.80 Tm (- linie rozliczeniowe pokazuj\271 r\363\277nic\352 mi\352dzy kwot\271 planowan\271 i rzeczywist\271.) Tj ET
-0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (18/33) Tj ET
-endstream
-endobj
-23 0 obj
 << /Length 3947 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (API backendu) Tj ET
@@ -799,10 +550,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 112.80 Tm (DELETE /api/items/{item_id}/reject Odrzuca przedmiot.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (19/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (16/30) Tj ET
 endstream
 endobj
-24 0 obj
+21 0 obj
 << /Length 4908 >>
 stream
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 772.00 Tm (Sklepy) Tj ET
@@ -845,10 +596,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 77.40 Tm (PUT /api/lists/{list_id}/items/{item_id} Aktualizuje ilo\234\346 pozycji.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (20/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (17/30) Tj ET
 endstream
 endobj
-25 0 obj
+22 0 obj
 << /Length 5060 >>
 stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (DELETE /api/lists/{list_id}/items/{item_id} Usuwa pozycj\352 albo wk\263ad u\277ytkownika.) Tj ET
@@ -892,10 +643,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 75.20 Tm (PATCH /api/settlements/{settlement_id}/status Zmienia status rozliczenia/faktur wed\263ug) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (21/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (18/30) Tj ET
 endstream
 endobj
-26 0 obj
+23 0 obj
 << /Length 1847 >>
 stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (logiki endpointu.) Tj ET
@@ -922,10 +673,10 @@ stream
 0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 468.40 Tm (arrived) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (22/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (19/30) Tj ET
 endstream
 endobj
-27 0 obj
+24 0 obj
 << /Length 3929 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Dokumentacja u\277ytkownika) Tj ET
@@ -967,10 +718,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 105.00 Tm (Status SAP jest informacyjny. Aplikacja nie \263\271czy si\352 z SAP.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (23/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (20/30) Tj ET
 endstream
 endobj
-28 0 obj
+25 0 obj
 << /Length 3812 >>
 stream
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 772.00 Tm (Panel g\263\363wny) Tj ET
@@ -1012,10 +763,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 85.80 Tm (Stany listy:) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (24/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (21/30) Tj ET
 endstream
 endobj
-29 0 obj
+26 0 obj
 << /Length 4038 >>
 stream
 0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 747.80 483.00 39.20 re B
@@ -1059,10 +810,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 102.20 Tm (Znaczenie kwot:) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (25/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (22/30) Tj ET
 endstream
 endobj
-30 0 obj
+27 0 obj
 << /Length 4141 >>
 stream
 0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 736.20 483.00 50.80 re B
@@ -1107,10 +858,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 76.80 Tm (2. Przypisz kwoty rzeczywiste do linii.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (26/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (23/30) Tj ET
 endstream
 endobj
-31 0 obj
+28 0 obj
 << /Length 643 >>
 stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (3. Zako\361cz rozliczenie.) Tj ET
@@ -1119,10 +870,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 715.60 Tm (rzeczywistych i r\363\277nic wzgl\352dem planu.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (27/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (24/30) Tj ET
 endstream
 endobj
-32 0 obj
+29 0 obj
 << /Length 3128 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Uruchomienie i testy) Tj ET
@@ -1163,10 +914,10 @@ stream
 0.08 0.12 0.20 rg BT /F3 8.1 Tf 1 0 0 1 66.00 128.00 Tm (npm run build) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (28/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (25/30) Tj ET
 endstream
 endobj
-33 0 obj
+30 0 obj
 << /Length 3855 >>
 stream
 0.12 0.18 0.30 rg BT /F2 15 Tf 1 0 0 1 56.00 772.00 Tm (Testy backendu) Tj ET
@@ -1206,10 +957,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 138.60 Tm (Dokumentacja jest generowana skryptem:) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (29/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (26/30) Tj ET
 endstream
 endobj
-34 0 obj
+31 0 obj
 << /Length 817 >>
 stream
 0.95 0.97 1.00 rg 0.82 0.87 0.94 RG 56.00 759.40 483.00 27.60 re B
@@ -1221,10 +972,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 681.00 Tm (Skrypt u\277ywa tylko standardowej biblioteki Pythona.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (30/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (27/30) Tj ET
 endstream
 endobj
-35 0 obj
+32 0 obj
 << /Length 4723 >>
 stream
 0.10 0.25 0.55 rg BT /F2 21 Tf 1 0 0 1 56.00 782.00 Tm (Utrzymanie i s\263ownik poj\352\346) Tj ET
@@ -1268,10 +1019,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 78.60 Tm (1. Utw\363rz dofinansowanie.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (31/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (28/30) Tj ET
 endstream
 endobj
-36 0 obj
+33 0 obj
 << /Length 4036 >>
 stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 72.00 782.00 Tm (2. Sprawd\237 bud\277et sekcji.) Tj ET
@@ -1315,10 +1066,10 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 79.00 Tm (Wk\263ad u\277ytkownika ShopPurchaseListItemContribution.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (32/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (29/30) Tj ET
 endstream
 endobj
-37 0 obj
+34 0 obj
 << /Length 934 >>
 stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 782.00 Tm (Wniosek PurchaseRequest.) Tj ET
@@ -1330,116 +1081,107 @@ stream
 0.08 0.12 0.20 rg BT /F1 10.2 Tf 1 0 0 1 56.00 672.80 Tm (Linia rozliczeniowa PurchaseRequestSettlementLine.) Tj ET
 0.55 0.60 0.68 RG 0.55 w 56 42 m 539 42 l S
 0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 56.00 28.00 Tm (BudgetFlowFusion - dokumentacja) Tj ET
-0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (33/33) Tj ET
+0.35 0.40 0.48 rg BT /F1 8 Tf 1 0 0 1 500.00 28.00 Tm (30/30) Tj ET
 endstream
 endobj
+35 0 obj
+<< /Type /Pages /Kids [36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R] /Count 30 >>
+endobj
+36 0 obj
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 5 0 R >>
+endobj
+37 0 obj
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 6 0 R >>
+endobj
 38 0 obj
-<< /Type /Pages /Kids [39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R 66 0 R 67 0 R 68 0 R 69 0 R 70 0 R 71 0 R] /Count 33 >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 7 0 R >>
 endobj
 39 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 5 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 8 0 R >>
 endobj
 40 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 6 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 9 0 R >>
 endobj
 41 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 7 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 10 0 R >>
 endobj
 42 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 8 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 11 0 R >>
 endobj
 43 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 9 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 12 0 R >>
 endobj
 44 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 10 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 13 0 R >>
 endobj
 45 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 11 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 14 0 R >>
 endobj
 46 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 12 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 15 0 R >>
 endobj
 47 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 13 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 16 0 R >>
 endobj
 48 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 14 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 17 0 R >>
 endobj
 49 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 15 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 18 0 R >>
 endobj
 50 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 16 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 19 0 R >>
 endobj
 51 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 17 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 20 0 R >>
 endobj
 52 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 18 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 21 0 R >>
 endobj
 53 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 19 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 22 0 R >>
 endobj
 54 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 20 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 23 0 R >>
 endobj
 55 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 21 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 24 0 R >>
 endobj
 56 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 22 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 25 0 R >>
 endobj
 57 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 23 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 26 0 R >>
 endobj
 58 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 24 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 27 0 R >>
 endobj
 59 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 25 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 28 0 R >>
 endobj
 60 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 26 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 29 0 R >>
 endobj
 61 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 27 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 30 0 R >>
 endobj
 62 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 28 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 31 0 R >>
 endobj
 63 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 29 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 32 0 R >>
 endobj
 64 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 30 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 33 0 R >>
 endobj
 65 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 31 0 R >>
+<< /Type /Page /Parent 35 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 34 0 R >>
 endobj
 66 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 32 0 R >>
-endobj
-67 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 33 0 R >>
-endobj
-68 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 34 0 R >>
-endobj
-69 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 35 0 R >>
-endobj
-70 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 36 0 R >>
-endobj
-71 0 obj
-<< /Type /Page /Parent 38 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R /F3 4 0 R >> >> /Contents 37 0 R >>
-endobj
-72 0 obj
-<< /Type /Catalog /Pages 38 0 R >>
+<< /Type /Catalog /Pages 35 0 R >>
 endobj
 xref
-0 73
+0 67
 0000000000 65535 f 
 0000000015 00000 n 
 0000000326 00000 n 
@@ -1450,71 +1192,65 @@ xref
 0000003029 00000 n 
 0000003524 00000 n 
 0000008413 00000 n 
-0000013068 00000 n 
-0000017937 00000 n 
-0000020619 00000 n 
-0000025791 00000 n 
-0000030391 00000 n 
-0000034022 00000 n 
-0000039618 00000 n 
-0000044920 00000 n 
-0000049864 00000 n 
-0000054260 00000 n 
-0000058510 00000 n 
-0000063294 00000 n 
-0000067871 00000 n 
-0000068402 00000 n 
-0000072402 00000 n 
-0000077363 00000 n 
-0000082476 00000 n 
-0000084376 00000 n 
-0000088358 00000 n 
-0000092223 00000 n 
-0000096314 00000 n 
-0000100508 00000 n 
-0000101203 00000 n 
-0000104384 00000 n 
-0000108292 00000 n 
-0000109161 00000 n 
-0000113937 00000 n 
-0000118026 00000 n 
-0000119012 00000 n 
-0000119296 00000 n 
-0000119444 00000 n 
-0000119592 00000 n 
-0000119740 00000 n 
-0000119888 00000 n 
-0000120036 00000 n 
-0000120185 00000 n 
-0000120334 00000 n 
-0000120483 00000 n 
-0000120632 00000 n 
-0000120781 00000 n 
-0000120930 00000 n 
-0000121079 00000 n 
-0000121228 00000 n 
-0000121377 00000 n 
-0000121526 00000 n 
-0000121675 00000 n 
-0000121824 00000 n 
-0000121973 00000 n 
-0000122122 00000 n 
-0000122271 00000 n 
-0000122420 00000 n 
-0000122569 00000 n 
-0000122718 00000 n 
-0000122867 00000 n 
-0000123016 00000 n 
-0000123165 00000 n 
-0000123314 00000 n 
-0000123463 00000 n 
-0000123612 00000 n 
-0000123761 00000 n 
-0000123910 00000 n 
-0000124059 00000 n 
-0000124208 00000 n 
+0000013013 00000 n 
+0000018282 00000 n 
+0000018664 00000 n 
+0000023028 00000 n 
+0000027869 00000 n 
+0000030122 00000 n 
+0000030632 00000 n 
+0000034437 00000 n 
+0000038939 00000 n 
+0000043618 00000 n 
+0000044758 00000 n 
+0000048758 00000 n 
+0000053719 00000 n 
+0000058832 00000 n 
+0000060732 00000 n 
+0000064714 00000 n 
+0000068579 00000 n 
+0000072670 00000 n 
+0000076864 00000 n 
+0000077559 00000 n 
+0000080740 00000 n 
+0000084648 00000 n 
+0000085517 00000 n 
+0000090293 00000 n 
+0000094382 00000 n 
+0000095368 00000 n 
+0000095631 00000 n 
+0000095779 00000 n 
+0000095927 00000 n 
+0000096075 00000 n 
+0000096223 00000 n 
+0000096371 00000 n 
+0000096520 00000 n 
+0000096669 00000 n 
+0000096818 00000 n 
+0000096967 00000 n 
+0000097116 00000 n 
+0000097265 00000 n 
+0000097414 00000 n 
+0000097563 00000 n 
+0000097712 00000 n 
+0000097861 00000 n 
+0000098010 00000 n 
+0000098159 00000 n 
+0000098308 00000 n 
+0000098457 00000 n 
+0000098606 00000 n 
+0000098755 00000 n 
+0000098904 00000 n 
+0000099053 00000 n 
+0000099202 00000 n 
+0000099351 00000 n 
+0000099500 00000 n 
+0000099649 00000 n 
+0000099798 00000 n 
+0000099947 00000 n 
+0000100096 00000 n 
 trailer
-<< /Size 73 /Root 72 0 R >>
+<< /Size 67 /Root 66 0 R >>
 startxref
-124259
+100147
 %%EOF

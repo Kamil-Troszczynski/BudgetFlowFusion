@@ -39,37 +39,12 @@ Aktorzy
 
 .. code-block:: text
 
-   +-------------------+----------------------------------------------+
-   | Aktor             | Odpowiedzialność                             |
-   +===================+==============================================+
-   | Członek koła      | przedmioty, sklepy, wkład do list zakupów    |
-   | Skarbnik          | budżety, finansowania, plany, wnioski        |
-   | Obsługa rozliczeń | faktury, statusy, kwoty rzeczywiste          |
-   +-------------------+----------------------------------------------+
+Członek koła: przedmioty, sklepy, wkład do list zakupów
+Skarbnik: budżety, finansowania, plany, wnioski
+Obsługa rozliczeń: faktury, statusy, kwoty rzeczywiste
 
 Obsługa rozliczeń nie jest osobnym typem konta w modelu. Jej czynności
 są realizowane przez moduł ``Settlement`` i ``Invoice``.
-
-Model ról
----------
-
-.. code-block:: text
-
-   Student
-      |
-      | project_finance_manager_id IS NULL
-      v
-   zwykły członek
-
-   Student
-      |
-      | project_finance_manager_id -> ProjectFinanceManager
-      v
-   skarbnik
-
-Frontend ukrywa funkcje zależnie od roli. Backend dodatkowo sprawdza
-część operacji skarbnika, np. zarządzanie kategoriami, sklepami i
-finansami.
 
 Wymagania funkcjonalne
 ----------------------

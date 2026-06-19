@@ -137,27 +137,9 @@
 <p>Aplikacja ma pilnować:</p>
 <ul><li>dostępności środków,</li><li>zgodności wniosku z pozycją CPV,</li><li>wykorzystania planu publicznego,</li><li>powiązania koszyków z wnioskiem,</li><li>historii finalizacji,</li><li>statusów faktur i rozliczeń.</li></ul>
 <h2 id="aktorzy">Aktorzy</h2>
-<pre><code>+-------------------+----------------------------------------------+
-| Aktor             | Odpowiedzialność                             |
-+===================+==============================================+
-| Członek koła      | przedmioty, sklepy, wkład do list zakupów    |
-| Skarbnik          | budżety, finansowania, plany, wnioski        |
-| Obsługa rozliczeń | faktury, statusy, kwoty rzeczywiste          |
-+-------------------+----------------------------------------------+</code></pre>
+<pre><code></code></pre>
+<p>Członek koła: przedmioty, sklepy, wkład do list zakupów Skarbnik: budżety, finansowania, plany, wnioski Obsługa rozliczeń: faktury, statusy, kwoty rzeczywiste</p>
 <p>Obsługa rozliczeń nie jest osobnym typem konta w modelu. Jej czynności są realizowane przez moduł <code>Settlement</code> i <code>Invoice</code>.</p>
-<h2 id="model-rol">Model ról</h2>
-<pre><code>Student
-   |
-   | project_finance_manager_id IS NULL
-   v
-zwykły członek
-
-Student
-   |
-   | project_finance_manager_id -&gt; ProjectFinanceManager
-   v
-skarbnik</code></pre>
-<p>Frontend ukrywa funkcje zależnie od roli. Backend dodatkowo sprawdza część operacji skarbnika, np. zarządzanie kategoriami, sklepami i finansami.</p>
 <h2 id="wymagania-funkcjonalne">Wymagania funkcjonalne</h2>
 <p>RF-01. Użytkownik może się zarejestrować i zalogować.</p>
 <p>RF-02. System rozróżnia zwykłego członka i skarbnika.</p>
@@ -191,24 +173,10 @@ skarbnik</code></pre>
 <ul><li>podwójne liczenie kwot z dofinansowań i wniosków,</li><li>niespójność planu CPV po edycji lub usunięciu pozycji,</li><li>brak pełnej autoryzacji backendowej dla każdej operacji finansowej,</li><li>różnice między PostgreSQL runtime i SQLite w testach,</li><li>logika biznesowa umieszczona bezpośrednio w endpointach.</li></ul></section>
 <section class="doc-section" id="architektura-systemu"><h1 id="architektura-systemu">Architektura systemu</h1>
 <h2 id="widok-warstwowy">Widok warstwowy</h2>
-<pre><code>+--------------------------------------------------+
-| Przeglądarka                                     |
-| Vue 3, Vue Router, komponenty .vue               |
-+-------------------------+------------------------+
-                          |
-                          | HTTP REST / JSON
-                          v
-+--------------------------------------------------+
-| Backend FastAPI                                  |
-| endpointy, walidacja Pydantic, logika domenowa   |
-+-------------------------+------------------------+
-                          |
-                          | SQLModel / SQLAlchemy
-                          v
-+--------------------------------------------------+
-| PostgreSQL                                       |
-| tabele tworzone z modeli SQLModel + migracja     |
-+--------------------------------------------------+</code></pre>
+<pre><code></code></pre>
+<ul><li>Przeglądarka (Vue 3, Vue Router, komponenty .vue)</li></ul>
+<ul><li>Backend FastAPI (endpointy, walidacja Pydantic, logika domenowa)</li></ul>
+<ul><li>PostgreSQL</li></ul>
 <h2 id="backend">Backend</h2>
 <p>Katalog: <code>backend</code>.</p>
 <p>Najważniejsze pliki:</p>
@@ -250,23 +218,7 @@ skarbnik</code></pre>
 <p>Główne widoki:</p>
 <ul><li><code>HomePage.vue</code> - panel użytkownika i dashboard,</li><li><code>AddedItems.vue</code> - katalog przedmiotów,</li><li><code>AddedShopPurchaseLists.vue</code> i <code>ShopPurchaseListDetails.vue</code> - listy zakupów,</li><li><code>PublicPurchasePlans.vue</code> - dofinansowania, budżety i plany,</li><li><code>PurchaseRequest.vue</code> - wnioski,</li><li><code>Settlement.vue</code> - rozliczenia i faktury,</li><li><code>Shops.vue</code> - sklepy.</li></ul>
 <h2 id="przepyw-requestu">Przepływ requestu</h2>
-<pre><code>komponent Vue
-   |
-   | fetch(&quot;http://localhost:8080/api/...&quot;)
-   v
-endpoint FastAPI
-   |
-   | Pydantic BaseModel / query params
-   v
-Session(engine)
-   |
-   | select / get / add / delete / commit
-   v
-PostgreSQL
-   |
-   | response_model albo dict
-   v
-JSON w przeglądarce</code></pre>
+<p>Dane w aplikacji przepływają od komponentu Vue, który wysyła żądanie HTTP do endpointu FastAPI. Endpoint odbiera parametry zapytania lub dane wejściowe zdefiniowane za pomocą modeli Pydantic (BaseModel). Następnie, przy użyciu sesji SQLAlchemy (Session(engine)), wykonywane są operacje na bazie danych PostgreSQL, takie jak pobieranie (select, get), dodawanie (add), usuwanie (delete) oraz zatwierdzanie zmian (commit). Po przetworzeniu danych FastAPI zwraca odpowiedź w postaci obiektu zgodnego z response_model lub słownika (dict), która jest automatycznie serializowana do formatu JSON i odbierana przez przeglądarkę w aplikacji Vue.</p>
 <h2 id="konfiguracja-srodowiska">Konfiguracja środowiska</h2>
 <p>Backend wymaga <code>DATABASE_URL</code>. W <code>docker-compose.yml</code> baza jest dostępna dla backendu jako:</p>
 <pre><code>postgresql://budgetflowfusion:budgetflowfusion@db:5432/budgetflowfusion</code></pre>
@@ -280,195 +232,41 @@ JSON w przeglądarce</code></pre>
 <h2 id="ograniczenia-architektury">Ograniczenia architektury</h2>
 <ul><li>Brak oddzielnej warstwy serwisowej: logika domenowa znajduje się w trasach.</li><li>Autoryzacja jest uproszczona: frontend przechowuje użytkownika w <code>localStorage</code>, a backend często przyjmuje identyfikatory w payloadzie lub query string.</li><li>Część endpointów zwraca modele SQLModel bez dedykowanego DTO.</li><li>Testy używają SQLite, a runtime używa PostgreSQL.</li></ul></section>
 <section class="doc-section" id="model-danych"><h1 id="model-danych">Model danych</h1>
-<h2 id="zrodo-modelu">Źródło modelu</h2>
-<p>Model bazodanowy jest zdefiniowany w <code>backend/src/relations.py</code> jako klasy <code>SQLModel</code>. Tabele są tworzone przez <code>SQLModel.metadata.create_all(engine)</code>. Dodatkowe zmiany dla istniejącej bazy PostgreSQL są wykonywane w <code>migrate_project_budgets()</code>.</p>
-<h2 id="legenda-diagramow">Legenda diagramów</h2>
-<pre><code>PK   klucz główny
-FK   klucz obcy
-1    dokładnie jeden
-0..1 zero albo jeden
-*    wiele</code></pre>
-<h2 id="diagram-gownych-encji">Diagram głównych encji</h2>
-<pre><code>+-------------+ 1     * +---------+
-| Association |---------| Student |
-| PK id       |         | PK id   |
-+------+------+         +----+----+
-       | 1                   | 0..1
-       |                     v
-       |              +-----------------------+
-       |              | ProjectFinanceManager |
-       |              | PK id                 |
-       |              +-----------+-----------+
-       |                          |
-       | 1                        | *
-       v                          v
-+---------+ 1   1 +---------------+ 1   * +---------+
-| Project |-------| ProjectBudget |-------| Funding |
-| PK id   |       | PK id         |       | PK id   |
-+----+----+       +-------+-------+       +----+----+
-     |                    |                    |
-     |                    | *                  | 1
-     |                    v                    v 0..1
-     |          +-------------------+   +------------------------+
-     |          | AssociationBudget |   | PublicPurchasePlanList |
-     |          | PK id             |   | PK id                  |
-     |          +-------------------+   +-----------+------------+
-     |                                           | 1
-     |                                           | *
-     |                                           v
-     |                                  +--------------------+
-     |                                  | PublicPurchasePlan |
-     |                                  | PK id, cpv_code    |
-     |                                  +--------------------+</code></pre>
-<h2 id="opis-gownych-encji-organizacyjno-finansowych">Opis głównych encji organizacyjno-finansowych</h2>
-<p><code>Association</code> Koło naukowe. Grupuje studentów i projekty.</p>
-<p><code>Student</code> Konto użytkownika. Przechowuje dane osobowe, login, hash hasła, przynależność do koła i opcjonalne powiązanie ze skarbnikiem.</p>
-<p><code>ProjectFinanceManager</code> Konto/rola skarbnika. Powiązanie ze studentem nadaje uprawnienia skarbnika.</p>
-<p><code>Project</code> Sekcja lub projekt koła. Należy do <code>Association</code>.</p>
-<p><code>ProjectBudget</code> Budżet projektu. Ma relację 1:1 z <code>Project</code> i należy do <code>AssociationBudget</code>.</p>
-<p><code>AssociationBudget</code> Budżet koła. Grupuje budżety projektów i dofinansowania.</p>
-<p><code>Funding</code> Dofinansowanie. Należy do budżetu projektu i budżetu koła. Jest głównym źródłem pieniędzy dla list zakupów, planów i wniosków.</p>
-<p><code>FundingTask</code> Zadanie budżetowe w ramach dofinansowania. Suma zadań nie może przekraczać kwoty dofinansowania.</p>
-<h2 id="diagram-planu-publicznego-i-wniosku">Diagram planu publicznego i wniosku</h2>
-<pre><code>Funding
-   | 1
-   | 0..1
-   v
-PublicPurchasePlanList
-   | 1
-   | *
-   v
-PublicPurchasePlan
-   ^
-   | *
-   | przez PurchaseRequestPlanPosition
-   |
-PurchaseRequest
-   |
-   | * przez PurchaseRequestFundingAllocation
-   v
-Funding
-
-PurchaseRequest
-   |
-   +-- PurchaseRequestFinalizationSnapshot
-   +-- PurchaseRequestSettlementLine
-   +-- Settlement</code></pre>
-<h2 id="opis-encji-planu-i-wniosku">Opis encji planu i wniosku</h2>
-<p><code>PublicPurchasePlanList</code> Nagłówek planu publicznego. Ma rok, numer planu, osobę odpowiedzialną, kurs euro i relację 1:1 z <code>Funding</code>.</p>
-<p><code>PublicPurchasePlan</code> Pozycja planu publicznego. Przechowuje nazwę, kod CPV, numer pozycji i planowaną kwotę.</p>
-<p><code>PurchaseRequest</code> Wniosek o zamówienie. Łączy budżet projektu, dofinansowanie, pozycje planu, grupę list zakupów, status finalizacji i dane dokumentowe.</p>
-<p><code>PurchaseRequestFundingAllocation</code> Tabela asocjacyjna <code>PurchaseRequest</code> -&gt; <code>Funding</code> z kwotą <code>allocated_amount</code>. Pozwala podzielić wniosek między wiele źródeł finansowania.</p>
-<p><code>PurchaseRequestPlanPosition</code> Tabela asocjacyjna <code>PurchaseRequest</code> -&gt; <code>ShopPurchaseList</code> -&gt; <code>PublicPurchasePlan</code> z kwotą wykorzystania pozycji planu.</p>
-<p><code>PurchaseRequestFinalizationSnapshot</code> Historyczny zapis danych finalizacji. Przechowuje kopie nazw, numerów, CPV i kwot użytych w dokumencie.</p>
-<p><code>PurchaseRequestSettlementLine</code> Linia rozliczeniowa wniosku. Zawiera planowaną i rzeczywistą kwotę brutto oraz opcjonalne powiązanie z fakturą.</p>
-<h2 id="diagram-list-zakupow">Diagram list zakupów</h2>
-<pre><code>GroupedShopsListByCpvCategoryAndFunding
-   | 1
-   | *
-   v
-ShopPurchaseList
-   | *                         * |
-   | przez ShopPurchaseListItem  |
-   v                            v
-Item                         Student
-   ^                            ^
-   |                            |
-   +-- ShopPurchaseListItemContribution</code></pre>
-<h2 id="opis-encji-zakupowych">Opis encji zakupowych</h2>
-<p><code>GroupedShopsListByCpvCategoryAndFunding</code> Grupa koszyków zakupowych. Łączy listy z tym samym kontekstem CPV i finansowania.</p>
-<p><code>ShopPurchaseList</code> Koszyk dla jednego sklepu. Ma koszt, priorytet, datę utworzenia, finansowanie, sklep, właściciela-studenta i opcjonalne rozliczenie.</p>
-<p><code>ShopPurchaseListItem</code> Pozycja koszyka. Kluczem jest para <code>shop_purchase_list_id</code> i <code>item_id</code>. Pole <code>amount</code> zawiera łączną ilość.</p>
-<p><code>ShopPurchaseListItemContribution</code> Wkład konkretnego studenta w pozycję koszyka. Kluczem jest lista, przedmiot i student.</p>
-<p><code>Item</code> Przedmiot w katalogu. Ma cenę, walutę, link, stawkę VAT, status, podkategorię, autora i sklep.</p>
-<p><code>Shop</code> Sklep. Ma nazwę, link, opinię, status, próg darmowej dostawy i listy zakupów.</p>
-<p><code>ProductCategory</code> Kategoria produktu z kodem CPV.</p>
-<p><code>ProductSubcategory</code> Podkategoria produktu. Może być pending, gdy nie ma przypisanej kategorii.</p>
-<h2 id="diagram-rozliczen">Diagram rozliczeń</h2>
-<pre><code>PurchaseRequest 0..1
-   |
-   v
-Settlement
-   | 1
-   | *
-   v
-Invoice
-
-Settlement
-   |
-   +-- ShopPurchaseList
-   +-- PurchaseRequestSettlementLine</code></pre>
-<h2 id="opis-encji-rozliczeniowych">Opis encji rozliczeniowych</h2>
-<p><code>Settlement</code> Rozliczenie. Może być powiązane z wnioskiem i skarbnikiem, który opłaca rozliczenie.</p>
-<p><code>Invoice</code> Faktura. Zawiera numer, datę wystawienia, sprzedawcę, NIP, kwoty netto i VAT, status oraz powiązanie z rozliczeniem.</p>
-<h2 id="enumy">Enumy</h2>
-<p><code>Currency</code> <code>PLN</code>, <code>EUR</code>, <code>USD</code>.</p>
-<p><code>InvoiceStatus</code> <code>pending</code>, <code>accepted</code>, <code>rejected</code>, <code>paid</code>, <code>returned</code>, <code>arrived</code>.</p>
-<p><code>ItemStatus</code> <code>draft</code>, <code>pending</code>, <code>approved</code>, <code>rejected</code>.</p>
-<h2 id="najwazniejsze-relacje">Najważniejsze relacje</h2>
-<pre><code>Association 1..* Student
-Association 1..* Project
-Project 1..1 ProjectBudget
-AssociationBudget 1..* ProjectBudget
-ProjectBudget 1..* Funding
-Funding 1..0..1 PublicPurchasePlanList
-PublicPurchasePlanList 1..* PublicPurchasePlan
-Funding 1..* ShopPurchaseList
-Shop 1..* ShopPurchaseList
-Student 1..* ShopPurchaseList
-ProductCategory 1..* ProductSubcategory
-ProductSubcategory 1..* Item
-ShopPurchaseList *..* Item przez ShopPurchaseListItem
-PurchaseRequest *..* Funding przez PurchaseRequestFundingAllocation
-PurchaseRequest *..* PublicPurchasePlan przez PurchaseRequestPlanPosition
-PurchaseRequest 1..* PurchaseRequestFinalizationSnapshot
-PurchaseRequest 1..* PurchaseRequestSettlementLine
-Settlement 1..* Invoice</code></pre>
-<h2 id="reguy-spojnosci-danych">Reguły spójności danych</h2>
-<ul><li>Jedno dofinansowanie może mieć najwyżej jeden plan publiczny.</li><li>Pozycje planu muszą mieć dodatni koszt.</li><li>Kod CPV powinien być tekstem, nie liczbą.</li><li>Pozycja planu nie powinna być usuwana, jeśli jest użyta przez listę lub wniosek.</li><li>Wniosek musi wskazywać budżet projektu i finansowanie.</li><li>Alokacja planu musi należeć do finansowania użytego we wniosku.</li><li>Finalizacja ustawia <code>can_add = False</code> i zapisuje snapshot.</li><li>Rozliczenie zakończone wymaga faktur.</li></ul></section>
+<p>Model danych dostępny jest w README.md w formacie mermaid.</p></section>
 <section class="doc-section" id="procesy-biznesowe"><h1 id="procesy-biznesowe">Procesy biznesowe</h1>
 <h2 id="proces-bazowy">Proces bazowy</h2>
-<pre><code>1. Skarbnik zakłada dofinansowanie.
-2. Skarbnik tworzy plan publiczny dla dofinansowania.
-3. Użytkownicy dodają przedmioty i pracują na listach zakupów.
-4. Skarbnik zamyka listy zakupów.
-5. Skarbnik tworzy wniosek.
-6. System rezerwuje budżet i pozycje planu.
-7. Skarbnik finalizuje wniosek.
-8. System zapisuje snapshot i linie rozliczeniowe.
-9. Wniosek przechodzi do rozliczeń.
-10. Faktury zamykają rozliczenie.</code></pre>
+<ol><li>Skarbnik zakłada dofinansowanie.</li><li>Skarbnik tworzy plan publiczny dla dofinansowania.</li><li>Użytkownicy dodają przedmioty i pracują na listach zakupów.</li><li>Skarbnik zamyka listy zakupów.</li><li>Skarbnik tworzy wniosek.</li><li>System rezerwuje budżet i pozycje planu.</li><li>Skarbnik finalizuje wniosek.</li><li>System zapisuje snapshot i linie rozliczeniowe.</li><li>Wniosek przechodzi do rozliczeń.</li><li>Faktury zamykają rozliczenie.</li></ol>
 <h2 id="dodanie-przedmiotu">Dodanie przedmiotu</h2>
 <pre><code>Student
-   -&gt; POST /api/items
-   -&gt; Item(status = approved)
-   -&gt; GET /api/items</code></pre>
+   - POST /api/items
+   - Item(status = approved)
+   - GET /api/items</code></pre>
 <p>Reguły:</p>
 <ul><li>wymagane są nazwa, cena, waluta, podkategoria i student,</li><li>przedmiot jest przypisany do sklepu,</li><li>katalog pokazuje rekordy zaakceptowane,</li><li>skarbnik może dodatkowo zatwierdzać albo odrzucać pozycje pending.</li></ul>
 <h2 id="zgoszenie-sklepu">Zgłoszenie sklepu</h2>
 <pre><code>Student
-   -&gt; POST /api/shops
-   -&gt; Shop(status = pending)
-   -&gt; Skarbnik
-   -&gt; PATCH approve albo DELETE reject</code></pre>
+   - POST /api/shops
+   - Shop(status = pending)
+   - Skarbnik
+   - PATCH approve albo DELETE reject</code></pre>
 <p>Reguły:</p>
 <ul><li>nazwa sklepu jest wymagana,</li><li>próg darmowej dostawy nie może być ujemny,</li><li>nazwa i link nie mogą duplikować aktywnego sklepu,</li><li>zaakceptowanego sklepu nie można odrzucić endpointem reject.</li></ul>
 <h2 id="dofinansowanie">Dofinansowanie</h2>
 <pre><code>ProjectBudget
-   -&gt; Funding
-   -&gt; FundingTask*</code></pre>
+   - Funding
+   - FundingTask*</code></pre>
 <p>Reguły:</p>
 <ul><li>kwota dofinansowania musi być dodatnia,</li><li>wymagane są nazwa, organizator i osoba podpisująca,</li><li>suma zadań budżetowych nie może przekroczyć kwoty dofinansowania,</li><li>dofinansowanie dziedziczy <code>project_id</code> i <code>association_budget_id</code> z budżetu projektu.</li></ul>
 <h2 id="plan-zamowien-publicznych">Plan zamówień publicznych</h2>
 <pre><code>Funding
-   -&gt; PublicPurchasePlanList
-   -&gt; PublicPurchasePlan*</code></pre>
+   - PublicPurchasePlanList
+   - PublicPurchasePlan*</code></pre>
 <p>Reguły:</p>
 <ul><li>jedno dofinansowanie ma najwyżej jeden nagłówek planu,</li><li>pozycja planu ma kod CPV i dodatnią kwotę,</li><li>kod CPV powinien być unikalny w ramach planu,</li><li>usunięcie pozycji jest blokowane, jeżeli pozycja jest użyta przez wniosek lub koszyk.</li></ul>
 <h2 id="lista-zakupow">Lista zakupów</h2>
 <pre><code>ShopPurchaseList
-   -&gt; ShopPurchaseListItem
-   -&gt; ShopPurchaseListItemContribution</code></pre>
+   - ShopPurchaseListItem
+   - ShopPurchaseListItemContribution</code></pre>
 <p>Reguły:</p>
 <ul><li>lista jest przypisana do sklepu, finansowania i studenta,</li><li>pozycja listy przechowuje ilość łączną,</li><li>contribution przechowuje ilość dodaną przez konkretnego studenta,</li><li>zwykły członek może usunąć tylko swój wkład,</li><li>zamknięcie listy tworzy albo wiąże <code>Settlement</code>.</li></ul>
 <h2 id="wniosek">Wniosek</h2>
@@ -484,34 +282,34 @@ Settlement 1..* Invoice</code></pre>
 <ul><li><code>funding_id</code> musi należeć do wskazanego <code>project_budget_id</code>,</li><li>kwota wniosku nie może przekroczyć dostępnych środków projektu,</li><li>kwota wniosku nie może przekroczyć dostępnych środków finansowania,</li><li>pozycja planu musi należeć do finansowania użytego we wniosku,</li><li>przekroczenie pozostałej kwoty planu ustawia <code>plan_compliance_status = requires_approval</code>,</li><li>status <code>requires_approval</code> wymaga uzasadnienia.</li></ul>
 <h2 id="wniosek-z-zamknietej-listy">Wniosek z zamkniętej listy</h2>
 <pre><code>PATCH /api/lists/{id}/close
-   -&gt; Settlement bez purchase_request_id
-   -&gt; ShopPurchaseList.settlement_id
+   - Settlement bez purchase_request_id
+   - ShopPurchaseList.settlement_id
 
 POST /api/create_purchase_requests
    shop_purchase_list_id = id
-   -&gt; PurchaseRequest
-   -&gt; Settlement.purchase_request_id = request.id</code></pre>
+   - PurchaseRequest
+   - Settlement.purchase_request_id = request.id</code></pre>
 <p>Reguły:</p>
 <ul><li>lista musi być zamknięta,</li><li>lista musi należeć do tego samego skarbnika,</li><li>settlement listy nie może być już powiązany z innym wnioskiem,</li><li>koszt wniosku jest liczony z pozycji listy.</li></ul>
 <h2 id="finalizacja">Finalizacja</h2>
 <pre><code>prepare_finalization
-   -&gt; can_add = False
-   -&gt; finalization_status = prepared
+   - can_add = False
+   - finalization_status = prepared
 
 finalize
-   -&gt; PurchaseRequestFinalizationSnapshot*
-   -&gt; PurchaseRequestFundingAllocation*
-   -&gt; PurchaseRequestSettlementLine*
-   -&gt; finalization_status = accounting_pending</code></pre>
+   - PurchaseRequestFinalizationSnapshot*
+   - PurchaseRequestFundingAllocation*
+   - PurchaseRequestSettlementLine*
+   - finalization_status = accounting_pending</code></pre>
 <p>Reguły:</p>
 <ul><li>wniosek musi mieć koszyki,</li><li>wniosek musi mieć pozycje CPV,</li><li>kurs euro musi być dodatni,</li><li>nazwa dokumentu jest wymagana,</li><li>finalizacja zapisuje snapshot i wartości końcowe netto/brutto,</li><li>po finalizacji nie można dalej dodawać pozycji do wniosku.</li></ul>
 <h2 id="rozliczenie">Rozliczenie</h2>
 <pre><code>send_to_settlement
-   -&gt; finalization_status = settlement
-   -&gt; Settlement
-   -&gt; Invoice*
-   -&gt; complete
-   -&gt; finalization_status = settled</code></pre>
+   - finalization_status = settlement
+   - Settlement
+   - Invoice*
+   - complete
+   - finalization_status = settled</code></pre>
 <p>Reguły:</p>
 <ul><li>do rozliczeń można przekazać tylko zatwierdzony wniosek,</li><li>dodatkowe linie rozliczeniowe można dodać dopiero po przekazaniu do rozliczeń,</li><li>zakończenie rozliczenia wymaga faktur,</li><li>linie rozliczeniowe pokazują różnicę między kwotą planowaną i rzeczywistą.</li></ul></section>
 <section class="doc-section" id="api-backendu"><h1 id="api-backendu">API backendu</h1>

@@ -4,18 +4,16 @@ Procesy biznesowe
 Proces bazowy
 -------------
 
-.. code-block:: text
-
-   1. Skarbnik zakłada dofinansowanie.
-   2. Skarbnik tworzy plan publiczny dla dofinansowania.
-   3. Użytkownicy dodają przedmioty i pracują na listach zakupów.
-   4. Skarbnik zamyka listy zakupów.
-   5. Skarbnik tworzy wniosek.
-   6. System rezerwuje budżet i pozycje planu.
-   7. Skarbnik finalizuje wniosek.
-   8. System zapisuje snapshot i linie rozliczeniowe.
-   9. Wniosek przechodzi do rozliczeń.
-   10. Faktury zamykają rozliczenie.
+1. Skarbnik zakłada dofinansowanie.
+2. Skarbnik tworzy plan publiczny dla dofinansowania.
+3. Użytkownicy dodają przedmioty i pracują na listach zakupów.
+4. Skarbnik zamyka listy zakupów.
+5. Skarbnik tworzy wniosek.
+6. System rezerwuje budżet i pozycje planu.
+7. Skarbnik finalizuje wniosek.
+8. System zapisuje snapshot i linie rozliczeniowe.
+9. Wniosek przechodzi do rozliczeń.
+10. Faktury zamykają rozliczenie.
 
 Dodanie przedmiotu
 ------------------
@@ -23,9 +21,9 @@ Dodanie przedmiotu
 .. code-block:: text
 
    Student
-      -> POST /api/items
-      -> Item(status = approved)
-      -> GET /api/items
+      - POST /api/items
+      - Item(status = approved)
+      - GET /api/items
 
 Reguły:
 
@@ -40,10 +38,10 @@ Zgłoszenie sklepu
 .. code-block:: text
 
    Student
-      -> POST /api/shops
-      -> Shop(status = pending)
-      -> Skarbnik
-      -> PATCH approve albo DELETE reject
+      - POST /api/shops
+      - Shop(status = pending)
+      - Skarbnik
+      - PATCH approve albo DELETE reject
 
 Reguły:
 
@@ -58,8 +56,8 @@ Dofinansowanie
 .. code-block:: text
 
    ProjectBudget
-      -> Funding
-      -> FundingTask*
+      - Funding
+      - FundingTask*
 
 Reguły:
 
@@ -75,8 +73,8 @@ Plan zamówień publicznych
 .. code-block:: text
 
    Funding
-      -> PublicPurchasePlanList
-      -> PublicPurchasePlan*
+      - PublicPurchasePlanList
+      - PublicPurchasePlan*
 
 Reguły:
 
@@ -92,8 +90,8 @@ Lista zakupów
 .. code-block:: text
 
    ShopPurchaseList
-      -> ShopPurchaseListItem
-      -> ShopPurchaseListItemContribution
+      - ShopPurchaseListItem
+      - ShopPurchaseListItemContribution
 
 Reguły:
 
@@ -133,13 +131,13 @@ Wniosek z zamkniętej listy
 .. code-block:: text
 
    PATCH /api/lists/{id}/close
-      -> Settlement bez purchase_request_id
-      -> ShopPurchaseList.settlement_id
+      - Settlement bez purchase_request_id
+      - ShopPurchaseList.settlement_id
 
    POST /api/create_purchase_requests
       shop_purchase_list_id = id
-      -> PurchaseRequest
-      -> Settlement.purchase_request_id = request.id
+      - PurchaseRequest
+      - Settlement.purchase_request_id = request.id
 
 Reguły:
 
@@ -154,14 +152,14 @@ Finalizacja
 .. code-block:: text
 
    prepare_finalization
-      -> can_add = False
-      -> finalization_status = prepared
+      - can_add = False
+      - finalization_status = prepared
 
    finalize
-      -> PurchaseRequestFinalizationSnapshot*
-      -> PurchaseRequestFundingAllocation*
-      -> PurchaseRequestSettlementLine*
-      -> finalization_status = accounting_pending
+      - PurchaseRequestFinalizationSnapshot*
+      - PurchaseRequestFundingAllocation*
+      - PurchaseRequestSettlementLine*
+      - finalization_status = accounting_pending
 
 Reguły:
 
@@ -178,11 +176,11 @@ Rozliczenie
 .. code-block:: text
 
    send_to_settlement
-      -> finalization_status = settlement
-      -> Settlement
-      -> Invoice*
-      -> complete
-      -> finalization_status = settled
+      - finalization_status = settlement
+      - Settlement
+      - Invoice*
+      - complete
+      - finalization_status = settled
 
 Reguły:
 
