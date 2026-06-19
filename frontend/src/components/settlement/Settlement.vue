@@ -1041,20 +1041,20 @@ watch(
 .requests-title {
   font-size: 2vw;
   font-weight: 800;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0;
 }
 
 .requests-subtitle {
   font-size: 1vw;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   margin: 0;
 }
 
 .requests-add-button {
   padding: 0.8vw 1.5vw;
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   border: none;
   border-radius: 0.8vw;
   font-size: 1vw;
@@ -1076,7 +1076,7 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 6vh;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--rgb-surface), 0.4);
   border: 0.08vw dashed rgba(148, 163, 184, 0.3);
   border-radius: 1vw;
   text-align: center;
@@ -1090,13 +1090,13 @@ watch(
 .requests-empty-text {
   font-size: 1.2vw;
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.8);
+  color: rgba(var(--rgb-muted), 0.8);
   margin: 0 0 0.5vh 0;
 }
 
 .requests-empty-subtext {
   font-size: 0.95vw;
-  color: rgba(226, 232, 240, 0.5);
+  color: rgba(var(--rgb-muted), 0.5);
   margin: 0;
 }
 
@@ -1110,14 +1110,14 @@ watch(
   display: flex;
   flex-direction: column;
   padding: 2vw;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 1vw;
   transition: all 0.3s ease;
 }
 
 .request-card:hover {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(var(--rgb-surface), 0.8);
   border-color: rgba(59, 130, 246, 0.3);
   transform: translateY(-0.4vh);
 }
@@ -1133,7 +1133,7 @@ watch(
 .request-card__title {
   font-size: 1.2vw;
   font-weight: 700;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   margin: 0;
   flex: 1;
 }
@@ -1148,7 +1148,7 @@ watch(
 
 .request-card__badge.pending {
   background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  color: var(--color-link);
 }
 
 .request-card__badge.partial {
@@ -1178,12 +1178,12 @@ watch(
 }
 
 .request-card__label {
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   font-weight: 600;
 }
 
 .request-card__value {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-weight: 500;
 }
 
@@ -1203,7 +1203,7 @@ watch(
 }
 
 .settlement-card__progress-text {
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   font-size: 0.85vw;
   margin: 0 0 1.5vw 0;
 }
@@ -1227,7 +1227,7 @@ watch(
 
 .request-card__button.view {
   background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  color: var(--color-link);
 }
 
 .request-card__button.view:hover {
@@ -1262,14 +1262,14 @@ watch(
   margin-bottom: 2vh;
   background: none;
   border: none;
-  color: #93c5fd;
+  color: var(--color-link);
   cursor: pointer;
   font-size: 1vw;
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
 .settlement-details__card {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 1vw;
   padding: 2vw;
@@ -1292,14 +1292,14 @@ watch(
 }
 
 .settlement-details__title {
-  color: white;
+  color: rgb(var(--rgb-text));
   margin: 0;
   font-size: 1.6vw;
   font-weight: 800;
 }
 
 .settlement-details__subtitle {
-  color: rgba(226, 232, 240, 0.5);
+  color: rgba(var(--rgb-muted), 0.5);
   margin: 0.5vh 0 0 0;
 }
 
@@ -1311,24 +1311,24 @@ watch(
 }
 
 .settlement-info {
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(var(--rgb-raised), 0.6);
   padding: 1vw;
   border-radius: 0.8vw;
 }
 
 .settlement-info p {
-  color: rgba(226, 232, 240, 0.5);
+  color: rgba(var(--rgb-muted), 0.5);
   margin: 0 0 0.5vh 0;
   font-size: 0.9vw;
 }
 
 .settlement-info strong {
-  color: white;
+  color: rgb(var(--rgb-text));
   font-size: 1vw;
 }
 
 .settlement-details__invoices h3 {
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0;
   font-size: 1.2vw;
 }
@@ -1346,20 +1346,20 @@ watch(
   grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 1vw;
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(var(--rgb-raised), 0.5);
   padding: 1vw;
   border-radius: 0.8vw;
   margin-top: 1vh;
 }
 
 .invoice-title {
-  color: white;
+  color: rgb(var(--rgb-text));
   margin: 0 0 0.3vh 0;
   font-weight: 600;
 }
 
 .invoice-date {
-  color: rgba(226, 232, 240, 0.5);
+  color: rgba(var(--rgb-muted), 0.5);
   font-size: 0.85vw;
   margin: 0;
 }
@@ -1410,7 +1410,7 @@ watch(
 }
 
 .invoice-status--missing {
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   background: rgba(148, 163, 184, 0.14);
 }
 
@@ -1428,7 +1428,7 @@ watch(
   padding: 1vw;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(var(--rgb-surface), 0.55);
 }
 
 .invoice-filters label {
@@ -1437,7 +1437,7 @@ watch(
 }
 
 .invoice-filters span {
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   font-size: 0.82vw;
   font-weight: 800;
   text-transform: uppercase;
@@ -1456,7 +1456,7 @@ watch(
   padding: 1vw;
   border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 0.85vw;
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(var(--rgb-raised), 0.5);
 }
 
 .settlement-line-card {
@@ -1465,7 +1465,7 @@ watch(
   padding: 1.1vw;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 0.9vw;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.78));
+  background: linear-gradient(135deg, rgba(var(--rgb-raised), 0.72), rgba(var(--rgb-surface), 0.78));
 }
 
 .settlement-line-card__header,
@@ -1499,18 +1499,18 @@ watch(
   gap: 0.25vw;
   padding: 0.75vw;
   border-radius: 0.7vw;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(var(--rgb-surface), 0.55);
 }
 
 .settlement-line-card__difference span {
-  color: rgba(226, 232, 240, 0.56);
+  color: rgba(var(--rgb-muted), 0.56);
   font-size: 0.78vw;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .settlement-line-card__difference strong {
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .settlement-line-description {
@@ -1577,7 +1577,7 @@ watch(
 }
 
 .modal-form__label {
-  color: #cbd5e1;
+  color: var(--color-subtle);
   font-size: 0.9vw;
   font-weight: 600;
 }
@@ -1587,7 +1587,7 @@ watch(
   border-radius: 0.7vw;
   border: 0.08vw solid rgba(148,163,184,0.2);
   background: rgba(15,23,42,0.7);
-  color: white;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
 }
 
@@ -1615,12 +1615,12 @@ watch(
 
 .modal-btn-cancel {
   background: rgba(148,163,184,0.15);
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
+  color: rgb(var(--rgb-text));
 }
 
 @media (max-width: 980px) {

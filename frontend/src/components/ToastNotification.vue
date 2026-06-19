@@ -38,9 +38,9 @@ const { toasts } = useToast()
   gap: 0.8vw;
   padding: 1vw 1.5vw;
   border-radius: 0.8vw;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(var(--rgb-surface), 0.95);
   backdrop-filter: blur(8px);
-  color: white;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
   font-weight: 600;
   font-family: 'Nunito', system-ui, sans-serif;

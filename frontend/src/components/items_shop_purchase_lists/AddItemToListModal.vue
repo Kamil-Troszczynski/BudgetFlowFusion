@@ -298,27 +298,27 @@ const handleSubmit = () => {
 .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-content { background: #0f172a; border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 28px; width: min(92vw, 680px); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(59, 130, 246, 0.2); }
-.modal-title { font-size: 22px; font-weight: 700; color: #bfdbfe; margin: 0; }
-.modal-close { background: none; border: none; color: rgba(226, 232, 240, 0.6); font-size: 22px; cursor: pointer; }
-.modal-close:hover { color: #ffffff; }
+.modal-title { font-size: 22px; font-weight: 700; color: var(--color-heading); margin: 0; }
+.modal-close { background: none; border: none; color: rgba(var(--rgb-muted), 0.6); font-size: 22px; cursor: pointer; }
+.modal-close:hover { color: rgb(var(--rgb-text)); }
 .item-form-row { display: grid; grid-template-columns: 1fr 0.7fr 0.7fr; gap: 14px; }
 .item-form-row--prices { grid-template-columns: 1fr 0.75fr 1fr; }
 .item-form-row--compact { grid-template-columns: 0.7fr 0.7fr; max-width: 360px; }
 .item-form-group { margin-bottom: 16px; }
-.item-form-label { display: block; margin-bottom: 7px; color: rgba(226, 232, 240, 0.9); font-size: 14px; font-weight: 700; }
-.item-form-input, .item-form-select { width: 100%; padding: 11px 12px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #ffffff; font-size: 14px; transition: all 0.2s; box-sizing: border-box; }
-.item-form-input:focus, .item-form-select:focus { outline: none; border-color: #3b82f6; background: rgba(30, 41, 59, 0.9); }
-.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.item-form-label { display: block; margin-bottom: 7px; color: rgba(var(--rgb-muted), 0.9); font-size: 14px; font-weight: 700; }
+.item-form-input, .item-form-select { width: 100%; padding: 11px 12px; background: rgba(var(--rgb-raised), 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: rgb(var(--rgb-text)); font-size: 14px; transition: all 0.2s; box-sizing: border-box; }
+.item-form-input:focus, .item-form-select:focus { outline: none; border-color: #3b82f6; background: rgba(var(--rgb-raised), 0.9); }
+.item-form-input::placeholder { color: rgba(var(--rgb-muted), 0.4); }
 .item-form-select option { background: #0f172a; }
 .item-form-search { margin-bottom: 8px; }
 .item-form-info { display: flex; gap: 12px; padding: 14px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; margin-top: 18px; }
-.item-form-info p { margin: 0; font-size: 14px; color: #bfdbfe; }
+.item-form-info p { margin: 0; font-size: 14px; color: var(--color-heading); }
 .item-form-info p + p { margin-top: 6px; }
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(59, 130, 246, 0.2); }
 .modal-btn { padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: #e2e8f0; }
+.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: rgb(var(--rgb-muted)); }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
-.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; }
+.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: rgb(var(--rgb-text)); }
 .modal-btn-save:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transform: translateY(-2px); }
 .modal-btn-save:disabled { background: rgba(239, 68, 68, 0.5); color: rgba(255, 255, 255, 0.6); cursor: not-allowed; box-shadow: none; transform: none; }
 .error-bg { background: rgba(239, 68, 68, 0.1) !important; border-color: rgba(239, 68, 68, 0.3) !important; }

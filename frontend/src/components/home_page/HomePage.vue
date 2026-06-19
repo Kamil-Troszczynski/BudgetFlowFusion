@@ -19,6 +19,9 @@
             </button>
           </nav>
           <div class="dashboard__user-section">
+            <button class="dashboard__theme-toggle" @click="toggleTheme" :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+              {{ theme === 'dark' ? 'dark-mode' : 'light-mode' }}
+            </button>
             <div class="dashboard__user-menu" ref="userMenuRef">
               <button
                 class="dashboard__user-name"
@@ -404,9 +407,11 @@ import Settlement from '@/components/settlement/Settlement.vue'
 import PublicPurchasePlans from '@/components/public_purchase_plans/PublicPurchasePlans.vue'
 import { useToast } from '@/composables/useToast'
 import Shops from '@/components/shops/Shops.vue'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const { user, logout } = useAuth()
+const { theme, toggle: toggleTheme } = useTheme()
 const showUserMenu = ref(false)
 const showEditProfileModal = ref(false)
 const showAddItemModal = ref(false)
@@ -777,8 +782,8 @@ const handleLogout = () => {
 
 .dashboard {
   min-height: 100dvh;
-  background: #050816;
-  color: #ffffff;
+  background: var(--bg-page);
+  color: rgb(var(--rgb-text));
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
@@ -789,8 +794,8 @@ const handleLogout = () => {
 }
 
 .dashboard__header {
-  background: rgba(9, 14, 32, 0.5);
-  border-bottom: 0.08vw solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--rgb-surface), 0.5);
+  border-bottom: 0.08vw solid rgba(var(--rgb-border-soft), 0.08);
   backdrop-filter: blur(0.7vw);
   position: sticky;
   top: 0;
@@ -836,7 +841,7 @@ const handleLogout = () => {
 .dashboard__nav-link {
   background: none;
   border: none;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   font-size: 1vw;
   font-weight: 600;
   padding: 0.5vw 1.2vw;
@@ -847,20 +852,36 @@ const handleLogout = () => {
 }
 
 .dashboard__nav-link:hover {
-  color: rgba(226, 232, 240, 0.9);
+  color: rgba(var(--rgb-muted), 0.9);
   background: rgba(59, 130, 246, 0.1);
 }
 
 .dashboard__nav-link.active {
-  color: #93c5fd;
+  color: var(--color-link);
   background: rgba(59, 130, 246, 0.2);
 }
 
 .dashboard__user-section {
   display: flex;
   align-items: center;
-  gap: 2vw;
+  gap: 1vw;
   justify-self: end;
+}
+
+.dashboard__theme-toggle {
+  background: none;
+  border: 0.08vw solid rgba(var(--rgb-border-soft), 0.15);
+  border-radius: 0.5vw;
+  padding: 0.5vw 0.7vw;
+  font-size: 1.1vw;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  line-height: 1;
+}
+
+.dashboard__theme-toggle:hover {
+  background: rgba(var(--rgb-muted), 0.1);
+  border-color: rgba(var(--rgb-border-soft), 0.3);
 }
 
 .dashboard__user-menu {
@@ -873,7 +894,7 @@ const handleLogout = () => {
   border: none;
   font-weight: 600;
   font-size: 1vw;
-  color: rgba(226, 232, 240, 0.8);
+  color: rgba(var(--rgb-muted), 0.8);
   cursor: pointer;
   padding: 0.6vw 1.2vw;
   border-radius: 0.5vw;
@@ -882,7 +903,7 @@ const handleLogout = () => {
 }
 
 .dashboard__user-name:hover {
-  color: rgba(226, 232, 240, 0.9);
+  color: rgba(var(--rgb-muted), 0.9);
   background: rgba(59, 130, 246, 0.1);
 }
 
@@ -890,8 +911,8 @@ const handleLogout = () => {
   position: absolute;
   top: 100%;
   right: 0;
-  background: rgba(15, 23, 42, 0.95);
-  border: 0.08vw solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--rgb-surface), 0.95);
+  border: 0.08vw solid rgba(var(--rgb-border-soft), 0.1);
   border-radius: 0.5vw;
   min-width: 12vw;
   margin-top: 0.8vw;
@@ -906,7 +927,7 @@ const handleLogout = () => {
   padding: 0.8vw 1.2vw;
   background: none;
   border: none;
-  color: rgba(226, 232, 240, 0.8);
+  color: rgba(var(--rgb-muted), 0.8);
   font-size: 0.95vw;
   font-weight: 500;
   text-align: left;
@@ -917,7 +938,7 @@ const handleLogout = () => {
 
 .dashboard__dropdown-item:hover {
   background: rgba(59, 130, 246, 0.2);
-  color: rgba(226, 232, 240, 1);
+  color: rgba(var(--rgb-muted), 1);
 }
 
 .dashboard__logout-btn {
@@ -951,11 +972,11 @@ const handleLogout = () => {
   font-size: 2.5vw;
   font-weight: 800;
   margin-bottom: 6vh;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .highlight {
-  color: #93c5fd;
+  color: var(--color-link);
   font-weight: 700;
 }
 
@@ -970,20 +991,20 @@ const handleLogout = () => {
   display: flex;
   gap: 1.5vw;
   padding: 1.8vw;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 1vw;
   transition: all 0.3s ease;
 }
 
 .dashboard__info-card:hover {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(var(--rgb-surface), 0.8);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
 .dashboard__user-info-card {
   padding: 2.5vw;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 1.2vw;
   margin-bottom: 3vh;
@@ -991,7 +1012,7 @@ const handleLogout = () => {
 }
 
 .dashboard__user-info-card:hover {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(var(--rgb-surface), 0.8);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
@@ -1004,7 +1025,7 @@ const handleLogout = () => {
 .dashboard__user-info-title {
   font-size: 1.3vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0;
 }
 
@@ -1030,13 +1051,13 @@ const handleLogout = () => {
 
 .dashboard__user-info-label {
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(var(--rgb-muted), 0.7);
   font-size: 1vw;
   min-width: 8vw;
 }
 
 .dashboard__user-info-value {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-weight: 500;
   font-size: 1vw;
 }
@@ -1051,7 +1072,7 @@ const handleLogout = () => {
 
 .dashboard__card-label {
   font-size: 0.8vw;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.4vh;
@@ -1060,7 +1081,7 @@ const handleLogout = () => {
 .dashboard__card-value {
   font-size: 1.1vw;
   font-weight: 600;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .dashboard__grid {
@@ -1075,7 +1096,7 @@ const handleLogout = () => {
 }
 
 .dashboard__card {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 1.2vw;
   overflow: hidden;
@@ -1083,7 +1104,7 @@ const handleLogout = () => {
 }
 
 .dashboard__card:hover {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(var(--rgb-surface), 0.7);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
@@ -1098,12 +1119,12 @@ const handleLogout = () => {
 .dashboard__card-title {
   font-size: 1.3vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .dashboard__card-badge {
   background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  color: var(--color-link);
   padding: 0.4vw 0.8vw;
   border-radius: 0.4vw;
   font-size: 0.7vw;
@@ -1114,7 +1135,7 @@ const handleLogout = () => {
 .dashboard__card-link {
   background: none;
   border: none;
-  color: #93c5fd;
+  color: var(--color-link);
   font-weight: 600;
   font-size: 0.95vw;
   cursor: pointer;
@@ -1123,7 +1144,7 @@ const handleLogout = () => {
 }
 
 .dashboard__card-link:hover {
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .dashboard__card-body {
@@ -1143,14 +1164,14 @@ const handleLogout = () => {
 }
 
 .budget-stat__label {
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(var(--rgb-muted), 0.7);
   font-size: 1vw;
 }
 
 .budget-stat__value {
   font-size: 1.6vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .budget-stat__value.warning {
@@ -1183,13 +1204,13 @@ const handleLogout = () => {
 
 .budget-progress__text {
   font-size: 0.9vw;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .budget-overview {
   display: grid;
   gap: 1.4vw;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 
 .budget-overview__header {
@@ -1205,14 +1226,14 @@ const handleLogout = () => {
 .budget-project-detail__top h3,
 .budget-fundings__header h3 {
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 1.45vw;
   font-weight: 800;
 }
 
 .budget-overview__eyebrow {
   margin: 0 0 0.35vw 0;
-  color: #93c5fd;
+  color: var(--color-link);
   font-size: 0.78vw;
   font-weight: 800;
   text-transform: uppercase;
@@ -1233,18 +1254,18 @@ const handleLogout = () => {
   padding: 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.8vw;
-  background: rgba(15, 23, 42, 0.58);
+  background: rgba(var(--rgb-surface), 0.58);
 }
 
 .budget-overview__stat span,
 .budget-project-metrics span {
-  color: rgba(226, 232, 240, 0.66);
+  color: rgba(var(--rgb-muted), 0.66);
   font-size: 0.85vw;
 }
 
 .budget-overview__stat strong,
 .budget-project-metrics strong {
-  color: #bfdbfe;
+  color: var(--color-heading);
   font-size: 1.12vw;
 }
 
@@ -1271,8 +1292,8 @@ const handleLogout = () => {
   padding: 0.9vw 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.18);
   border-radius: 0.7vw;
-  background: rgba(15, 23, 42, 0.56);
-  color: #e2e8f0;
+  background: rgba(var(--rgb-surface), 0.56);
+  color: rgb(var(--rgb-muted));
   cursor: pointer;
   font-family: 'Nunito', system-ui, sans-serif;
 }
@@ -1305,14 +1326,14 @@ const handleLogout = () => {
   padding: 1.2vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.54);
+  background: rgba(var(--rgb-surface), 0.54);
 }
 
 .budget-project-detail__top span,
 .budget-project-detail__meter p,
 .budget-fundings__header span {
   margin: 0;
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   font-size: 0.88vw;
 }
 
@@ -1337,7 +1358,7 @@ const handleLogout = () => {
   width: 100%;
   min-width: 860px;
   border-collapse: collapse;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
 }
 
 .budget-table th,
@@ -1349,11 +1370,11 @@ const handleLogout = () => {
 }
 
 .budget-table th {
-  color: #93c5fd;
+  color: var(--color-link);
   font-size: 0.78vw;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: rgba(30, 41, 59, 0.72);
+  background: rgba(var(--rgb-raised), 0.72);
 }
 
 .budget-table-usage {
@@ -1388,13 +1409,13 @@ const handleLogout = () => {
 }
 
 .budget-deadline--muted {
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   background: rgba(148, 163, 184, 0.12);
 }
 
 .budget-table-empty {
   padding: 1.2vw;
-  color: rgba(226, 232, 240, 0.65);
+  color: rgba(var(--rgb-muted), 0.65);
   text-align: center;
 }
 
@@ -1417,13 +1438,13 @@ const handleLogout = () => {
 .transaction-item__title {
   font-weight: 600;
   font-size: 1vw;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin-bottom: 0.3vh;
 }
 
 .transaction-item__date {
   font-size: 0.85vw;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .transaction-item__amount {
@@ -1442,7 +1463,7 @@ const handleLogout = () => {
   padding: 1vw;
   background: rgba(59, 130, 246, 0.15);
   border: 0.08vw solid rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
+  color: var(--color-link);
   border-radius: 0.8vw;
   font-weight: 600;
   font-size: 0.95vw;
@@ -1464,7 +1485,7 @@ const handleLogout = () => {
   padding: 1.3vw;
   background: rgba(59, 130, 246, 0.1);
   border: 0.08vw solid rgba(59, 130, 246, 0.2);
-  color: #bfdbfe;
+  color: var(--color-heading);
   border-radius: 0.8vw;
   font-weight: 600;
   font-size: 1vw;
@@ -1504,14 +1525,14 @@ const handleLogout = () => {
 }
 
 .stat-row__label {
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(var(--rgb-muted), 0.7);
   font-size: 1vw;
 }
 
 .stat-row__value {
   font-size: 1.4vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 @media (max-width: 1024px) {
@@ -1653,13 +1674,13 @@ const handleLogout = () => {
 .modal-title {
   font-size: 1.6vw;
   font-weight: 700;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 
 .modal-close {
   background: none;
   border: none;
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(var(--rgb-muted), 0.7);
   font-size: 1.6vw;
   cursor: pointer;
   padding: 0;
@@ -1672,7 +1693,7 @@ const handleLogout = () => {
 }
 
 .modal-close:hover {
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 
 .edit-form-group {
@@ -1682,7 +1703,7 @@ const handleLogout = () => {
 .edit-form-label {
   display: block;
   margin-bottom: 0.6vw;
-  color: #bfdbfe;
+  color: var(--color-heading);
   font-size: 0.95vw;
   font-weight: 600;
 }
@@ -1690,10 +1711,10 @@ const handleLogout = () => {
 .edit-form-input {
   width: 100%;
   padding: 0.8vw;
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(var(--rgb-raised), 0.8);
   border: 0.08vw solid rgba(59, 130, 246, 0.3);
   border-radius: 0.6vw;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-size: 0.95vw;
   font-family: 'Nunito', system-ui, sans-serif;
   transition: all 0.2s ease;
@@ -1702,16 +1723,16 @@ const handleLogout = () => {
 .edit-form-input:focus {
   outline: none;
   border-color: rgba(59, 130, 246, 0.6);
-  background: rgba(30, 41, 59, 0.95);
+  background: rgba(var(--rgb-raised), 0.95);
 }
 
 .edit-form-select {
   width: 100%;
   padding: 0.8vw;
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(var(--rgb-raised), 0.8);
   border: 0.08vw solid rgba(59, 130, 246, 0.3);
   border-radius: 0.6vw;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-size: 0.95vw;
   font-family: 'Nunito', system-ui, sans-serif;
   transition: all 0.2s ease;
@@ -1720,7 +1741,7 @@ const handleLogout = () => {
 .edit-form-select:focus {
   outline: none;
   border-color: rgba(59, 130, 246, 0.6);
-  background: rgba(30, 41, 59, 0.95);
+  background: rgba(var(--rgb-raised), 0.95);
 }
 
 .edit-form-checkbox {
@@ -1739,7 +1760,7 @@ const handleLogout = () => {
 .edit-form-checkbox label {
   margin: 0;
   cursor: pointer;
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .edit-form__role-toggle {
@@ -1752,7 +1773,7 @@ const handleLogout = () => {
 .edit-form__role-label {
   font-weight: 700;
   font-size: 0.95vw;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
@@ -1764,8 +1785,8 @@ const handleLogout = () => {
   padding: 0.9vw 1.2vw;
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.68);
-  color: #ffffff;
+  background: rgba(var(--rgb-surface), 0.68);
+  color: rgb(var(--rgb-text));
   font-family: 'Nunito', system-ui, sans-serif;
   font-size: 0.95vw;
   font-weight: 500;
@@ -1775,7 +1796,7 @@ const handleLogout = () => {
 
 .edit-form__toggle:hover {
   border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(var(--rgb-surface), 0.85);
 }
 
 .edit-form__toggle.is-treasurer {
@@ -1816,7 +1837,7 @@ const handleLogout = () => {
 
 .edit-form__toggle-indicator::after {
   content: '↔';
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
   font-weight: bold;
 }
@@ -1856,7 +1877,7 @@ const handleLogout = () => {
 
 .modal-btn-cancel {
   background: rgba(59, 130, 246, 0.1);
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .modal-btn-cancel:hover {
@@ -1877,7 +1898,7 @@ const handleLogout = () => {
   overflow-y: auto;
   padding-right: 0.5vw;
   scrollbar-width: thin;
-  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(15, 23, 42, 0.5);
+  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(var(--rgb-surface), 0.5);
 }
 
 .members-list::-webkit-scrollbar {
@@ -1885,7 +1906,7 @@ const handleLogout = () => {
 }
 
 .members-list::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
   border-radius: 0.2vw;
 }
 
@@ -1896,7 +1917,7 @@ const handleLogout = () => {
 
 .members-empty {
   text-align: center;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   padding: 2vw;
   font-size: 0.95vw;
 }
@@ -1906,27 +1927,27 @@ const handleLogout = () => {
   align-items: center;
   justify-content: space-between;
   padding: 1vw 1.2vw;
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(var(--rgb-raised), 0.8);
   border: 0.08vw solid rgba(59, 130, 246, 0.2);
   border-radius: 0.8vw;
   transition: all 0.2s ease;
 }
 
 .member-item:hover {
-  background: rgba(30, 41, 59, 0.95);
+  background: rgba(var(--rgb-raised), 0.95);
   border-color: rgba(59, 130, 246, 0.4);
 }
 
 .member-item__name {
   font-weight: 700;
   font-size: 1.05vw;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   margin-bottom: 0.3vh;
 }
 
 .member-item__details {
   font-size: 0.85vw;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   display: flex;
   gap: 0.5vw;
   align-items: center;

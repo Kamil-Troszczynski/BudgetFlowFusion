@@ -545,7 +545,7 @@ onMounted(loadData)
   display: flex; justify-content: space-between; align-items: center; gap: 20px;
 }
 h2, h3, p { margin: 0; }
-h2 { color: #bfdbfe; font-size: 28px; }
+h2 { color: var(--color-heading); font-size: 28px; }
 h3 { color: #dbeafe; font-size: 20px; }
 p, dt { color: #94a3b8; }
 .plans__header { margin-bottom: 24px; }
@@ -554,18 +554,18 @@ p, dt { color: #94a3b8; }
 .funding-list { display: flex; flex-direction: column; gap: 10px; }
 .funding {
   display: grid; gap: 6px; padding: 16px; text-align: left; color: #fff; cursor: pointer;
-  background: rgba(15, 23, 42, .65); border: 1px solid rgba(148, 163, 184, .18); border-radius: 8px;
+  background: rgba(var(--rgb-surface), .65); border: 1px solid rgba(148, 163, 184, .18); border-radius: 8px;
 }
 .funding span { color: #94a3b8; }
-.funding--active { border-color: #60a5fa; background: rgba(30, 41, 59, .9); }
-.workspace { padding: 22px; background: rgba(15, 23, 42, .65); border: 1px solid rgba(148, 163, 184, .18); border-radius: 8px; }
+.funding--active { border-color: #60a5fa; background: rgba(var(--rgb-raised), .9); }
+.workspace { padding: 22px; background: rgba(var(--rgb-surface), .65); border: 1px solid rgba(148, 163, 184, .18); border-radius: 8px; }
 .workspace__header { padding-bottom: 20px; border-bottom: 1px solid rgba(148, 163, 184, .16); flex-wrap: wrap; }
 dl { display: flex; gap: 24px; margin: 0; }
 dt { font-size: 12px; } dd { margin: 3px 0 0; font-weight: 700; }
 .tasks-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 16px; }
-.task-chip { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 7px; background: rgba(30, 41, 59, .6); border: 1px solid rgba(148, 163, 184, .14); color: #cbd5e1; }
-.task-chip strong { color: #bfdbfe; }
-.create-plan { margin-top: 20px; padding: 18px; background: rgba(30, 41, 59, .62); border-radius: 8px; }
+.task-chip { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 7px; background: rgba(var(--rgb-raised), .6); border: 1px solid rgba(148, 163, 184, .14); color: var(--color-subtle); }
+.task-chip strong { color: var(--color-heading); }
+.create-plan { margin-top: 20px; padding: 18px; background: rgba(var(--rgb-raised), .62); border-radius: 8px; }
 .plan-rate-card {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) auto;
@@ -573,7 +573,7 @@ dt { font-size: 12px; } dd { margin: 3px 0 0; font-weight: 700; }
   align-items: end;
   margin-top: 18px;
   padding: 18px;
-  background: linear-gradient(135deg, rgba(30, 41, 59, .72), rgba(15, 23, 42, .92));
+  background: linear-gradient(135deg, rgba(var(--rgb-raised), .72), rgba(var(--rgb-surface), .92));
   border: 1px solid rgba(96, 165, 250, .18);
   border-radius: 10px;
 }
@@ -592,7 +592,7 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 13px; text-align: left; border-bottom: 1px solid rgba(148, 163, 184, .15); }
 th { color: #94a3b8; font-size: 13px; }
 .delete { border: 0; background: transparent; color: #fca5a5; cursor: pointer; }
-label { display: grid; gap: 7px; color: #cbd5e1; font-weight: 700; }
+label { display: grid; gap: 7px; color: var(--color-subtle); font-weight: 700; }
 input { padding: 11px; border: 1px solid #475569; border-radius: 7px; background: #0f172a; color: #fff; }
 select, textarea { padding: 11px; border: 1px solid #475569; border-radius: 7px; background: #0f172a; color: #fff; }
 .modal-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(2, 6, 23, .78); z-index: 1000; }
@@ -600,7 +600,7 @@ select, textarea { padding: 11px; border: 1px solid #475569; border-radius: 7px;
 .modal--wide { width: min(720px, calc(100vw - 32px)); max-height: 88vh; overflow-y: auto; }
 .modal header button { border: 0; background: transparent; color: #fff; font-size: 25px; cursor: pointer; }
 .modal form { display: grid; gap: 18px; margin-top: 20px; }
-.funding-tasks { display: grid; gap: 10px; padding: 14px; border-radius: 8px; background: rgba(15, 23, 42, .55); border: 1px solid rgba(148, 163, 184, .14); }
+.funding-tasks { display: grid; gap: 10px; padding: 14px; border-radius: 8px; background: rgba(var(--rgb-surface), .55); border: 1px solid rgba(148, 163, 184, .14); }
 .tasks-header, .task-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
 .task-row { grid-template-columns: 1fr 150px auto; }
 @media (max-width: 850px) {

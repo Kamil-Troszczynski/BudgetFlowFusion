@@ -148,19 +148,19 @@ const handleSubmit = async () => {
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-content { background: #0f172a; border: 0.1vw solid rgba(59, 130, 246, 0.2); border-radius: 1.2vw; padding: 2.5vw; width: 90%; max-width: 35vw; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vw; padding-bottom: 1vw; border-bottom: 0.1vw solid rgba(59, 130, 246, 0.2); }
-.modal-title { font-size: 1.5vw; font-weight: 700; color: #bfdbfe; margin: 0; }
-.modal-close { background: none; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.5vw; cursor: pointer; }
-.modal-close:hover { color: #ffffff; }
+.modal-title { font-size: 1.5vw; font-weight: 700; color: var(--color-heading); margin: 0; }
+.modal-close { background: none; border: none; color: rgba(var(--rgb-muted), 0.6); font-size: 1.5vw; cursor: pointer; }
+.modal-close:hover { color: rgb(var(--rgb-text)); }
 
-.type-selector { display: flex; gap: 1vw; margin-bottom: 2vw; background: rgba(30, 41, 59, 0.4); padding: 0.5vw; border-radius: 0.8vw; }
+.type-selector { display: flex; gap: 1vw; margin-bottom: 2vw; background: rgba(var(--rgb-raised), 0.4); padding: 0.5vw; border-radius: 0.8vw; }
 .type-btn { flex: 1; padding: 0.8vw; background: transparent; border: none; color: #94a3b8; font-weight: 600; border-radius: 0.6vw; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', system-ui, sans-serif; }
-.type-btn.active { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+.type-btn.active { background: rgba(59, 130, 246, 0.2); color: var(--color-link); }
 
 .item-form-group { margin-bottom: 1.5vw; }
-.item-form-label { display: block; margin-bottom: 0.6vw; color: rgba(226, 232, 240, 0.9); font-size: 0.95vw; font-weight: 600; }
-.item-form-input, .item-form-select { width: 100%; padding: 0.9vw; background: rgba(30, 41, 59, 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #ffffff; font-size: 0.95vw; box-sizing: border-box; }
+.item-form-label { display: block; margin-bottom: 0.6vw; color: rgba(var(--rgb-muted), 0.9); font-size: 0.95vw; font-weight: 600; }
+.item-form-input, .item-form-select { width: 100%; padding: 0.9vw; background: rgba(var(--rgb-raised), 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: rgb(var(--rgb-text)); font-size: 0.95vw; box-sizing: border-box; }
 .item-form-input:focus, .item-form-select:focus { outline: none; border-color: #3b82f6; }
-.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.item-form-input::placeholder { color: rgba(var(--rgb-muted), 0.4); }
 .item-form-search { margin-bottom: 0.6vw; }
 .item-form-select option { background: #0f172a; }
 
@@ -173,6 +173,6 @@ const handleSubmit = async () => {
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; margin-top: 2vw; padding-top: 1.5vw; border-top: 0.1vw solid rgba(59, 130, 246, 0.2); }
 .modal-btn { padding: 0.8vw 1.6vw; border-radius: 0.6vw; font-size: 0.95vw; font-weight: 600; cursor: pointer; border: none; font-family: 'Nunito', system-ui, sans-serif; }
-.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: #e2e8f0; }
-.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; }
+.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: rgb(var(--rgb-muted)); }
+.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: rgb(var(--rgb-text)); }
 </style>

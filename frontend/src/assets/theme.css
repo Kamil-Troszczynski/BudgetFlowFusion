@@ -1,0 +1,36 @@
+/* ============================================================
+   BudgetFlowFusion – Design-token CSS variables
+   Dark theme is the default (no extra class needed).
+   Apply  data-theme="light"  to <html> to switch to light.
+   ============================================================ */
+
+:root {
+  /* RGB triplets – used with rgba(var(--rgb-*), opacity) */
+  --rgb-page:        5, 8, 22;           /* #050816  page background     */
+  --rgb-surface:     15, 23, 42;         /* #0f172a  panel / card bg     */
+  --rgb-raised:      30, 41, 59;         /* #1e293b  elevated surface    */
+  --rgb-text:        255, 255, 255;      /* #ffffff  primary text        */
+  --rgb-muted:       226, 232, 240;      /* #e2e8f0  secondary text      */
+  --rgb-border-soft: 255, 255, 255;      /* subtle white borders         */
+
+  /* Solid values */
+  --bg-page:         #050816;
+  --color-heading:   #bfdbfe;            /* light-blue headings          */
+  --color-link:      #93c5fd;            /* light-blue links / active    */
+  --color-subtle:    #cbd5e1;            /* subtle text                  */
+}
+
+/* ── Light theme overrides ───────────────────────────────── */
+[data-theme="light"] {
+  --rgb-page:        241, 245, 249;      /* #f1f5f9  light page bg       */
+  --rgb-surface:     255, 255, 255;      /* #ffffff  white panels        */
+  --rgb-raised:      248, 250, 252;      /* #f8fafc  light elevated      */
+  --rgb-text:        15, 23, 42;         /* #0f172a  dark primary text   */
+  --rgb-muted:       71, 85, 105;        /* #475569  dark muted text     */
+  --rgb-border-soft: 15, 23, 42;         /* subtle dark borders          */
+
+  --bg-page:         #f1f5f9;
+  --color-heading:   #1d4ed8;            /* blue-700                     */
+  --color-link:      #2563eb;            /* blue-600                     */
+  --color-subtle:    #475569;            /* slate-600                    */
+}

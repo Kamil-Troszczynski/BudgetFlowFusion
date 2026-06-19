@@ -6,7 +6,7 @@
         <p class="validation-subtitle">Zarządzanie kategoriami CPV i oczekującymi podkategoriami</p>
       </div>
       <div class="stats-badges">
-        <button class="action-btn accept" @click="showCategoryModal = true" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3);">
+        <button class="action-btn accept" @click="showCategoryModal = true" style="background: rgba(59, 130, 246, 0.2); color: var(--color-link); border-color: rgba(59, 130, 246, 0.3);">
           + Zarządzaj CPV
         </button>
       </div>
@@ -310,7 +310,7 @@ const assignCategory = async (subcategoryId) => {
 
 <style scoped>
 .validation-section {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   padding: 1vw 0;
 }
 
@@ -323,12 +323,12 @@ const assignCategory = async (subcategoryId) => {
 
 .validation-title {
   font-size: 1.8vw;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0 0 0.5vw 0;
 }
 
 .validation-subtitle {
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   margin: 0;
   font-size: 0.95vw;
 }
@@ -343,7 +343,7 @@ const assignCategory = async (subcategoryId) => {
   display: flex;
   gap: 0.5vw;
   margin-bottom: 2vw;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
   padding: 0.5vw;
   border-radius: 0.8vw;
   border: 1px solid rgba(148, 163, 184, 0.15);
@@ -369,7 +369,7 @@ const assignCategory = async (subcategoryId) => {
 
 .tab-btn.active {
   background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  color: var(--color-link);
 }
 
 .tab-badge {
@@ -384,7 +384,7 @@ const assignCategory = async (subcategoryId) => {
 
 .tab-badge.subcategory-badge {
   background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
+  color: var(--color-link);
   border-color: rgba(59, 130, 246, 0.4);
 }
 
@@ -395,10 +395,10 @@ const assignCategory = async (subcategoryId) => {
 .search-input {
   width: 100%;
   padding: 0.9vw 1.2vw;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0.7vw;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
   font-family: 'Nunito', system-ui, sans-serif;
   transition: border-color 0.2s;
@@ -408,10 +408,10 @@ const assignCategory = async (subcategoryId) => {
   outline: none;
   border-color: rgba(96, 165, 250, 0.6);
 }
-.search-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.search-input::placeholder { color: rgba(var(--rgb-muted), 0.4); }
 
 .table-container {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--rgb-surface), 0.6);
   border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: 1vw;
   overflow: hidden;
@@ -431,8 +431,8 @@ const assignCategory = async (subcategoryId) => {
 }
 
 .validation-table th {
-  background: rgba(30, 41, 59, 0.8);
-  color: #93c5fd;
+  background: rgba(var(--rgb-raised), 0.8);
+  color: var(--color-link);
   font-weight: 700;
   text-transform: uppercase;
   font-size: 0.75vw;
@@ -440,14 +440,14 @@ const assignCategory = async (subcategoryId) => {
 }
 
 .validation-table tr:last-child td { border-bottom: none; }
-.validation-table tr:hover { background: rgba(30, 41, 59, 0.4); }
+.validation-table tr:hover { background: rgba(var(--rgb-raised), 0.4); }
 
 .item-name { font-weight: 700; color: #f8fafc; }
-.item-student { color: #cbd5e1; }
+.item-student { color: var(--color-subtle); }
 .item-price { font-family: monospace; font-size: 1vw; }
 
 .cpv-info { display: flex; flex-direction: column; gap: 0.3vw; }
-.category { color: #e2e8f0; }
+.category { color: rgb(var(--rgb-muted)); }
 .cpv-code { font-size: 0.8vw; color: #fbbf24; font-family: monospace; }
 
 .link-btn {
@@ -456,7 +456,7 @@ const assignCategory = async (subcategoryId) => {
   font-weight: 600;
   transition: color 0.2s;
 }
-.link-btn:hover { color: #93c5fd; text-decoration: underline; }
+.link-btn:hover { color: var(--color-link); text-decoration: underline; }
 
 .actions-cell {
   display: flex;
@@ -484,10 +484,10 @@ const assignCategory = async (subcategoryId) => {
 .category-select {
   width: 100%;
   padding: 0.6vw 0.8vw;
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(var(--rgb-raised), 0.7);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0.5vw;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 0.85vw;
   font-family: 'Nunito', system-ui, sans-serif;
 }
@@ -497,12 +497,12 @@ const assignCategory = async (subcategoryId) => {
 .validation-empty {
   text-align: center;
   padding: 4vw;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--rgb-surface), 0.4);
   border: 1px dashed rgba(148, 163, 184, 0.2);
   border-radius: 1vw;
 }
 .empty-icon { font-size: 3vw; margin-bottom: 1vw; }
-.empty-text { font-size: 1.2vw; font-weight: 700; color: #e2e8f0; margin-bottom: 0.5vw; }
+.empty-text { font-size: 1.2vw; font-weight: 700; color: rgb(var(--rgb-muted)); margin-bottom: 0.5vw; }
 .empty-subtext { color: #94a3b8; font-size: 0.95vw; }
 
 .confirm-modal-overlay {
@@ -544,7 +544,7 @@ const assignCategory = async (subcategoryId) => {
 }
 
 .confirm-modal-text {
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-size: 1.1vw;
   line-height: 1.6;
   margin-bottom: 2.5vw;
@@ -570,13 +570,13 @@ const assignCategory = async (subcategoryId) => {
 
 .confirm-btn-cancel {
   background: rgba(148, 163, 184, 0.15);
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
-.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: #ffffff; }
+.confirm-btn-cancel:hover { background: rgba(148, 163, 184, 0.3); color: rgb(var(--rgb-text)); }
 
 .confirm-btn-danger {
   background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
 }
 .confirm-btn-danger:hover {

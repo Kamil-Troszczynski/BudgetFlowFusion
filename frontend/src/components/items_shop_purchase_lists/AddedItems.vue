@@ -207,7 +207,7 @@ onMounted(fetchHistory)
   gap: 1.4vw;
   width: 100%;
   padding: 2vh 0;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
@@ -222,21 +222,21 @@ onMounted(fetchHistory)
 
 .items-history__header h2 {
   margin: 0 0 0.5vw;
-  color: #bfdbfe;
+  color: var(--color-heading);
   font-size: 2vw;
   font-weight: 800;
 }
 
 .items-history__header p {
   margin: 0;
-  color: rgba(226, 232, 240, 0.64);
+  color: rgba(var(--rgb-muted), 0.64);
   font-size: 1vw;
   line-height: 1.5;
 }
 
 .items-history__eyebrow {
   margin: 0 0 0.35vw 0 !important;
-  color: #93c5fd !important;
+  color: var(--color-link) !important;
   font-size: 0.78vw !important;
   font-weight: 800;
   text-transform: uppercase;
@@ -247,7 +247,7 @@ onMounted(fetchHistory)
   border: 0.08vw solid rgba(96, 165, 250, 0.35);
   border-radius: 0.6vw;
   background: rgba(59, 130, 246, 0.16);
-  color: #93c5fd;
+  color: var(--color-link);
   padding: 0.75vw 1.2vw;
   font-weight: 800;
   font-size: 0.9vw;
@@ -268,7 +268,7 @@ onMounted(fetchHistory)
   padding: 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
 }
 
 .history-filter {
@@ -277,7 +277,7 @@ onMounted(fetchHistory)
 }
 
 .history-filter span {
-  color: rgba(226, 232, 240, 0.68);
+  color: rgba(var(--rgb-muted), 0.68);
   font-size: 0.8vw;
   font-weight: 800;
   text-transform: uppercase;
@@ -289,8 +289,8 @@ onMounted(fetchHistory)
   padding: 0.8vw 0.9vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.22);
   border-radius: 0.65vw;
-  background: rgba(15, 23, 42, 0.68);
-  color: #ffffff;
+  background: rgba(var(--rgb-surface), 0.68);
+  color: rgb(var(--rgb-text));
   font-size: 0.92vw;
   font-family: inherit;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -299,7 +299,7 @@ onMounted(fetchHistory)
 .history-input:focus {
   outline: none;
   border-color: rgba(96, 165, 250, 0.62);
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(var(--rgb-surface), 0.92);
 }
 
 .history-input option {
@@ -318,23 +318,23 @@ onMounted(fetchHistory)
   padding: 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.8vw;
-  background: rgba(15, 23, 42, 0.56);
+  background: rgba(var(--rgb-surface), 0.56);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .history-summary > div:hover {
   border-color: rgba(59, 130, 246, 0.32);
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(var(--rgb-surface), 0.72);
 }
 
 .history-summary span {
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   font-size: 0.82vw;
   font-weight: 700;
 }
 
 .history-summary strong {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 1.25vw;
 }
 
@@ -342,7 +342,7 @@ onMounted(fetchHistory)
   overflow-x: auto;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(var(--rgb-surface), 0.42);
   box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.18);
 }
 
@@ -362,8 +362,8 @@ onMounted(fetchHistory)
 }
 
 .history-table th {
-  background: rgba(30, 41, 59, 0.76);
-  color: #93c5fd;
+  background: rgba(var(--rgb-raised), 0.76);
+  color: var(--color-link);
   font-size: 0.72vw;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -393,12 +393,12 @@ onMounted(fetchHistory)
 }
 
 .history-product strong {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-weight: 800;
 }
 
 .history-product span {
-  color: rgba(226, 232, 240, 0.55);
+  color: rgba(var(--rgb-muted), 0.55);
   font-size: 0.78vw;
 }
 
@@ -418,7 +418,7 @@ onMounted(fetchHistory)
 .history-chip--shop {
   border: 0.08vw solid rgba(59, 130, 246, 0.22);
   background: rgba(59, 130, 246, 0.12);
-  color: #bfdbfe;
+  color: var(--color-heading);
 }
 
 .history-chip--project {
@@ -440,7 +440,7 @@ onMounted(fetchHistory)
 }
 
 .history-empty {
-  color: rgba(226, 232, 240, 0.64);
+  color: rgba(var(--rgb-muted), 0.64);
   text-align: center;
   padding: 2vw !important;
 }

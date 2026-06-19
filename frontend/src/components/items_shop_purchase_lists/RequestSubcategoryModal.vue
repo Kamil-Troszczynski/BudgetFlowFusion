@@ -119,7 +119,7 @@ const handleSubmit = async () => {
 .modal-title {
   font-size: 1.5vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0;
   font-family: 'Nunito', system-ui, sans-serif;
 }
@@ -127,11 +127,11 @@ const handleSubmit = async () => {
 .modal-close {
   background: none;
   border: none;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   font-size: 1.5vw;
   cursor: pointer;
 }
-.modal-close:hover { color: #ffffff; }
+.modal-close:hover { color: rgb(var(--rgb-text)); }
 
 .modal-info {
   font-size: 0.9vw;
@@ -150,7 +150,7 @@ const handleSubmit = async () => {
 .item-form-label {
   display: block;
   margin-bottom: 0.6vw;
-  color: rgba(226, 232, 240, 0.9);
+  color: rgba(var(--rgb-muted), 0.9);
   font-size: 0.95vw;
   font-weight: 600;
   font-family: 'Nunito', system-ui, sans-serif;
@@ -159,10 +159,10 @@ const handleSubmit = async () => {
 .item-form-input {
   width: 100%;
   padding: 0.9vw;
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(var(--rgb-raised), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.2);
   border-radius: 0.6vw;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
   font-family: 'Nunito', system-ui, sans-serif;
   transition: all 0.2s;
@@ -171,9 +171,9 @@ const handleSubmit = async () => {
 .item-form-input:focus {
   outline: none;
   border-color: #3b82f6;
-  background: rgba(30, 41, 59, 0.9);
+  background: rgba(var(--rgb-raised), 0.9);
 }
-.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.item-form-input::placeholder { color: rgba(var(--rgb-muted), 0.4); }
 
 .modal-actions {
   display: flex;
@@ -197,13 +197,13 @@ const handleSubmit = async () => {
 
 .modal-btn-cancel {
   background: rgba(148, 163, 184, 0.1);
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
 
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
 }
 .modal-btn-save:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transform: translateY(-2px); }
 .modal-btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }

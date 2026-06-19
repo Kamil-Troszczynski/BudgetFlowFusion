@@ -255,39 +255,39 @@ const handleSubmit = () => {
 
 <style scoped>
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 22, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); padding: 3vh 0; box-sizing: border-box; }
-.modal-content { background: #0f172a; border: 0.1vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.5vw; width: 90%; max-width: 35vw; max-height: 94vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.75) rgba(15, 23, 42, 0.8); box-sizing: border-box; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: modalPop 0.25s ease; }
+.modal-content { background: #0f172a; border: 0.1vw solid rgba(148, 163, 184, 0.15); border-radius: 1.2vw; padding: 2.5vw; width: 90%; max-width: 35vw; max-height: 94vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.75) rgba(var(--rgb-surface), 0.8); box-sizing: border-box; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: modalPop 0.25s ease; }
 .modal-content::-webkit-scrollbar { width: 0.55vw; }
-.modal-content::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.75); border-radius: 999px; margin: 0.9vw 0; }
-.modal-content::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #60a5fa, #2563eb); border-radius: 999px; border: 0.12vw solid rgba(15, 23, 42, 0.95); }
+.modal-content::-webkit-scrollbar-track { background: rgba(var(--rgb-surface), 0.75); border-radius: 999px; margin: 0.9vw 0; }
+.modal-content::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #60a5fa, #2563eb); border-radius: 999px; border: 0.12vw solid rgba(var(--rgb-surface), 0.95); }
 .modal-content::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #93c5fd, #3b82f6); }
 @keyframes modalPop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vw; padding-bottom: 1.5vw; border-bottom: 0.1vw solid rgba(148, 163, 184, 0.1); }
-.modal-title { font-size: 1.5vw; font-weight: 800; color: #bfdbfe; margin: 0; }
-.modal-close { background: none; border: none; color: rgba(226, 232, 240, 0.6); font-size: 1.5vw; cursor: pointer; transition: color 0.2s; }
-.modal-close:hover { color: #ffffff; }
+.modal-title { font-size: 1.5vw; font-weight: 800; color: var(--color-heading); margin: 0; }
+.modal-close { background: none; border: none; color: rgba(var(--rgb-muted), 0.6); font-size: 1.5vw; cursor: pointer; transition: color 0.2s; }
+.modal-close:hover { color: rgb(var(--rgb-text)); }
 
 .list-form-group { margin-bottom: 1.5vw; }
-.list-form-label { display: block; margin-bottom: 0.6vw; color: rgba(226, 232, 240, 0.85); font-size: 0.9vw; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.list-form-input, .list-form-select { width: 100%; box-sizing: border-box; padding: 0.9vw; background: rgba(30, 41, 59, 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: #ffffff; font-size: 0.95vw; transition: all 0.2s; font-family: inherit; }
-.list-form-input:focus, .list-form-select:focus { outline: none; border-color: #3b82f6; background: rgba(30, 41, 59, 0.9); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+.list-form-label { display: block; margin-bottom: 0.6vw; color: rgba(var(--rgb-muted), 0.85); font-size: 0.9vw; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.list-form-input, .list-form-select { width: 100%; box-sizing: border-box; padding: 0.9vw; background: rgba(var(--rgb-raised), 0.6); border: 0.08vw solid rgba(148, 163, 184, 0.2); border-radius: 0.6vw; color: rgb(var(--rgb-text)); font-size: 0.95vw; transition: all 0.2s; font-family: inherit; }
+.list-form-input:focus, .list-form-select:focus { outline: none; border-color: #3b82f6; background: rgba(var(--rgb-raised), 0.9); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 .list-form-select--error { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; }
 .list-form-textarea { resize: none; font-family: inherit; }
 
 .duplicate-warning-banner { display: flex; gap: 1vw; align-items: flex-start; padding: 1vw; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 0.6vw; margin-bottom: 1.5vw; text-align: left; }
 .warning-banner-icon { font-size: 1.4vw; color: #f59e0b; line-height: 1; }
-.warning-banner-content { font-size: 0.85vw; color: #cbd5e1; line-height: 1.4; }
+.warning-banner-content { font-size: 0.85vw; color: var(--color-subtle); line-height: 1.4; }
 
-.shop-meta-preview { display: flex; flex-direction: column; gap: 0.5vw; padding: 0.9vw 1.2vw; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 0.6vw; margin-top: -1vw; margin-bottom: 1.5vw; }
+.shop-meta-preview { display: flex; flex-direction: column; gap: 0.5vw; padding: 0.9vw 1.2vw; background: rgba(var(--rgb-surface), 0.4); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 0.6vw; margin-top: -1vw; margin-bottom: 1.5vw; }
 .meta-preview-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.85vw; }
 .meta-preview-label { color: #64748b; font-weight: 600; }
 .meta-preview-value { font-weight: 700; }
 
 .modal-actions { display: flex; gap: 1vw; justify-content: flex-end; margin-top: 2vw; padding-top: 1.5vw; border-top: 0.1vw solid rgba(148, 163, 184, 0.1); }
 .modal-btn { padding: 0.8vw 1.8vw; border-radius: 0.6vw; font-size: 0.95vw; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; font-family: inherit; }
-.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: #e2e8f0; }
-.modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); color: #ffffff; }
-.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+.modal-btn-cancel { background: rgba(148, 163, 184, 0.1); color: rgb(var(--rgb-muted)); }
+.modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); color: rgb(var(--rgb-text)); }
+.modal-btn-save { background: linear-gradient(135deg, #3b82f6, #2563eb); color: rgb(var(--rgb-text)); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
 .modal-btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
 .modal-btn-save:disabled { opacity: 0.3; cursor: not-allowed; }
 

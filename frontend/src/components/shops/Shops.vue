@@ -308,7 +308,7 @@ onMounted(fetchShops)
   gap: 1.4vw;
   width: 100%;
   padding: 2vh 0;
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
   font-family: 'Nunito', system-ui, sans-serif;
 }
 
@@ -323,21 +323,21 @@ onMounted(fetchShops)
 
 .shops-view__header h2 {
   margin: 0 0 0.5vw;
-  color: #bfdbfe;
+  color: var(--color-heading);
   font-size: 2vw;
   font-weight: 800;
 }
 
 .shops-view__header p {
   margin: 0;
-  color: rgba(226, 232, 240, 0.64);
+  color: rgba(var(--rgb-muted), 0.64);
   font-size: 1vw;
   line-height: 1.5;
 }
 
 .shops-view__eyebrow {
   margin: 0 0 0.35vw 0 !important;
-  color: #93c5fd !important;
+  color: var(--color-link) !important;
   font-size: 0.78vw !important;
   font-weight: 800;
   text-transform: uppercase;
@@ -352,7 +352,7 @@ onMounted(fetchShops)
   padding: 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.15);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--rgb-surface), 0.5);
 }
 
 .shops-filter,
@@ -363,7 +363,7 @@ onMounted(fetchShops)
 
 .shops-filter span,
 .shops-form__group span {
-  color: rgba(226, 232, 240, 0.68);
+  color: rgba(var(--rgb-muted), 0.68);
   font-size: 0.8vw;
   font-weight: 800;
   text-transform: uppercase;
@@ -375,8 +375,8 @@ onMounted(fetchShops)
   padding: 0.8vw 0.9vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.22);
   border-radius: 0.65vw;
-  background: rgba(15, 23, 42, 0.68);
-  color: #ffffff;
+  background: rgba(var(--rgb-surface), 0.68);
+  color: rgb(var(--rgb-text));
   font-size: 0.92vw;
   font-family: inherit;
   box-sizing: border-box;
@@ -385,7 +385,7 @@ onMounted(fetchShops)
 .shops-input:focus {
   outline: none;
   border-color: rgba(96, 165, 250, 0.62);
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(var(--rgb-surface), 0.92);
 }
 
 .shops-summary {
@@ -400,17 +400,17 @@ onMounted(fetchShops)
   padding: 1vw;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.8vw;
-  background: rgba(15, 23, 42, 0.56);
+  background: rgba(var(--rgb-surface), 0.56);
 }
 
 .shops-summary span {
-  color: rgba(226, 232, 240, 0.62);
+  color: rgba(var(--rgb-muted), 0.62);
   font-size: 0.82vw;
   font-weight: 700;
 }
 
 .shops-summary strong {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 1.25vw;
 }
 
@@ -418,7 +418,7 @@ onMounted(fetchShops)
   overflow-x: auto;
   border: 0.08vw solid rgba(148, 163, 184, 0.16);
   border-radius: 0.9vw;
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(var(--rgb-surface), 0.42);
   box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.18);
 }
 
@@ -438,8 +438,8 @@ onMounted(fetchShops)
 }
 
 .shops-table th {
-  background: rgba(30, 41, 59, 0.76);
-  color: #93c5fd;
+  background: rgba(var(--rgb-raised), 0.76);
+  color: var(--color-link);
   font-size: 0.72vw;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -447,13 +447,13 @@ onMounted(fetchShops)
 }
 
 .shops-name {
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-weight: 800;
 }
 
 .shops-opinion {
   max-width: 24vw;
-  color: rgba(226, 232, 240, 0.78);
+  color: rgba(var(--rgb-muted), 0.78);
 }
 
 .shops-status {
@@ -495,7 +495,7 @@ onMounted(fetchShops)
   border: 0.08vw solid rgba(96, 165, 250, 0.35);
   border-radius: 0.6vw;
   background: rgba(59, 130, 246, 0.16);
-  color: #93c5fd;
+  color: var(--color-link);
   padding: 0.75vw 1.2vw;
   font-weight: 800;
   font-size: 0.9vw;
@@ -505,12 +505,12 @@ onMounted(fetchShops)
 
 .shops-primary-btn {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
 }
 
 .shops-secondary-btn {
   background: rgba(148, 163, 184, 0.1);
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 
 .shops-action-btn {
@@ -531,7 +531,7 @@ onMounted(fetchShops)
 }
 
 .shops-empty {
-  color: rgba(226, 232, 240, 0.64);
+  color: rgba(var(--rgb-muted), 0.64);
   text-align: center;
   padding: 2vw !important;
 }
@@ -570,14 +570,14 @@ onMounted(fetchShops)
 
 .shops-modal__header h3 {
   margin: 0;
-  color: #bfdbfe;
+  color: var(--color-heading);
   font-size: 22px;
 }
 
 .shops-modal__close {
   border: 0;
   background: none;
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(var(--rgb-muted), 0.7);
   font-size: 22px;
   cursor: pointer;
 }

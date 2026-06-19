@@ -210,19 +210,19 @@ const handleSubmit = () => {
 .modal-title {
   font-size: 1.5vw;
   font-weight: 700;
-  color: #bfdbfe;
+  color: var(--color-heading);
   margin: 0;
 }
 
 .modal-close {
   background: none;
   border: none;
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
   font-size: 1.5vw;
   cursor: pointer;
   transition: color 0.2s;
 }
-.modal-close:hover { color: #ffffff; }
+.modal-close:hover { color: rgb(var(--rgb-text)); }
 
 .item-form-group {
   margin-bottom: 1.5vw;
@@ -241,7 +241,7 @@ const handleSubmit = () => {
 .item-form-label {
   display: block;
   margin-bottom: 0.6vw;
-  color: rgba(226, 232, 240, 0.9);
+  color: rgba(var(--rgb-muted), 0.9);
   font-size: 0.95vw;
   font-weight: 600;
 }
@@ -249,10 +249,10 @@ const handleSubmit = () => {
 .item-form-input, .item-form-select {
   width: 100%;
   padding: 0.9vw;
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(var(--rgb-raised), 0.6);
   border: 0.08vw solid rgba(148, 163, 184, 0.2);
   border-radius: 0.6vw;
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
   font-size: 0.95vw;
   transition: all 0.2s;
   box-sizing: border-box;
@@ -261,10 +261,10 @@ const handleSubmit = () => {
 .item-form-input:focus, .item-form-select:focus {
   outline: none;
   border-color: #3b82f6;
-  background: rgba(30, 41, 59, 0.9);
+  background: rgba(var(--rgb-raised), 0.9);
 }
 
-.item-form-input::placeholder { color: rgba(226, 232, 240, 0.4); }
+.item-form-input::placeholder { color: rgba(var(--rgb-muted), 0.4); }
 
 .item-form-search {
   margin-bottom: 0.6vw;
@@ -287,7 +287,7 @@ const handleSubmit = () => {
   font-family: 'Nunito', system-ui, sans-serif;
   transition: color 0.2s;
 }
-.request-subcategory-link:hover { color: #93c5fd; text-decoration: underline; }
+.request-subcategory-link:hover { color: var(--color-link); text-decoration: underline; }
 
 .item-form-info {
   display: flex;
@@ -327,13 +327,13 @@ const handleSubmit = () => {
 
 .modal-btn-cancel {
   background: rgba(148, 163, 184, 0.1);
-  color: #e2e8f0;
+  color: rgb(var(--rgb-muted));
 }
 .modal-btn-cancel:hover { background: rgba(148, 163, 184, 0.2); }
 
 .modal-btn-save {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
+  color: rgb(var(--rgb-text));
 }
 .modal-btn-save:hover {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
