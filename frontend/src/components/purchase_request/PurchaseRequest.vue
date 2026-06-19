@@ -100,26 +100,26 @@
                 </div>
                 <div class="request-card__actions">
                   <button class="request-card__button view" @click="emit('open-shopping', request)">Otwórz koszyk</button>
-                  <button v-if="isOwner(request) && request.status === 'pending'" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
+                  <button v-if="request.status === 'pending'" class="request-card__button view" @click="openEditRequestModal(request)">Edytuj szczegóły</button>
                   <!-- pending → przenieś do dokończenia -->
                   <button
-                    v-if="request.status === 'pending' && isOwner(request) && Number(request.sourceList__shopCount || 0) > 0"
+                    v-if="request.status === 'pending'"
                     class="request-card__button finalize"
                     @click="moveToDoDokonczenia(request)"
                   >Przenieś do dokończenia</button>
                   <!-- prepared → zatwierdź (otwiera modal finalizacji) -->
                   <button
-                    v-if="request.status === 'prepared' && isOwner(request)"
+                    v-if="request.status === 'prepared'"
                     class="request-card__button approve"
                     @click="prepareFinalization(request)"
                   >Zatwierdź</button>
                   <!-- prepared → odrzuć -->
                   <button
-                    v-if="request.status === 'prepared' && isOwner(request)"
+                    v-if="request.status === 'prepared'"
                     class="request-card__button reject-btn"
                     @click="rejectRequest(request)"
                   >Odrzuć</button>
-                  <button v-if="canReturnToOpen(request)" class="request-card__button reopen" @click="returnToOpen(request)">Przywróć do otwartych</button>
+                  <button v-if="request.status === 'prepared'" class="request-card__button reopen" @click="returnToOpen(request)">Przywróć do otwartych</button>
                   <button class="request-card__button view" @click="activeRequest = request">Podsumowanie</button>
                   <button v-if="isOwner(request)" class="request-card__button delete" @click="deleteRequest(request.id)">Usuń</button>
                 </div>
@@ -156,26 +156,26 @@
                     <td>
                       <div class="table-row-actions">
                         <button class="table-btn view" @click="emit('open-shopping', request)">Lista</button>
-                        <button v-if="isOwner(request) && request.status === 'pending'" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
+                        <button v-if="request.status === 'pending'" class="table-btn view" @click="openEditRequestModal(request)">Edytuj</button>
                         <!-- pending → przenieś do dokończenia -->
                         <button
-                          v-if="request.status === 'pending' && isOwner(request) && Number(request.sourceList__shopCount || 0) > 0"
+                          v-if="request.status === 'pending'"
                           class="table-btn finalize"
                           @click="moveToDoDokonczenia(request)"
                         >Do dokończenia</button>
                         <!-- prepared → zatwierdź -->
                         <button
-                          v-if="request.status === 'prepared' && isOwner(request)"
+                          v-if="request.status === 'prepared'"
                           class="table-btn approve"
                           @click="prepareFinalization(request)"
                         >Zatwierdź</button>
                         <!-- prepared → odrzuć -->
                         <button
-                          v-if="request.status === 'prepared' && isOwner(request)"
+                          v-if="request.status === 'prepared'"
                           class="table-btn reject-btn"
                           @click="rejectRequest(request)"
                         >Odrzuć</button>
-                        <button v-if="canReturnToOpen(request)" class="table-btn reopen" @click="returnToOpen(request)">Otwórz</button>
+                        <button v-if="request.status === 'prepared'" class="table-btn reopen" @click="returnToOpen(request)">Przywróć</button>
                         <button class="table-btn view" @click="activeRequest = request">Podsumowanie</button>
                         <button v-if="isOwner(request)" class="table-btn delete" @click="deleteRequest(request.id)">Usuń</button>
                       </div>
@@ -2032,8 +2032,16 @@ const deleteRequest = async (id) => {
 }
 
 const formatStatus = (status) => {
-  const map = { pending: 'Oczekujący', prepared: 'Do dokończenia', approved: 'Zatwierdzony', rejected: 'Odrzucony' }
-  return map[status] || status
+  const map = {
+    pending:    'Oczekujący',
+    prepared:   'Do dokończenia',
+    approved:   'Zatwierdzony',
+    rejected:   'Odrzucony',
+    accounting: 'Oczekuje na księgowość',
+    settlement: 'W rozliczeniu',
+    settled:    'Rozliczony',
+  }
+  return map[status] ?? status
 }
 const formatPlanStatus = status => status === 'compliant' ? 'Zgodny z planem' : (status === 'requires_approval' ? 'Wymaga zgody' : status || 'Brak danych')
 const formatDate = (dateStr) => dateStr ? new Intl.DateTimeFormat('pl-PL').format(new Date(dateStr)) : '—'

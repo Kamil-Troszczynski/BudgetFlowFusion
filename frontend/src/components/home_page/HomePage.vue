@@ -241,6 +241,9 @@
           </section>
 
           <section class="dashboard__section" v-if="!showPulpit && navLinks[activeNavIndex]?.includes('Listy') && navLinks[activeNavIndex]?.includes('zakupów')">
+            <div v-if="selectedShoppingRequestId" class="shopping-back-bar">
+              <button class="shopping-back-btn" @click="goBackFromShopping">← Powrót do wniosków</button>
+            </div>
             <AddedShopPurchaseLists :initial-purchase-request-id="selectedShoppingRequestId" />
           </section>
 
@@ -480,6 +483,14 @@ const openShoppingForRequest = (request) => {
   )
   if (listsIndex >= 0) {
     navigateToSection(listsIndex)
+  }
+}
+
+const goBackFromShopping = () => {
+  selectedShoppingRequestId.value = null
+  const requestsIndex = navLinks.value.findIndex(link => link.includes('Wnioski'))
+  if (requestsIndex >= 0) {
+    navigateToSection(requestsIndex)
   }
 }
 
@@ -2570,5 +2581,25 @@ const handleLogout = () => {
   .dashboard__section :deep(table) {
     min-width: 720px;
   }
+}
+
+.shopping-back-bar {
+  margin-bottom: 1.5vh;
+}
+
+.shopping-back-btn {
+  background: none;
+  border: none;
+  color: var(--color-link);
+  font-size: 1vw;
+  font-weight: 700;
+  font-family: 'Nunito', system-ui, sans-serif;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.shopping-back-btn:hover {
+  color: var(--color-heading);
 }
 </style>
